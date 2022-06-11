@@ -1,0 +1,15 @@
+/.idea/
+/__pycache__/
+/build/
+/dist/
+/venv/
+/log/
+/*.egg-info/
+
+.DS_Store
+
+*.pyc
+*.spec
+*.zip
+
+main.py
