@@ -1,14 +1,33 @@
+import os
 import sys
 import time
-import qqbot
+import logging
 import traceback
 
 from typing import Union, List, Type, Callable, Coroutine, Iterator
 from contextlib import asynccontextmanager
+from logging.handlers import TimedRotatingFileHandler
+
+if not os.path.exists('log'):
+    os.makedirs('log')
+
+formatter = '%(asctime)s [%(levelname)s] %(message)s'
+file_handler = TimedRotatingFileHandler(
+    filename='log/amiyabot.log',
+    backupCount=7,
+    when='D'
+)
+file_handler.setFormatter(logging.Formatter(formatter))
+file_handler.setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.INFO,
+                    format=formatter,
+                    datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger()
+logger.addHandler(file_handler)
 
 
 def info(message: str):
-    qqbot.logger.info(f'[BOT] {message}')
+    logger.info(message)
 
 
 def error(message: Union[str, Exception], desc: str = None):
@@ -19,7 +38,7 @@ def error(message: Union[str, Exception], desc: str = None):
     if desc:
         text = f'{desc} {text}'
 
-    qqbot.logger.error(f'[BOT] {text}')
+    logger.error(text)
 
     return text
 
@@ -61,7 +80,7 @@ def download_progress(title: str, max_size: int, chunk_size: int, iter_content: 
 
 @asynccontextmanager
 async def catch(desc: str = None,
-                ignore: List[Type[Exception]] = None,
+                ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
                 handler: Callable[[Exception], Coroutine] = None):
     try:
         yield

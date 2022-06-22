@@ -2,7 +2,7 @@ import os
 import json
 
 from typing import Optional, Union
-from playwright.async_api import Browser, Page, Playwright, async_playwright
+from playwright.async_api import Browser, Page, ViewportSize, Playwright, async_playwright
 from amiyabot.util import Singleton, argv
 from amiyabot import log
 
@@ -47,9 +47,9 @@ class ChromiumBrowser(metaclass=Singleton):
         await self.browser.close()
         await self.playwright.stop()
 
-    async def open_page(self, url: str, is_file: bool = False):
+    async def open_page(self, url: str, width: int, height: int, is_file: bool = False):
         if self.browser:
-            page = await self.browser.new_page(no_viewport=True)
+            page = await self.browser.new_page(no_viewport=True, viewport=ViewportSize(width=width, height=height))
 
             if is_file:
                 url = 'file:///' + os.path.abspath(url)

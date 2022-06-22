@@ -1,6 +1,5 @@
 import re
 import time
-import qqbot
 import asyncio
 import collections
 
@@ -10,14 +9,24 @@ from amiyabot import log
 Equal = collections.namedtuple('equal', ['content'])  # 全等对象，接受一个字符串，表示消息文本完全匹配该值
 
 
+class Event:
+    def __init__(self, appid, event_name, data):
+        self.appid = appid
+        self.event_name = event_name
+        self.data = data
+
+    def __str__(self):
+        return f'Bot:{self.appid} Event:{self.event_name}'
+
+
 class Message:
-    def __init__(self, bot, message: qqbot.Message):
+    def __init__(self, bot, message: dict):
         """
         二次封装的消息对象
         """
         self.bot = bot
         self.message = message
-        self.message_id = message.id
+        self.message_id = message['id']
 
         self.face = []
         self.image = []
@@ -33,10 +42,11 @@ class Message:
         self.is_at = False
         self.is_admin = False
 
-        self.user_id = message.author.id
-        self.guild_id = message.guild_id
-        self.channel_id = message.channel_id
-        self.nickname = message.author.username
+        self.user_id = message['author']['id']
+        self.guild_id = message['guild_id']
+        self.channel_id = message['channel_id']
+        self.nickname = message['author']['username']
+        self.avatar = message['author']['avatar']
 
         self.time = int(time.time())
 
@@ -45,9 +55,10 @@ class Message:
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
 
-        return 'Bot:{bot} Channel:{channel} {nickname}: {message}'.format(
+        return 'Bot:{bot} Guild:{guild} Channel:{channel} {nickname}: {message}'.format(
             **{
                 'bot': self.bot.appid,
+                'guild': self.guild_id,
                 'channel': self.channel_id,
                 'nickname': self.nickname,
                 'message': text + face + image

@@ -1,12 +1,8 @@
 import re
-import qqbot
 import asyncio
-
-from qqbot.model.audio import AudioControl, STATUS
 
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.lib.imageCreator import create_image, IMAGES_TYPE
-from amiyabot.builtin.lib.imageManager import ImagesManager
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser, debug
 from amiyabot import log
 
@@ -36,11 +32,26 @@ class Chain:
         if at:
             self.at(enter=True)
 
-    def __req(self, content: str = '', image: str = '', message_reference: qqbot.MessageReference = None):
-        return qqbot.MessageSendRequest(msg_id=self.data.message_id,
-                                        content=content,
-                                        image=image,
-                                        message_reference=message_reference)
+    def __req(self, content: str = '', image_url: str = '', file_image: bytes = None):
+        req = MessageSendRequest(
+            data={
+                'msg_id': self.data.message_id,
+                'content': content,
+                'image': image_url,
+                'file_image': file_image,
+                **({
+                       'message_reference': {
+                           'message_id': self.data.message_id,
+                           'ignore_get_message_error': False
+                       }
+                   } if self.reference else {})
+            }
+        )
+
+        if file_image:
+            req.upload_image = True
+
+        return req
 
     def at(self, user: int = None, enter: bool = False):
         self.chain.append(At(user or self.data.user_id))
@@ -117,19 +128,27 @@ class Chain:
         self.chain.append(Voice(url, title))
         return self
 
-    def html(self, path: str, data: Union[dict, list] = None, is_template: bool = True, render_time: int = 200):
+    def html(self,
+             path: str,
+             data: Union[dict, list] = None,
+             width: int = 1280,
+             height: int = 720,
+             is_template: bool = True,
+             render_time: int = 200):
         self.chain.append(Html(**{
             'data': data,
+            'width': width,
+            'height': height,
             'template': path,
             'is_file': is_template,
             'render_time': render_time
         }))
         return self
 
-    async def build(self, chain: CHAIN_LIST = None):
+    async def build(self, chain: CHAIN_LIST = None) -> List[MessageSendRequest]:
         chain = chain or self.chain
 
-        messages: List[Union[qqbot.MessageSendRequest, AudioControl]] = []
+        messages = []
 
         text = ''
         has_content = False
@@ -153,21 +172,22 @@ class Chain:
             # Image
             if type(item) is Image:
                 if item.url:
-                    messages.append(self.__req(image=item.url))
+                    messages.append(self.__req(image_url=item.url))
                 else:
-                    res = await ImagesManager.generate_url(item.content)
-                    if res:
-                        messages.append(self.__req(image=res))
+                    messages.append(self.__req(file_image=item.content))
 
             # Voice
             if type(item) is Voice:
-                messages.append(AudioControl(item.url, item.title, STATUS.START))
+                pass
 
             # Html
             if type(item) is Html:
                 async with log.catch('html convert error:'):
                     browser = ChromiumBrowser()
-                    page = await browser.open_page(item.template, is_file=item.is_file)
+                    page = await browser.open_page(item.template,
+                                                   is_file=item.is_file,
+                                                   width=item.width,
+                                                   height=item.height)
 
                     if not page:
                         continue
@@ -177,20 +197,13 @@ class Chain:
 
                     await asyncio.sleep(item.render_time / 1000)
 
-                    res = await ImagesManager.generate_url(await page.make_image())
-                    if res:
-                        messages.append(self.__req(image=res))
+                    messages.append(self.__req(file_image=await page.make_image()))
 
                     if not debug:
                         await page.close()
 
         text = text.strip('\n')
         if text and has_content:
-            if self.reference:
-                reference = qqbot.MessageReference()
-                reference.message_id = self.data.message_id
-                messages.append(self.__req(content=text, message_reference=reference))
-            else:
-                messages.append(self.__req(content=text))
+            messages.append(self.__req(content=text))
 
         return messages

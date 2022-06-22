@@ -1,14 +1,12 @@
-from . import env
-
-import qqbot
 import asyncio
 
 from typing import List
+from amiyabot.adapter.intents import Intents
 from amiyabot.handler import BotHandlerFactory, BotInstance
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.builtin.message import Message, WaitEventCancel, WaitEventOutOfFocus, Equal
+from amiyabot.builtin.message import Event, Message, WaitEventCancel, WaitEventOutOfFocus, Equal
 from amiyabot import log
 
 chromium = ChromiumBrowser()
@@ -18,19 +16,17 @@ class AmiyaBot(BotHandlerFactory):
     def __init__(self, appid: str, token: str, private: bool = False):
         super().__init__(appid, token)
 
-        self.handler_type = qqbot.HandlerType.AT_MESSAGE_EVENT_HANDLER
+        self.intents_type = Intents.PUBLIC_GUILD_MESSAGES
         if private:
-            self.handler_type = qqbot.HandlerType.MESSAGE_EVENT_HANDLER
+            self.intents_type = Intents.GUILD_MESSAGES
 
     async def start(self, enable_chromium: bool = False):
         if enable_chromium:
             await chromium.launch()
-        await qqbot.async_listen_events(self.instance.token,
-                                        False,
-                                        qqbot.Handler(self.handler_type, self.__message_handler),
-                                        ret_coro=True)
 
-    async def __message_handler(self, event, message: qqbot.Message):
+        await self.instance.connect(self.intents_type, self.__message_handler)
+
+    async def __message_handler(self, event: str, message: dict):
         async with log.catch(desc='handler error:',
                              ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
                              handler=self.__exception_handler):
@@ -67,8 +63,12 @@ class MultipleAccounts(BotHandlerFactory):
             item.before_reply_handlers += self.before_reply_handlers
             item.message_handler_middleware += self.message_handler_middleware
 
-            for e in self.exception_handlers:
-                if e not in item.exception_handlers:
-                    item.exception_handlers[e] = self.exception_handlers[e]
-                else:
-                    item.exception_handlers[e] += self.exception_handlers[e]
+            self.__combine_dict_handlers(item, 'event_handlers')
+            self.__combine_dict_handlers(item, 'exception_handlers')
+
+    def __combine_dict_handlers(self, item: AmiyaBot, keyname: str):
+        for e in getattr(self, keyname):
+            if e not in getattr(item, keyname):
+                getattr(item, keyname)[e] = getattr(self, keyname)[e]
+            else:
+                getattr(item, keyname)[e] += getattr(self, keyname)[e]

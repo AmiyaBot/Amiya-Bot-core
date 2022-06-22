@@ -1,0 +1,60 @@
+class BaseConstant:
+    domain = 'https://api.sgroup.qq.com'
+    sandBoxDomain = 'https://sandbox.api.sgroup.qq.com'
+
+
+class APIConstant:
+    guildURI = '/guilds/{guild_id}'
+    guildMembersURI = '/guilds/{guild_id}/members'
+    guildMemberURI = '/guilds/{guild_id}/members/{user_id}'
+
+    rolesURI = '/guilds/{guild_id}/roles'
+    roleURI = '/guilds/{guild_id}/roles/{role_id}'
+    memberRoleURI = '/guilds/{guild_id}/members/{user_id}/roles/{role_id}'
+
+    channelsURI = '/guilds/{guild_id}/channels'
+    channelURI = '/channels/{channel_id}'
+    channelPermissionsURI = '/channels/{channel_id}/members/{user_id}/permissions'
+    channelRolePermissionsURI = '/channels/{channel_id}/roles/{role_id}/permissions'
+
+    messagesURI = '/channels/{channel_id}/messages'
+    messageURI = '/channels/{channel_id}/messages/{message_id}'
+
+    userMeURI = '/users/@me'
+    userMeGuildsURI = '/users/@me/guilds'
+    userMeDMURI = '/users/@me/dms'
+
+    gatewayURI = '/gateway'
+    gatewayBotURI = '/gateway/bot'
+
+    audioControlURI = '/channels/{channel_id}/audio'
+    dmsURI = '/dms/{guild_id}/messages'
+
+    guildMuteURI = '/guilds/{guild_id}/mute'
+    guildMemberMuteURI = '/guilds/{guild_id}/members/{user_id}/mute'
+
+    guildAnnounceURI = '/guilds/{guild_id}/announces'
+    deleteGuildAnnounceURI = '/guilds/{guild_id}/announces/{message_id}'
+    channelAnnounceURI = '/channels/{channel_id}/announces'
+    deleteChannelAnnounceURI = '/channels/{channel_id}/announces/{message_id}'
+
+    channelSchedulesURI = '/channels/{channel_id}/schedules'
+    channelSchedulesIdURI = '/channels/{channel_id}/schedules/{schedule_id}'
+
+    guildAPIPermissionURL = '/guilds/{guild_id}/api_permission'
+    guildAPIPermissionDemandURL = '/guilds/{guild_id}/api_permission/demand'
+
+    reactionURI = '/channels/{channel_id}/messages/{message_id}/reactions/{type}/{id}'
+
+    changePinsURI = '/channels/{channel_id}/pins/{message_id}'
+    getPinsURI = '/channels/{channel_id}/pins'
+
+    interactionURI = '/interactions/{interaction_id}'
+
+
+def get_url(url_format: str, is_sandbox=False):
+    domain = BaseConstant.domain
+    if is_sandbox:
+        domain = BaseConstant.sandBoxDomain
+
+    return f'{domain}{url_format}'

@@ -1,20 +1,23 @@
-import qqbot
-
-from typing import List, Tuple, Union, Optional
-from qqbot.model.ws_context import WsContext
 from amiyabot.builtin.message.builder import package_message
-from amiyabot.builtin.message import Message, Verify, WaitEvent, ChannelWaitEvent, WaitEventCancel, wait_events_bucket
+from amiyabot.builtin.message import *
 from amiyabot.handler import MessageHandlerItem, BotHandlerFactory
 
 CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
 
 
-async def message_handler(bot: BotHandlerFactory, event: WsContext, message: qqbot.Message):
+async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
     instance = bot.instance
     data = await package_message(instance, event, message)
 
-    if not data:
+    # 执行事件响应
+    if type(data) is Event:
+        if data.event_name in bot.event_handlers:
+            log.info(data.__str__())
+            for method in bot.event_handlers[data.event_name]:
+                await method(instance, data)
         return None
+
+    log.info(data.__str__())
 
     # 执行中间处理函数
     if bot.message_handler_middleware:

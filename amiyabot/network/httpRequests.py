@@ -2,18 +2,12 @@ import json
 import aiohttp
 
 from typing import Union
-from amiyabot.util import argv
 from amiyabot import log
-
-outline = argv('outline')
 
 
 class HttpRequests:
     @classmethod
     async def get(cls, interface: str, *args, **kwargs):
-        if outline:
-            return None
-
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(interface, *args, **kwargs) as res:
@@ -26,9 +20,6 @@ class HttpRequests:
 
     @classmethod
     async def post(cls, interface: str, payload: Union[dict, list] = None, headers: dict = None):
-        if outline:
-            return None
-
         _headers = {
             'Content-Type': 'application/json',
             **(headers or {})
@@ -47,27 +38,26 @@ class HttpRequests:
             log.error(f'fail to request <{interface}>[POST]')
 
     @classmethod
-    async def upload(cls, interface: str, file: bytes, file_field: str = 'file', payload: dict = None):
-        if outline:
-            return None
+    async def post_form_data(cls, interface: str, payload: dict = None, headers: dict = None):
+        _headers = {
+            **(headers or {})
+        }
 
         data = aiohttp.FormData()
-        data.add_field(file_field,
-                       file,
-                       content_type='application/octet-stream')
-
         for field, value in (payload or {}).items():
+            if type(value) in [dict, list]:
+                value = json.dumps(value, ensure_ascii=False)
             data.add_field(field, value)
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(interface, data=data) as res:
+                async with session.post(interface, data=data, headers=_headers) as res:
                     if res.status == 200:
                         return await res.text()
                     else:
-                        log.error(f'bad to request <{interface}>[UPLOAD]. Got code {res.status}')
+                        log.error(f'bad to request <{interface}>[POST-FormData]. Got code {res.status}')
         except aiohttp.ClientConnectorError:
-            log.error(f'fail to request <{interface}>[UPLOAD]')
+            log.error(f'fail to request <{interface}>[POST-FormData]')
 
 
 http_requests = HttpRequests

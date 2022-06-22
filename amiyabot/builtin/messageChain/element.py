@@ -35,6 +35,14 @@ class Html:
     template: str
     is_file: bool
     render_time: int
+    width: int = 1280
+    height: int = 720
+
+
+@dataclass
+class MessageSendRequest:
+    data: dict
+    upload_image: bool = False
 
 
 CHAIN_LIST = List[
