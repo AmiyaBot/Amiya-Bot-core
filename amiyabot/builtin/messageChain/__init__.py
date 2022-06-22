@@ -1,4 +1,5 @@
 import re
+import os
 import asyncio
 
 from amiyabot.builtin.message import Message
@@ -31,27 +32,6 @@ class Chain:
 
         if at:
             self.at(enter=True)
-
-    def __req(self, content: str = '', image_url: str = '', file_image: bytes = None):
-        req = MessageSendRequest(
-            data={
-                'msg_id': self.data.message_id,
-                'content': content,
-                'image': image_url,
-                'file_image': file_image,
-                **({
-                       'message_reference': {
-                           'message_id': self.data.message_id,
-                           'ignore_get_message_error': False
-                       }
-                   } if self.reference else {})
-            }
-        )
-
-        if file_image:
-            req.upload_image = True
-
-        return req
 
     def at(self, user: int = None, enter: bool = False):
         self.chain.append(At(user or self.data.user_id))
@@ -117,8 +97,9 @@ class Chain:
 
             for item in target:
                 if type(item) is str:
-                    with open(item, mode='rb') as f:
-                        self.chain.append(Image(content=f.read()))
+                    if os.path.exists(item):
+                        with open(item, mode='rb') as f:
+                            self.chain.append(Image(content=f.read()))
                 else:
                     self.chain.append(Image(content=item))
 
@@ -145,36 +126,30 @@ class Chain:
         }))
         return self
 
-    async def build(self, chain: CHAIN_LIST = None) -> List[MessageSendRequest]:
+    async def build(self, chain: CHAIN_LIST = None):
         chain = chain or self.chain
 
-        messages = []
-
-        text = ''
-        has_content = False
+        messages = MessageSendRequestGroup(self.data.message_id, self.reference)
 
         for item in chain:
             # At
             if type(item) is At:
-                text += f'<@{item.target}>'
+                messages.add_text(f'<@{item.target}>')
 
             # Face
             if type(item) is Face:
-                has_content = True
-                text += f'<emoji:{item.face_id}>'
+                messages.add_text(f'<emoji:{item.face_id}>')
 
             # Text
             if type(item) is Text:
-                if item.content.strip('\n'):
-                    has_content = True
-                text += item.content
+                messages.add_text(item.content)
 
             # Image
             if type(item) is Image:
                 if item.url:
-                    messages.append(self.__req(image_url=item.url))
-                else:
-                    messages.append(self.__req(file_image=item.content))
+                    messages.add_image(item.url)
+                if item.content:
+                    messages.add_image(item.content)
 
             # Voice
             if type(item) is Voice:
@@ -197,13 +172,11 @@ class Chain:
 
                     await asyncio.sleep(item.render_time / 1000)
 
-                    messages.append(self.__req(file_image=await page.make_image()))
+                    messages.add_image(await page.make_image())
 
                     if not debug:
                         await page.close()
 
-        text = text.strip('\n')
-        if text and has_content:
-            messages.append(self.__req(content=text))
+        messages.done()
 
         return messages

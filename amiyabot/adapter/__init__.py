@@ -86,6 +86,6 @@ class BotInstance(TencentConnect):
 
     async def send_chain_message(self, chain: Chain):
         reqs = await chain.build()
-        for req in reqs:
+        for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
                 await self.post_message(chain.data.channel_id, req)
