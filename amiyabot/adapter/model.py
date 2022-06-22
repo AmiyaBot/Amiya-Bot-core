@@ -21,7 +21,10 @@ class ConnectionHandler:
 @dataclass
 class ShardsRecord:
     shards_index: int
+    session_id: str = None
     last_s: int = None
+    reconnect_limit: int = 3
+    heartbeat_key: str = None
 
 
 @dataclass
