@@ -130,7 +130,10 @@ class Chain:
     async def build(self, chain: CHAIN_LIST = None):
         chain = chain or self.chain
 
-        messages = MessageSendRequestGroup(self.data.message_id, self.reference, self.data.is_direct)
+        messages = MessageSendRequestGroup(self.data.user_id,
+                                           self.data.message_id,
+                                           self.reference,
+                                           self.data.is_direct)
 
         for item in chain:
             # At

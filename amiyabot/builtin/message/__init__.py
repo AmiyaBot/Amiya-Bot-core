@@ -20,13 +20,13 @@ class Event:
 
 
 class Message:
-    def __init__(self, bot, message: dict):
+    def __init__(self, bot, message: dict = None):
         """
         二次封装的消息对象
         """
         self.bot = bot
         self.message = message
-        self.message_id = message['id']
+        self.message_id = None
 
         self.face = []
         self.image = []
@@ -43,16 +43,28 @@ class Message:
         self.is_admin = False
         self.is_direct = False
 
+        self.user_id = None
+        self.guild_id = None
+        self.src_guild_id = None
+        self.channel_id = None
+        self.nickname = None
+        self.avatar = None
+
+        self.joined_at = None
+
+        self.time = int(time.time())
+
+        if message:
+            self.__get_info(message)
+
+    def __get_info(self, message):
+        self.message_id = message['id']
         self.user_id = message['author']['id']
         self.guild_id = message['guild_id']
         self.src_guild_id = message['src_guild_id'] if 'src_guild_id' in message else message['guild_id']
         self.channel_id = message['channel_id']
         self.nickname = message['author']['username']
         self.avatar = message['author']['avatar']
-
-        self.joined_at = None
-
-        self.time = int(time.time())
 
     def __str__(self):
         text = self.text_origin.replace('\n', ' ')

@@ -1,8 +1,8 @@
 import asyncio
 
 from typing import List
-from amiyabot.adapter.intents import Intents
-from amiyabot.handler import BotHandlerFactory, BotInstance, GroupConfig
+from amiyabot.adapter import BotInstance, Intents
+from amiyabot.handler import BotHandlerFactory, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
 from amiyabot.builtin.messageChain import Chain

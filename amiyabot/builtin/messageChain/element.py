@@ -43,14 +43,16 @@ class Html:
 class MessageSendRequest:
     data: dict
     direct: bool
+    user_id: str
     upload_image: bool = False
 
 
 class MessageSendRequestGroup:
-    def __init__(self, message_id: str, reference: bool, direct: bool):
+    def __init__(self, user_id: str, message_id: str, reference: bool, direct: bool):
         self.req_list: List[MessageSendRequest] = []
 
         self.text: str = ''
+        self.user_id: str = user_id
         self.message_id: str = message_id
         self.reference: bool = reference
         self.direct: bool = direct
@@ -60,7 +62,8 @@ class MessageSendRequestGroup:
             data={
                 'msg_id': self.message_id
             },
-            direct=self.direct
+            direct=self.direct,
+            user_id=self.user_id
         )
 
         if content:

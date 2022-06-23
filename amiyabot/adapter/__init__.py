@@ -1,4 +1,3 @@
-import sys
 import json
 import asyncio
 import websockets
@@ -6,6 +5,7 @@ import websockets
 from typing import Dict
 from amiyabot import log
 from amiyabot.util import random_code
+from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from contextlib import asynccontextmanager
 
@@ -145,4 +145,21 @@ class BotInstance(TencentConnect):
         reqs = await chain.build()
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                await self.post_message(chain.data.guild_id, chain.data.channel_id, req)
+                await self.post_message(chain.data.guild_id,chain.data.src_guild_id, chain.data.channel_id, req)
+
+    @asynccontextmanager
+    async def send_message(self, channel_id: str, user_id: str = None, direct_src_guild_id: str = None):
+        data = Message(self)
+
+        data.user_id = user_id
+        data.channel_id = channel_id
+
+        if direct_src_guild_id:
+            data.is_direct = True
+            data.src_guild_id = direct_src_guild_id
+
+        chain = Chain(data)
+
+        yield chain
+
+        await self.send_chain_message(chain)
