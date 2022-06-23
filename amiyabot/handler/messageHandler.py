@@ -24,27 +24,8 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         for middleware in bot.message_handler_middleware:
             data = await middleware(data) or data
 
-    waiter: Union[WaitEvent, ChannelWaitEvent, None] = None
-
-    channel_waiter = None
-    if data.channel_id:
-        user_waiter = f'{instance.appid}_{data.channel_id}_{data.user_id}'
-        channel_waiter = f'{instance.appid}_{data.channel_id}'
-    else:
-        user_waiter = f'{instance.appid}_{data.user_id}'
-
-    # 寻找是否存在等待事件
-    if user_waiter in wait_events_bucket:
-        waiter = wait_events_bucket[user_waiter]
-    if channel_waiter and channel_waiter in wait_events_bucket:
-        waiter = wait_events_bucket[channel_waiter]
-
-    # 检查等待事件是否活跃
-    try:
-        if waiter and not waiter.check_alive():
-            waiter = None
-    except WaitEventCancel:
-        waiter = None
+    # 检查是否存在等待事件
+    waiter = await find_wait_event(data)
 
     # 若存在等待事件并且等待事件设置了强制等待，则直接进入事件
     if waiter and waiter.force:
@@ -96,3 +77,36 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> 
         return None
 
     return sorted(candidate, key=lambda n: len(n[0]), reverse=True)[0]
+
+
+async def find_wait_event(data: Message) -> Union[WaitEvent, ChannelWaitEvent, None]:
+    waiter = None
+
+    if data.is_direct:
+        # 私信等待事件
+        target_id = f'{data.bot.appid}_{data.guild_id}_{data.user_id}'
+        if target_id in wait_events_bucket:
+            waiter = wait_events_bucket[target_id]
+    else:
+        # 子频道用户等待事件
+        target_id = f'{data.bot.appid}_{data.channel_id}_{data.user_id}'
+        if target_id in wait_events_bucket:
+            waiter = wait_events_bucket[target_id]
+
+        # 子频道全体等待事件
+        channel_target_id = f'{data.bot.appid}_{data.channel_id}'
+        if channel_target_id in wait_events_bucket:
+            channel_waiter = wait_events_bucket[channel_target_id]
+
+            # 如果没有用户事件或全体事件是强制等待的，则覆盖
+            if not waiter or channel_waiter.force:
+                waiter = channel_waiter
+
+    # 检查等待事件是否活跃
+    try:
+        if waiter and not waiter.check_alive():
+            waiter = None
+    except WaitEventCancel:
+        waiter = None
+
+    return waiter

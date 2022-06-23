@@ -6,12 +6,14 @@ from amiyabot import log
 
 
 class HttpRequests:
+    success_code = [200, 201, 202, 204]
+
     @classmethod
     async def get(cls, interface: str, *args, **kwargs):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(interface, *args, **kwargs) as res:
-                    if res.status == 200:
+                    if res.status in cls.success_code:
                         return await res.text()
                     else:
                         log.error(f'bad to request <{interface}>[GET]. Got code {res.status}')
@@ -30,7 +32,7 @@ class HttpRequests:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(interface, data=json.dumps(_payload), headers=_headers) as res:
-                    if res.status == 200:
+                    if res.status in cls.success_code:
                         return await res.text()
                     else:
                         log.error(f'bad to request <{interface}>[POST]. Got code {res.status}')
@@ -52,7 +54,7 @@ class HttpRequests:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(interface, data=data, headers=_headers) as res:
-                    if res.status == 200:
+                    if res.status in cls.success_code:
                         return await res.text()
                     else:
                         log.error(f'bad to request <{interface}>[POST-FormData]. Got code {res.status}')

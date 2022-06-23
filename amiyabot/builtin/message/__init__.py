@@ -41,12 +41,16 @@ class Message:
 
         self.is_at = False
         self.is_admin = False
+        self.is_direct = False
 
         self.user_id = message['author']['id']
         self.guild_id = message['guild_id']
+        self.src_guild_id = message['src_guild_id'] if 'src_guild_id' in message else message['guild_id']
         self.channel_id = message['channel_id']
         self.nickname = message['author']['username']
         self.avatar = message['author']['avatar']
+
+        self.joined_at = None
 
         self.time = int(time.time())
 
@@ -55,11 +59,12 @@ class Message:
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
 
-        return 'Bot:{bot} Guild:{guild} Channel:{channel} {nickname}: {message}'.format(
+        return 'Bot:{bot} Guild:{guild} Channel:{channel} {direct}{nickname}: {message}'.format(
             **{
                 'bot': self.bot.appid,
                 'guild': self.guild_id,
                 'channel': self.channel_id,
+                'direct': '(direct)' if self.is_direct else '',
                 'nickname': self.nickname,
                 'message': text + face + image
             }
@@ -73,10 +78,10 @@ class Message:
                    force: bool = False,
                    max_time: int = 30,
                    data_filter: Callable = None):
-        if self.channel_id:
-            target_id = f'{self.bot.appid}_{self.channel_id}_{self.user_id}'
+        if self.is_direct:
+            target_id = f'{self.bot.appid}_{self.guild_id}_{self.user_id}'
         else:
-            target_id = f'{self.bot.appid}_{self.user_id}'
+            target_id = f'{self.bot.appid}_{self.channel_id}_{self.user_id}'
 
         if reply:
             await self.bot.send_chain_message(reply)
@@ -105,6 +110,9 @@ class Message:
                            clean: bool = True,
                            max_time: int = 30,
                            data_filter: Callable = None):
+        if self.is_direct:
+            raise WaitEventException('direct message not support "wait_channel"')
+
         target_id = f'{self.bot.appid}_{self.channel_id}'
 
         if reply:
@@ -302,6 +310,14 @@ class WaitEventsBucket:
         self.bucket[target_id] = event
 
         return event
+
+
+class WaitEventException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 
 class WaitEventCancel(Exception):

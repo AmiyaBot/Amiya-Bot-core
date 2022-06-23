@@ -42,10 +42,13 @@ class TencentConnect:
     async def get_message(self, channel_id: str, message_id: str):
         return await self.__get_request(APIConstant.messageURI.format(channel_id=channel_id, message_id=message_id))
 
-    async def post_message(self, channel_id: str, req: MessageSendRequest):
-        return await self.__post_request(APIConstant.messagesURI.format(channel_id=channel_id),
-                                         req.data,
-                                         req.upload_image)
+    async def post_message(self, guild_id: str, channel_id: str, req: MessageSendRequest):
+        if req.direct:
+            api = APIConstant.dmsURI.format(guild_id=guild_id)
+        else:
+            api = APIConstant.messagesURI.format(channel_id=channel_id)
+
+        return await self.__post_request(api, req.data, req.upload_image)
 
     @abc.abstractmethod
     async def create_connection(self, gateway: ConnectionHandler, shards_index: int = 0):

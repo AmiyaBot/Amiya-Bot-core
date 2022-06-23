@@ -2,7 +2,7 @@ import asyncio
 
 from typing import List
 from amiyabot.adapter.intents import Intents
-from amiyabot.handler import BotHandlerFactory, BotInstance
+from amiyabot.handler import BotHandlerFactory, BotInstance, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
 from amiyabot.builtin.messageChain import Chain
@@ -49,19 +49,21 @@ class MultipleAccounts(BotHandlerFactory):
         self.bots = bots
 
     async def start(self, enable_chromium: bool = False):
-        self.__combine_handlers()
+        self.__combine_factory()
 
         await asyncio.wait(
             [item.start(enable_chromium) for item in self.bots]
         )
 
-    def __combine_handlers(self):
+    def __combine_factory(self):
         for item in self.bots:
             item.prefix_keywords += self.prefix_keywords
             item.message_handlers += self.message_handlers
             item.after_reply_handlers += self.after_reply_handlers
             item.before_reply_handlers += self.before_reply_handlers
             item.message_handler_middleware += self.message_handler_middleware
+
+            item.group_config.update(self.group_config)
 
             self.__combine_dict_handlers(item, 'event_handlers')
             self.__combine_dict_handlers(item, 'exception_handlers')

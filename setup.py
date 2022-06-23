@@ -31,3 +31,5 @@ setuptools.setup(
         'zhon~=1.1.5'
     ]
 )
+
+# python setup.py bdist_wheel

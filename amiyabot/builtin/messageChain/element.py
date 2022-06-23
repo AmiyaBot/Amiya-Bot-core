@@ -42,22 +42,25 @@ class Html:
 @dataclass
 class MessageSendRequest:
     data: dict
+    direct: bool
     upload_image: bool = False
 
 
 class MessageSendRequestGroup:
-    def __init__(self, message_id: str, reference: bool):
+    def __init__(self, message_id: str, reference: bool, direct: bool):
         self.req_list: List[MessageSendRequest] = []
 
         self.text: str = ''
         self.message_id: str = message_id
         self.reference: bool = reference
+        self.direct: bool = direct
 
     def __insert_req(self, content: str = '', image: Union[str, bytes] = None):
         req = MessageSendRequest(
             data={
                 'msg_id': self.message_id
-            }
+            },
+            direct=self.direct
         )
 
         if content:
@@ -79,6 +82,15 @@ class MessageSendRequestGroup:
         self.req_list.append(req)
 
     def add_text(self, text: str):
+        if self.req_list:
+            req = self.req_list[-1]
+
+            if 'content' not in req.data:
+                req.data['content'] = ''
+
+            req.data['content'] += text
+            return None
+
         self.text += text
 
     def add_image(self, image: Union[str, bytes]):

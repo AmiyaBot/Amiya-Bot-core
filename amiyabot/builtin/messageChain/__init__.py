@@ -30,13 +30,14 @@ class Chain:
         self.reference = reference
         self.chain: CHAIN_LIST = []
 
-        if at:
+        if at and not data.is_direct:
             self.at(enter=True)
 
     def at(self, user: int = None, enter: bool = False):
-        self.chain.append(At(user or self.data.user_id))
-        if enter:
-            return self.text('\n')
+        if not self.data.is_direct:
+            self.chain.append(At(user or self.data.user_id))
+            if enter:
+                return self.text('\n')
         return self
 
     def face(self, face_id: int):
@@ -129,7 +130,7 @@ class Chain:
     async def build(self, chain: CHAIN_LIST = None):
         chain = chain or self.chain
 
-        messages = MessageSendRequestGroup(self.data.message_id, self.reference)
+        messages = MessageSendRequestGroup(self.data.message_id, self.reference, self.data.is_direct)
 
         for item in chain:
             # At

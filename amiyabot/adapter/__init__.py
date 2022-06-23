@@ -16,7 +16,8 @@ from .intents import Intents
 
 @asynccontextmanager
 async def ws(sign, url):
-    async with log.catch(f'connection({sign}) error:', ignore=[asyncio.CancelledError]):
+    async with log.catch(f'connection({sign}) error:',
+                         ignore=[asyncio.CancelledError, websockets.ConnectionClosedError]):
         async with websockets.connect(url) as websocket:
             yield websocket
 
@@ -140,10 +141,8 @@ class BotInstance(TencentConnect):
                 sec = 0
                 await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_dict())
 
-        print(f'end {heartbeat_key}')
-
     async def send_chain_message(self, chain: Chain):
         reqs = await chain.build()
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                await self.post_message(chain.data.channel_id, req)
+                await self.post_message(chain.data.guild_id, chain.data.channel_id, req)

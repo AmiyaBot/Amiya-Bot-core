@@ -22,15 +22,17 @@ async def package_message(instance: BotInstance,
     :param event:        事件名
     :param message:      消息对象
     """
-    if event in ['AT_MESSAGE_CREATE', 'MESSAGE_CREATE']:
-        if message['author']['bot'] and not is_reference:
+    if event in ['AT_MESSAGE_CREATE', 'MESSAGE_CREATE', 'DIRECT_MESSAGE_CREATE']:
+        if 'bot' in message['author'] and message['author']['bot'] and not is_reference:
             return None
 
         data = Message(instance, message)
+        data.is_direct = 'direct_message' in message and message['direct_message']
 
-        if 'member' in message and 'roles' in message['member']:
-            if [n for n in message['member']['roles'] if n in ADMIN]:
+        if 'member' in message:
+            if 'roles' in message['member'] and [n for n in message['member']['roles'] if n in ADMIN]:
                 data.is_admin = True
+            data.joined_at = message['member']['joined_at']
 
         if 'attachments' in message:
             for item in message['attachments']:
