@@ -220,6 +220,8 @@ class MessageHandlerItem:
                 if self.group_id in self.factory.group_config:
                     if not self.factory.group_config[self.group_id].allow_direct:
                         return Verify(False)
+                else:
+                    return Verify(False)
             elif self.allow_direct is False:
                 return Verify(False)
         else:
