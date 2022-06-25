@@ -10,7 +10,7 @@ setuptools.setup(
     author_email='826197021@qq.com',
     url='https://gitee.com/vivien8261/amiya-bot-core',
     license='MIT Licence',
-    description='快速构建 QQ 频道机器人',
+    description='简洁高效的异步 Python QQ 频道机器人框架',
     long_description=description,
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(include=['amiyabot', 'amiyabot.*']),
