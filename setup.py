@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as md:
 
 setuptools.setup(
     name='amiyabot',
-    version='1.0.7',
+    version='1.0.9',
     author='vivien8261',
     author_email='826197021@qq.com',
     url='https://gitee.com/vivien8261/amiya-bot-core',

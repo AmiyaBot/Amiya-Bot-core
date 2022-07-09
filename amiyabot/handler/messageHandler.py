@@ -14,7 +14,7 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         if data.event_name in bot.event_handlers:
             log.info(data.__str__())
             for method in bot.event_handlers[data.event_name]:
-                await method(instance, data)
+                await method(data, instance)
         return None
 
     log.info(data.__str__())

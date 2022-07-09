@@ -13,8 +13,8 @@ class GateWay:
 
 @dataclass
 class ConnectionHandler:
+    private: bool
     gateway: GateWay
-    intents_type: int
     message_handler: Callable
 
 

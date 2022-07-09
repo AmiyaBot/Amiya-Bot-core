@@ -58,13 +58,15 @@ class Message:
             self.__get_info(message)
 
     def __get_info(self, message):
+        author = message['author']
+
         self.message_id = message['id']
-        self.user_id = message['author']['id']
+        self.user_id = author['id']
         self.guild_id = message['guild_id']
         self.src_guild_id = message['src_guild_id'] if 'src_guild_id' in message else message['guild_id']
         self.channel_id = message['channel_id']
-        self.nickname = message['author']['username']
-        self.avatar = message['author']['avatar']
+        self.nickname = author['username']
+        self.avatar = author['avatar'] if 'avatar' in author else None
 
     def __str__(self):
         text = self.text_origin.replace('\n', ' ')

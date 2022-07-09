@@ -22,7 +22,12 @@ async def package_message(instance: BotInstance,
     :param event:        事件名
     :param message:      消息对象
     """
-    if event in ['AT_MESSAGE_CREATE', 'MESSAGE_CREATE', 'DIRECT_MESSAGE_CREATE']:
+    message_created = [
+        'MESSAGE_CREATE',
+        'AT_MESSAGE_CREATE',
+        'DIRECT_MESSAGE_CREATE'
+    ]
+    if event in message_created:
         if 'bot' in message['author'] and message['author']['bot'] and not is_reference:
             return None
 

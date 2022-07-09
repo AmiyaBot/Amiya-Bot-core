@@ -62,7 +62,9 @@ class BotInstance(TencentConnect):
                 if payload.op == 0:
                     if payload.t == 'READY':
                         log.info(
-                            f'Bot connected({sign}). ' + payload.d['user']['username']
+                            f'Bot connected({sign}): %s(%s)' % (
+                                payload.d['user']['username'], 'private' if handler.private else 'public'
+                            )
                         )
                         self.shards_record[shards_index].session_id = payload.d['session_id']
                     else:
@@ -71,7 +73,7 @@ class BotInstance(TencentConnect):
                 if payload.op == 10:
                     create_token = {
                         'token': f'Bot {self.appid}.{self.token}',
-                        'intents': Intents.get_all_intents(handler.intents_type),
+                        'intents': Intents(handler.private).intents.get_all_intents(),
                         'shard': [shards_index, gateway.shards],
                         'properties': {
                             '$os': '',
@@ -145,16 +147,23 @@ class BotInstance(TencentConnect):
         reqs = await chain.build()
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                await self.post_message(chain.data.guild_id,chain.data.src_guild_id, chain.data.channel_id, req)
+                await self.post_message(chain.data.guild_id, chain.data.src_guild_id, chain.data.channel_id, req)
 
     @asynccontextmanager
-    async def send_message(self, channel_id: str, user_id: str = None, direct_src_guild_id: str = None):
+    async def send_message(self, channel_id: str = '', user_id: str = '', direct_src_guild_id: str = ''):
         data = Message(self)
 
         data.user_id = user_id
         data.channel_id = channel_id
 
+        if not channel_id and not direct_src_guild_id:
+            raise TypeError(
+                'BotInstance.send_message() missing argument: "channel_id" or "direct_src_guild_id"')
+
         if direct_src_guild_id:
+            if not user_id:
+                raise TypeError('BotInstance.send_message(direct_src_guild_id=...) missing argument: "user_id"')
+
             data.is_direct = True
             data.src_guild_id = direct_src_guild_id
 

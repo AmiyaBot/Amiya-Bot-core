@@ -1,7 +1,7 @@
 import asyncio
 
 from typing import List
-from amiyabot.adapter import BotInstance, Intents
+from amiyabot.adapter import BotInstance
 from amiyabot.handler import BotHandlerFactory, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
@@ -16,15 +16,13 @@ class AmiyaBot(BotHandlerFactory):
     def __init__(self, appid: str, token: str, private: bool = False):
         super().__init__(appid, token)
 
-        self.intents_type = Intents.PUBLIC_GUILD_MESSAGES
-        if private:
-            self.intents_type = Intents.GUILD_MESSAGES
+        self.private = private
 
     async def start(self, enable_chromium: bool = False):
         if enable_chromium:
             await chromium.launch()
 
-        await self.instance.connect(self.intents_type, self.__message_handler)
+        await self.instance.connect(self.private, self.__message_handler)
 
     async def __message_handler(self, event: str, message: dict):
         async with log.catch(desc='handler error:',

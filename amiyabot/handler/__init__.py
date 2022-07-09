@@ -9,7 +9,7 @@ from amiyabot.adapter import BotInstance
 PREFIX = Union[bool, List[str]]
 KEYWORDS = Union[str, Equal, re.Pattern, List[Union[str, Equal, re.Pattern]]]
 FUNC_CORO = Callable[[Message], Coroutine[Any, Any, Optional[Chain]]]
-EVENT_CORO = Callable[[BotInstance, Event], Coroutine[Any, Any, None]]
+EVENT_CORO = Callable[[Event, BotInstance], Coroutine[Any, Any, None]]
 AFTER_CORO = Callable[[Chain], Coroutine[Any, Any, None]]
 BEFORE_CORO = Callable[[Message], Coroutine[Any, Any, bool]]
 VERIFY_CORO = Callable[[Message], Coroutine[Any, Any, Union[bool, Tuple[bool, int]]]]

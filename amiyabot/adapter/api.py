@@ -19,7 +19,7 @@ class TencentConnect:
             'Authorization': f'Bot {appid}.{token}'
         }
 
-    async def connect(self, intents_type: int, handler: Callable):
+    async def connect(self, private: bool, handler: Callable):
         resp = await self.__get_request(APIConstant.gatewayBotURI)
         gateway = GateWay(**resp)
 
@@ -30,9 +30,9 @@ class TencentConnect:
 
         await self.create_connection(
             ConnectionHandler(
-                intents_type=intents_type,
-                message_handler=handler,
-                gateway=gateway
+                private=private,
+                gateway=gateway,
+                message_handler=handler
             )
         )
 
