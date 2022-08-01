@@ -8,6 +8,9 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
     instance = bot.instance
     data = await instance.package_message(event, message)
 
+    if not data:
+        return False
+
     # 执行事件响应
     if type(data) is Event:
         if data.event_name in bot.event_handlers:

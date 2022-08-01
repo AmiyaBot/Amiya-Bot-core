@@ -27,6 +27,7 @@ class Message:
         self.bot = bot
         self.message = message
         self.message_id = None
+        self.message_type = None
 
         self.face = []
         self.image = []
@@ -53,20 +54,6 @@ class Message:
         self.joined_at = None
 
         self.time = int(time.time())
-
-        if message:
-            self.__get_info(message)
-
-    def __get_info(self, message):
-        author = message['author']
-
-        self.message_id = message['id']
-        self.user_id = author['id']
-        self.guild_id = message['guild_id']
-        self.src_guild_id = message['src_guild_id'] if 'src_guild_id' in message else message['guild_id']
-        self.channel_id = message['channel_id']
-        self.nickname = author['username']
-        self.avatar = author['avatar'] if 'avatar' in author else None
 
     def __str__(self):
         text = self.text_origin.replace('\n', ' ')

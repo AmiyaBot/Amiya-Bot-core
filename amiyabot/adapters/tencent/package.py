@@ -2,15 +2,16 @@ import re
 import jieba
 
 from amiyabot.builtin.message import Event, Message
-from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.util import remove_punctuation, chinese_to_digits
+from amiyabot.adapters.tencent.api import TencentAPI
+
+from ..convert import text_convert
 
 ADMIN = ['2', '4', '5']
 
 jieba.setLogLevel(jieba.logging.INFO)
 
 
-async def package_tencent_message(instance: BotAdapterProtocol,
+async def package_tencent_message(instance: TencentAPI,
                                   event: str,
                                   message: dict,
                                   is_reference: bool = False):
@@ -23,7 +24,7 @@ async def package_tencent_message(instance: BotAdapterProtocol,
         if 'bot' in message['author'] and message['author']['bot'] and not is_reference:
             return None
 
-        data = Message(instance, message)
+        data = get_info(Message(instance, message), message)
         data.is_direct = 'direct_message' in message and message['direct_message']
 
         if 'member' in message:
@@ -69,31 +70,15 @@ async def package_tencent_message(instance: BotAdapterProtocol,
         return Event(instance.appid, event, message)
 
 
-def text_convert(message: Message, origin, initial):
-    """
-    消息文本的最终处理
+def get_info(obj: Message, message: dict):
+    author = message['author']
 
-    :param message:  Message 对象
-    :param origin:   预处理消息文本
-    :param initial:  未经预处理的原始消息文本
-    :return:         Message 对象
-    """
-    message.text = remove_punctuation(origin)
-    message.text_digits = chinese_to_digits(message.text)
-    message.text_origin = origin
-    message.text_initial = initial
+    obj.message_id = message['id']
+    obj.user_id = author['id']
+    obj.guild_id = message['guild_id']
+    obj.src_guild_id = message['src_guild_id'] if 'src_guild_id' in message else message['guild_id']
+    obj.channel_id = message['channel_id']
+    obj.nickname = author['username']
+    obj.avatar = author['avatar'] if 'avatar' in author else None
 
-    chars = cut_by_jieba(message.text) + cut_by_jieba(message.text_digits)
-
-    words = list(set(chars))
-    words = sorted(words, key=chars.index)
-
-    message.text_words = words
-
-    return message
-
-
-def cut_by_jieba(text):
-    return jieba.lcut(
-        text.lower().replace(' ', '')
-    )
+    return obj

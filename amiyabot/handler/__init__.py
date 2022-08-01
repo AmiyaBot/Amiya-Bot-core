@@ -27,11 +27,10 @@ class BotHandlerFactory:
     def __init__(self,
                  appid: str = None,
                  token: str = None,
-                 adapter: Type[BotAdapterProtocol] = None,
-                 create_instance: bool = True):
+                 adapter: Type[BotAdapterProtocol] = None):
 
         self.instance: Optional[BotAdapterProtocol] = None
-        if create_instance:
+        if adapter:
             self.instance = adapter(appid, token)
 
         self.appid = appid

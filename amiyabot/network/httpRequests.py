@@ -40,6 +40,26 @@ class HttpRequests:
             log.error(f'fail to request <{interface}>[POST]')
 
     @classmethod
+    async def upload(cls, interface: str, file: bytes, file_field: str = 'file', payload: dict = None):
+        data = aiohttp.FormData()
+        data.add_field(file_field,
+                       file,
+                       content_type='application/octet-stream')
+
+        for field, value in (payload or {}).items():
+            data.add_field(field, value)
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(interface, data=data) as res:
+                    if res.status in cls.success_code:
+                        return await res.text()
+                    else:
+                        log.error(f'bad to request <{interface}>[UPLOAD]. Got code {res.status}')
+        except aiohttp.ClientConnectorError:
+            log.error(f'fail to request <{interface}>[UPLOAD]')
+
+    @classmethod
     async def post_form_data(cls, interface: str, payload: dict = None, headers: dict = None):
         _headers = {
             **(headers or {})

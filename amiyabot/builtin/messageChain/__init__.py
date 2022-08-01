@@ -1,11 +1,8 @@
 import re
 import os
-import asyncio
 
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.lib.imageCreator import create_image, IMAGES_TYPE
-from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser, debug
-from amiyabot import log
 
 from .element import *
 
@@ -126,61 +123,3 @@ class Chain:
             'render_time': render_time
         }))
         return self
-
-    async def build(self, chain: CHAIN_LIST = None):
-        chain = chain or self.chain
-
-        messages = MessageSendRequestGroup(self.data.user_id,
-                                           self.data.message_id,
-                                           self.reference,
-                                           self.data.is_direct)
-
-        for item in chain:
-            # At
-            if type(item) is At:
-                messages.add_text(f'<@{item.target}>')
-
-            # Face
-            if type(item) is Face:
-                messages.add_text(f'<emoji:{item.face_id}>')
-
-            # Text
-            if type(item) is Text:
-                messages.add_text(item.content)
-
-            # Image
-            if type(item) is Image:
-                if item.url:
-                    messages.add_image(item.url)
-                if item.content:
-                    messages.add_image(item.content)
-
-            # Voice
-            if type(item) is Voice:
-                pass
-
-            # Html
-            if type(item) is Html:
-                async with log.catch('html convert error:'):
-                    browser = ChromiumBrowser()
-                    page = await browser.open_page(item.template,
-                                                   is_file=item.is_file,
-                                                   width=item.width,
-                                                   height=item.height)
-
-                    if not page:
-                        continue
-
-                    if item.data:
-                        await page.init_data(item.data)
-
-                    await asyncio.sleep(item.render_time / 1000)
-
-                    messages.add_image(await page.make_image())
-
-                    if not debug:
-                        await page.close()
-
-        messages.done()
-
-        return messages

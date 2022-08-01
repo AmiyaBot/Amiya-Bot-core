@@ -13,6 +13,7 @@ from .api import TencentAPI
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
 from .package import package_tencent_message
+from .builder import build_message_send
 
 from .. import BotAdapterProtocol
 
@@ -147,7 +148,7 @@ class TencentBotInstance(TencentAPI, BotAdapterProtocol):
                 await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_dict())
 
     async def send_chain_message(self, chain: Chain):
-        reqs = await chain.build()
+        reqs = await build_message_send(chain)
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
                 await self.post_message(chain.data.guild_id,
@@ -179,5 +180,5 @@ class TencentBotInstance(TencentAPI, BotAdapterProtocol):
 
         await self.send_chain_message(chain)
 
-    async def package_message(self, event: str, message: dict, is_reference: bool = False):
-        return await package_tencent_message(self, event, message, is_reference)
+    async def package_message(self, event: str, message: dict):
+        return await package_tencent_message(self, event, message)

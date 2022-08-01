@@ -1,5 +1,9 @@
+import asyncio
+
 from dataclasses import dataclass
 from typing import Optional, Union, List
+from amiyabot import log
+from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser, debug
 
 
 @dataclass
@@ -38,71 +42,28 @@ class Html:
     width: int = 1280
     height: int = 720
 
+    async def create_html_image(self):
+        async with log.catch('html convert error:'):
+            browser = ChromiumBrowser()
+            page = await browser.open_page(self.template,
+                                           is_file=self.is_file,
+                                           width=self.width,
+                                           height=self.height)
 
-@dataclass
-class MessageSendRequest:
-    data: dict
-    direct: bool
-    user_id: str
-    upload_image: bool = False
+            if not page:
+                return None
 
+            if self.data:
+                await page.init_data(self.data)
 
-class MessageSendRequestGroup:
-    def __init__(self, user_id: str, message_id: str, reference: bool, direct: bool):
-        self.req_list: List[MessageSendRequest] = []
+            await asyncio.sleep(self.render_time / 1000)
 
-        self.text: str = ''
-        self.user_id: str = user_id
-        self.message_id: str = message_id
-        self.reference: bool = reference
-        self.direct: bool = direct
+            result = await page.make_image()
 
-    def __insert_req(self, content: str = '', image: Union[str, bytes] = None):
-        req = MessageSendRequest(
-            data={
-                'msg_id': self.message_id
-            },
-            direct=self.direct,
-            user_id=self.user_id
-        )
+            if not debug:
+                await page.close()
 
-        if content:
-            req.data['content'] = content
-
-        if type(image) is str:
-            req.data['image'] = image
-
-        if type(image) is bytes:
-            req.data['file_image'] = image
-            req.upload_image = True
-
-        if self.reference:
-            req.data['message_reference'] = {
-                'message_id': self.message_id,
-                'ignore_get_message_error': False
-            }
-
-        self.req_list.append(req)
-
-    def add_text(self, text: str):
-        if self.req_list:
-            req = self.req_list[-1]
-
-            if 'content' not in req.data:
-                req.data['content'] = ''
-
-            req.data['content'] += text
-            return None
-
-        self.text += text
-
-    def add_image(self, image: Union[str, bytes]):
-        self.__insert_req(content=self.text, image=image)
-        self.text = ''
-
-    def done(self):
-        if self.text:
-            self.__insert_req(content=self.text)
+            return result
 
 
 CHAIN_LIST = List[

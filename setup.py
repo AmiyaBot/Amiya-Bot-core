@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as md:
 
 setuptools.setup(
     name='amiyabot',
-    version='1.0.9',
+    version='1.1.0',
     author='vivien8261',
     author_email='826197021@qq.com',
     url='https://gitee.com/vivien8261/amiya-bot-core',
@@ -19,6 +19,7 @@ setuptools.setup(
     python_requires='>=3.7',
     install_requires=[
         'aiohttp~=3.7.4.post0',
+        'graiax-silkcoder~=0.3.0',
         'jieba~=0.42.1',
         'peewee~=3.14.10',
         'pillow~=9.1.1',

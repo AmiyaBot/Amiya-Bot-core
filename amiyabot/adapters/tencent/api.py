@@ -3,11 +3,11 @@ import json
 
 from typing import Callable, Optional
 from amiyabot.network.httpRequests import http_requests
-from amiyabot.builtin.messageChain.element import MessageSendRequest
 from amiyabot import log
 
 from .url import APIConstant, get_url
 from .model import GateWay, ConnectionHandler
+from .builder import MessageSendRequest
 
 
 class TencentAPI:
