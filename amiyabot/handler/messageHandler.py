@@ -1,4 +1,3 @@
-from amiyabot.builtin.message.builder import package_message
 from amiyabot.builtin.message import *
 from amiyabot.handler import MessageHandlerItem, BotHandlerFactory
 
@@ -7,7 +6,7 @@ CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
 
 async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
     instance = bot.instance
-    data = await package_message(instance, event, message)
+    data = await instance.package_message(event, message)
 
     # 执行事件响应
     if type(data) is Event:

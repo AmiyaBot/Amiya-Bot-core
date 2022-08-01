@@ -9,9 +9,12 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from contextlib import asynccontextmanager
 
-from .api import TencentConnect
+from .api import TencentAPI
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
+from .package import package_tencent_message
+
+from .. import BotAdapterProtocol
 
 
 @asynccontextmanager
@@ -24,7 +27,7 @@ async def ws(sign, url):
     log.info(f'connection({sign}) closed.')
 
 
-class BotInstance(TencentConnect):
+class TencentBotInstance(TencentAPI, BotAdapterProtocol):
     def __init__(self, appid: str, token: str):
         super().__init__(appid, token)
 
@@ -147,7 +150,10 @@ class BotInstance(TencentConnect):
         reqs = await chain.build()
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                await self.post_message(chain.data.guild_id, chain.data.src_guild_id, chain.data.channel_id, req)
+                await self.post_message(chain.data.guild_id,
+                                        chain.data.src_guild_id,
+                                        chain.data.channel_id,
+                                        req)
 
     @asynccontextmanager
     async def send_message(self, channel_id: str = '', user_id: str = '', direct_src_guild_id: str = ''):
@@ -172,3 +178,6 @@ class BotInstance(TencentConnect):
         yield chain
 
         await self.send_chain_message(chain)
+
+    async def package_message(self, event: str, message: dict, is_reference: bool = False):
+        return await package_tencent_message(self, event, message, is_reference)

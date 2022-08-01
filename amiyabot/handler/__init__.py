@@ -4,17 +4,17 @@ from dataclasses import dataclass
 from typing import Any, Type, List, Dict, Tuple, Union, Optional, Callable, Coroutine
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.message import Event, Message, MessageMatch, Verify, Equal
-from amiyabot.adapter import BotInstance
+from amiyabot.adapters import BotAdapterProtocol
 
 PREFIX = Union[bool, List[str]]
 KEYWORDS = Union[str, Equal, re.Pattern, List[Union[str, Equal, re.Pattern]]]
 FUNC_CORO = Callable[[Message], Coroutine[Any, Any, Optional[Chain]]]
-EVENT_CORO = Callable[[Event, BotInstance], Coroutine[Any, Any, None]]
+EVENT_CORO = Callable[[Event, BotAdapterProtocol], Coroutine[Any, Any, None]]
 AFTER_CORO = Callable[[Chain], Coroutine[Any, Any, None]]
 BEFORE_CORO = Callable[[Message], Coroutine[Any, Any, bool]]
 VERIFY_CORO = Callable[[Message], Coroutine[Any, Any, Union[bool, Tuple[bool, int]]]]
 MIDDLE_WARE = Callable[[Message], Coroutine[Any, Any, Optional[Message]]]
-EXCEPTION_CORO = Callable[[Exception, BotInstance], Coroutine[Any, Any, None]]
+EXCEPTION_CORO = Callable[[Exception, BotAdapterProtocol], Coroutine[Any, Any, None]]
 
 
 @dataclass
@@ -24,10 +24,15 @@ class GroupConfig:
 
 
 class BotHandlerFactory:
-    def __init__(self, appid: str = None, token: str = None, create_instance: bool = True):
-        self.instance: Optional[BotInstance] = None
+    def __init__(self,
+                 appid: str = None,
+                 token: str = None,
+                 adapter: Type[BotAdapterProtocol] = None,
+                 create_instance: bool = True):
+
+        self.instance: Optional[BotAdapterProtocol] = None
         if create_instance:
-            self.instance = BotInstance(appid, token)
+            self.instance = adapter(appid, token)
 
         self.appid = appid
         self.prefix_keywords = list()

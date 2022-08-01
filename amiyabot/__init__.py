@@ -1,7 +1,8 @@
 import asyncio
 
-from typing import List
-from amiyabot.adapter import BotInstance
+from typing import List, Type
+from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters.tencent import TencentBotInstance
 from amiyabot.handler import BotHandlerFactory, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
@@ -13,8 +14,12 @@ chromium = ChromiumBrowser()
 
 
 class AmiyaBot(BotHandlerFactory):
-    def __init__(self, appid: str, token: str, private: bool = False):
-        super().__init__(appid, token)
+    def __init__(self,
+                 appid: str,
+                 token: str,
+                 private: bool = False,
+                 adapter: Type[BotAdapterProtocol] = TencentBotInstance):
+        super().__init__(appid, token, adapter)
 
         self.private = private
 

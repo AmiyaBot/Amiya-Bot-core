@@ -2,7 +2,7 @@ import re
 import jieba
 
 from amiyabot.builtin.message import Event, Message
-from amiyabot.adapter import BotInstance
+from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.util import remove_punctuation, chinese_to_digits
 
 ADMIN = ['2', '4', '5']
@@ -10,18 +10,10 @@ ADMIN = ['2', '4', '5']
 jieba.setLogLevel(jieba.logging.INFO)
 
 
-async def package_message(instance: BotInstance,
-                          event: str,
-                          message: dict,
-                          is_reference: bool = False):
-    """
-    预处理并封装消息对象
-
-    :param instance:     AmiyaBot 实例
-    :param is_reference: 是否是引用的消息
-    :param event:        事件名
-    :param message:      消息对象
-    """
+async def package_tencent_message(instance: BotAdapterProtocol,
+                                  event: str,
+                                  message: dict,
+                                  is_reference: bool = False):
     message_created = [
         'MESSAGE_CREATE',
         'AT_MESSAGE_CREATE',
@@ -67,7 +59,7 @@ async def package_message(instance: BotInstance,
         if 'message_reference' in message:
             reference = await instance.get_message(message['channel_id'],
                                                    message['message_reference']['message_id'])
-            reference_data = await package_message(instance, event, reference['message'], True)
+            reference_data = await package_tencent_message(instance, event, reference['message'], True)
 
             if reference_data:
                 data.image += reference_data.image

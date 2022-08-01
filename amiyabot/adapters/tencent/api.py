@@ -10,7 +10,7 @@ from .url import APIConstant, get_url
 from .model import GateWay, ConnectionHandler
 
 
-class TencentConnect:
+class TencentAPI:
     def __init__(self, appid: str, token: str):
         self.appid = appid
         self.token = token
