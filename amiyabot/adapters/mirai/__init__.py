@@ -33,6 +33,9 @@ class MiraiBotInstance(BotAdapterProtocol):
         self.session = None
         self.alive = True
 
+    def __str__(self):
+        return 'Mirai'
+
     async def connect(self, private: bool, handler: Callable):
         try:
             async with websockets.connect(self.url) as websocket:

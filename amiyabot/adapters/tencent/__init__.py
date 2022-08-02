@@ -38,6 +38,9 @@ class TencentBotInstance(TencentAPI, BotAdapterProtocol):
         self.shards_record: Dict[int, ShardsRecord] = {}
         self.alive = True
 
+    def __str__(self):
+        return 'Tencent'
+
     def __create_heartbeat(self, websocket, interval, record: ShardsRecord):
         heartbeat_key = random_code(10)
         record.heartbeat_key = heartbeat_key

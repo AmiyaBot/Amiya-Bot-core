@@ -22,7 +22,7 @@ def package_mirai_message(instance: BotAdapterProtocol, account: str, data: dict
         msg.is_admin = data['sender']['permission'] in ['OWNER', 'ADMINISTRATOR']
 
     else:
-        return Event(account, data['type'], data)
+        return Event(instance, data['type'], data)
 
     msg.user_id = data['sender']['id']
     msg.avatar = f'https://q.qlogo.cn/headimg_dl?dst_uin={msg.user_id}&spec=100'

@@ -12,6 +12,9 @@ class BotAdapterProtocol(object):
         self.appid = appid
         self.token = token
 
+    def __str__(self):
+        return 'Adapter'
+
     @abc.abstractmethod
     async def connect(self, private: bool, handler: handler_type):
         raise NotImplementedError

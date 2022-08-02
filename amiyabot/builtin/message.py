@@ -10,13 +10,13 @@ Equal = collections.namedtuple('equal', ['content'])  # 全等对象，接受一
 
 
 class Event:
-    def __init__(self, appid, event_name, data):
-        self.appid = appid
+    def __init__(self, instance, event_name, data):
+        self.instance = instance
         self.event_name = event_name
         self.data = data
 
     def __str__(self):
-        return f'Bot:{self.appid} Event:{self.event_name}'
+        return f'{self.instance} Bot:{self.instance.appid} Event:{self.event_name}'
 
 
 class Message:
@@ -60,8 +60,9 @@ class Message:
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
 
-        return 'Bot:{bot} Guild:{guild} Channel:{channel} {direct}{nickname}: {message}'.format(
+        return '{adapter} Bot:{bot} Guild:{guild} Channel:{channel} {direct}{nickname}: {message}'.format(
             **{
+                'adapter': self.bot,
                 'bot': self.bot.appid,
                 'guild': self.guild_id,
                 'channel': self.channel_id,

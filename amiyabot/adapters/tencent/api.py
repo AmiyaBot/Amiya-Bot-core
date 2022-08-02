@@ -59,7 +59,7 @@ class TencentAPI:
 
     @abc.abstractmethod
     async def create_connection(self, gateway: ConnectionHandler, shards_index: int = 0):
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def __check_response(response_text: Optional[str]) -> Optional[dict]:

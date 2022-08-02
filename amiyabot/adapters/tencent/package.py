@@ -67,7 +67,7 @@ async def package_tencent_message(instance: TencentAPI,
 
         return data
     else:
-        return Event(instance.appid, event, message)
+        return Event(instance, event, message)
 
 
 def get_info(obj: Message, message: dict):
