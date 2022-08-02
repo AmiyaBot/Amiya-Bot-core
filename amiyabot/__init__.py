@@ -66,7 +66,7 @@ class MultipleAccounts(BotHandlerFactory):
             item.before_reply_handlers += self.before_reply_handlers
             item.message_handler_middleware += self.message_handler_middleware
 
-            item.group_config.update(self.group_config)
+            item.group_config.config.update(self.group_config.config)
 
             self.__combine_dict_handlers(item, 'event_handlers')
             self.__combine_dict_handlers(item, 'exception_handlers')
