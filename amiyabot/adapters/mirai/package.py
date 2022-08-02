@@ -25,6 +25,7 @@ def package_mirai_message(instance: BotAdapterProtocol, account: str, data: dict
         return Event(account, data['type'], data)
 
     msg.user_id = data['sender']['id']
+    msg.avatar = f'https://q.qlogo.cn/headimg_dl?dst_uin={msg.user_id}&spec=100'
 
     message_chain = data['messageChain']
     text = ''
