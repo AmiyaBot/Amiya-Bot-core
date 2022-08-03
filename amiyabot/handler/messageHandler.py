@@ -13,8 +13,8 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
 
     # 执行事件响应
     if type(data) is Event:
-        log.info(data.__str__())
         if data.event_name in bot.event_handlers:
+            log.info(data.__str__())
             for method in bot.event_handlers[data.event_name]:
                 await method(data, instance)
         return None
