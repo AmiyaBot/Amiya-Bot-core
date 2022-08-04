@@ -3,6 +3,7 @@ import asyncio
 from typing import List, Type
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.tencent import TencentBotInstance
+from amiyabot.network.httpServer import HttpServer
 from amiyabot.handler import BotHandlerFactory, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser

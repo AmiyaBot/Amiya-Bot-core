@@ -1,4 +1,5 @@
 aiohttp~=3.7.4.post0
+fastapi~=0.79.0
 graiax-silkcoder~=0.3.0
 jieba~=0.42.1
 peewee~=3.14.10
@@ -8,5 +9,7 @@ pymysql~=1.0.2
 pyyaml~=6.0
 requests~=2.27.1
 setuptools~=60.2.0
+starlette~=0.19.1
+uvicorn~=0.18.2
 websockets~=10.1
 zhon~=1.1.5

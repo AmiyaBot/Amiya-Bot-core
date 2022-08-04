@@ -138,3 +138,8 @@ def chinese_to_digits(text: str):
 def pascal_case_to_snake_case(camel_case: str):
     snake_case = re.sub(r'(?P<key>[A-Z])', r'_\g<key>', camel_case)
     return snake_case.lower().strip('_')
+
+
+def snake_case_to_pascal_case(snake_case: str):
+    words = snake_case.split('_')
+    return ''.join(word.title() if i > 0 else word.lower() for i, word in enumerate(words))

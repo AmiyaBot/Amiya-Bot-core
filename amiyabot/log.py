@@ -115,14 +115,6 @@ class LoggerManager:
                 handler(err)
 
 
-class ServerLog:
-    logger = LoggerManager('Server')
-
-    @classmethod
-    def write(cls, text: str):
-        cls.logger.info(text, 'server')
-
-
 def download_progress(title: str, max_size: int, chunk_size: int, iter_content: Iterator):
     def print_bar():
         curr = int(curr_size / max_size * 100)
