@@ -3,7 +3,7 @@ import asyncio
 import websockets
 
 from typing import Dict
-from amiyabot import log
+from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
@@ -16,6 +16,8 @@ from .package import package_tencent_message
 from .builder import build_message_send
 
 from .. import BotAdapterProtocol
+
+log = LoggerManager('Tencent')
 
 
 @asynccontextmanager
@@ -69,7 +71,7 @@ class TencentBotInstance(TencentAPI, BotAdapterProtocol):
                 if payload.op == 0:
                     if payload.t == 'READY':
                         log.info(
-                            f'Bot connected({sign}): %s(%s)' % (
+                            f'connected({sign}): %s(%s)' % (
                                 payload.d['user']['username'], 'private' if handler.private else 'public'
                             )
                         )

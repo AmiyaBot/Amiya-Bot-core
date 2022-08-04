@@ -1,7 +1,10 @@
 from amiyabot.builtin.message import *
 from amiyabot.handler import MessageHandlerItem, BotHandlerFactory
+from amiyabot.log import LoggerManager
 
 CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
+
+adapter_log: Dict[str, LoggerManager] = {}
 
 
 async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
@@ -11,15 +14,21 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
     if not data:
         return False
 
+    instance_name = str(bot.instance)
+    if instance_name not in adapter_log:
+        adapter_log[instance_name] = LoggerManager(name=instance_name)
+
+    _log = adapter_log[instance_name]
+
     # 执行事件响应
     if type(data) is Event:
         if data.event_name in bot.event_handlers:
-            log.info(data.__str__())
+            _log.info(data.__str__())
             for method in bot.event_handlers[data.event_name]:
                 await method(data, instance)
         return None
 
-    log.info(data.__str__())
+    _log.info(data.__str__())
 
     # 执行中间处理函数
     if bot.message_handler_middleware:
@@ -86,17 +95,17 @@ async def find_wait_event(data: Message) -> Union[WaitEvent, ChannelWaitEvent, N
 
     if data.is_direct:
         # 私信等待事件
-        target_id = f'{data.bot.appid}_{data.guild_id}_{data.user_id}'
+        target_id = f'{data.instance.appid}_{data.guild_id}_{data.user_id}'
         if target_id in wait_events_bucket:
             waiter = wait_events_bucket[target_id]
     else:
         # 子频道用户等待事件
-        target_id = f'{data.bot.appid}_{data.channel_id}_{data.user_id}'
+        target_id = f'{data.instance.appid}_{data.channel_id}_{data.user_id}'
         if target_id in wait_events_bucket:
             waiter = wait_events_bucket[target_id]
 
         # 子频道全体等待事件
-        channel_target_id = f'{data.bot.appid}_{data.channel_id}'
+        channel_target_id = f'{data.instance.appid}_{data.channel_id}'
         if channel_target_id in wait_events_bucket:
             channel_waiter = wait_events_bucket[channel_target_id]
 

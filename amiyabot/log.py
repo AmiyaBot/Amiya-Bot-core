@@ -8,59 +8,68 @@ from typing import Union, Dict, List, Type, Iterator, Callable, Coroutine
 from contextlib import asynccontextmanager, contextmanager
 from logging.handlers import TimedRotatingFileHandler
 
-save_path = 'log'
-default_file = 'running'
-formatter = '%(asctime)s [%(levelname)s] %(message)s'
-logging.basicConfig(level=logging.INFO,
-                    format=formatter,
-                    datefmt='%Y-%m-%d %H:%M:%S')
-
 
 class LoggerManager:
-    handlers: Dict[str, logging.Logger] = {}
+    def __init__(self,
+                 name: str,
+                 level: int = logging.DEBUG,
+                 formatter: str = '%(asctime)s [%(name)8s][%(levelname)8s] %(message)s',
+                 save_path: str = 'log',
+                 default_file: str = 'running'):
 
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+        self.handlers: Dict[str, logging.Logger] = {}
 
-    @classmethod
-    def create_handler(cls, filename: str):
-        file_handler = TimedRotatingFileHandler(
-            encoding='utf-8',
-            filename=f'{save_path}/{filename}.log',
-            backupCount=7,
-            when='D'
-        )
-        file_handler.setFormatter(logging.Formatter(formatter))
-        file_handler.setLevel(logging.DEBUG)
+        self.name = name
+        self.level = level
+        self.formatter = formatter
+        self.save_path = save_path
+        self.default_file = default_file
 
-        cls.handlers[filename] = logging.getLogger()
-        cls.handlers[filename].addHandler(file_handler)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
 
-    @classmethod
-    def info(cls, message: str, filename: str = default_file):
-        if filename not in cls.handlers:
-            cls.create_handler(filename)
+    def __handler(self, filename: str):
+        if not filename:
+            filename = self.default_file
 
-        cls.handlers[filename].info(message.strip('\n'))
+        if filename not in self.handlers:
+            formatter = logging.Formatter(self.formatter)
 
-    @classmethod
-    def warning(cls, message: str, filename: str = default_file):
-        if filename not in cls.handlers:
-            cls.create_handler(filename)
+            file_handler = TimedRotatingFileHandler(
+                encoding='utf-8',
+                filename=f'{self.save_path}/{filename}.log',
+                backupCount=7,
+                when='D'
+            )
+            file_handler.setFormatter(formatter)
+            file_handler.setLevel(self.level)
 
-        cls.handlers[filename].warning(message.strip('\n'))
+            stream_handler = logging.StreamHandler(stream=sys.stdout)
+            stream_handler.setFormatter(formatter)
+            stream_handler.setLevel(self.level)
 
-    @classmethod
-    def debug(cls, message: str, filename: str = default_file):
-        if filename not in cls.handlers:
-            cls.create_handler(filename)
+            logger = logging.getLogger(name=self.name)
+            logger.setLevel(self.level)
 
-        cls.handlers[filename].debug(message.strip('\n'))
+            if not logger.handlers:
+                logger.addHandler(file_handler)
+                logger.addHandler(stream_handler)
 
-    @classmethod
-    def error(cls, message: Union[str, Exception], desc: str = None, filename: str = default_file):
-        if filename not in cls.handlers:
-            cls.create_handler(filename)
+            self.handlers[filename] = logger
+
+        return self.handlers[filename]
+
+    def info(self, message: str, filename: str = None):
+        self.__handler(filename).info(message.strip('\n'))
+
+    def warning(self, message: str, filename: str = None):
+        self.__handler(filename).warning(message.strip('\n'))
+
+    def debug(self, message: str, filename: str = None):
+        self.__handler(filename).debug(message.strip('\n'))
+
+    def error(self, message: Union[str, Exception], desc: str = None, filename: str = None):
+        handler = self.__handler(filename)
 
         text = message
 
@@ -69,13 +78,12 @@ class LoggerManager:
         if desc:
             text = f'{desc} {text}'
 
-        cls.handlers[filename].error(text)
+        handler.error(text.strip('\n'))
 
         return text
 
-    @classmethod
     @asynccontextmanager
-    async def catch(cls,
+    async def catch(self,
                     desc: str = None,
                     ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
                     handler: Callable[[Exception], Coroutine] = None):
@@ -85,14 +93,13 @@ class LoggerManager:
             if ignore and type(err) in ignore:
                 return
 
-            error_message = cls.error(err, desc)
+            error_message = self.error(err, desc)
 
             if handler and error_message:
                 await handler(err)
 
-    @classmethod
     @contextmanager
-    def sync_catch(cls,
+    def sync_catch(self,
                    desc: str = None,
                    ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
                    handler: Callable[[Exception], None] = None):
@@ -102,16 +109,18 @@ class LoggerManager:
             if ignore and type(err) in ignore:
                 return
 
-            error_message = cls.error(err, desc)
+            error_message = self.error(err, desc)
 
             if handler and error_message:
                 handler(err)
 
 
 class ServerLog:
+    logger = LoggerManager('Server')
+
     @classmethod
     def write(cls, text: str):
-        LoggerManager.info(text, 'server')
+        cls.logger.info(text, 'server')
 
 
 def download_progress(title: str, max_size: int, chunk_size: int, iter_content: Iterator):
@@ -149,9 +158,11 @@ def download_progress(title: str, max_size: int, chunk_size: int, iter_content: 
     print()
 
 
-info = LoggerManager.info
-error = LoggerManager.error
-debug = LoggerManager.debug
-catch = LoggerManager.catch
-warning = LoggerManager.warning
-sync_catch = LoggerManager.sync_catch
+basic = LoggerManager('Bot')
+
+info = basic.info
+error = basic.error
+debug = basic.debug
+catch = basic.catch
+warning = basic.warning
+sync_catch = basic.sync_catch

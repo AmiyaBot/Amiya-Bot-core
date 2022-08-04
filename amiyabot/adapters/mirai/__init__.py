@@ -5,10 +5,12 @@ import websockets
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.builtin.messageChain import Chain
-from amiyabot import log
+from amiyabot.log import LoggerManager
 
 from .package import package_mirai_message
 from .builder import build_message_send
+
+log = LoggerManager('Mirai')
 
 
 def mirai_api_http(host: str, ws_port: int, http_port: int):
@@ -37,9 +39,12 @@ class MiraiBotInstance(BotAdapterProtocol):
         return 'Mirai'
 
     async def connect(self, private: bool, handler: Callable):
+        mark = f'websocket({self.appid})'
+
+        log.info(f'connecting {mark}...')
         try:
             async with websockets.connect(self.url) as websocket:
-                log.info('websocket connect successful. waiting handshake...')
+                log.info(f'{mark} connect successful. waiting handshake...')
                 self.connection = websocket
                 while self.alive:
                     message = await websocket.recv()
@@ -52,12 +57,15 @@ class MiraiBotInstance(BotAdapterProtocol):
 
                 await websocket.close()
 
-                log.info('websocket closed.')
+                log.info(f'{mark} closed.')
 
         except websockets.ConnectionClosedOK as e:
-            log.error(f'websocket connection closed. {e}')
+            log.error(f'{mark} connection closed. {e}')
         except ConnectionRefusedError:
-            log.error('cannot connect to mirai-api-http websocket server.')
+            log.error(f'cannot connect to mirai-api-http {mark} server.')
+
+        await asyncio.sleep(10)
+        asyncio.create_task(self.connect(private, handler))
 
     async def handle_message(self, message: str, handler: Callable):
         async with log.catch(ignore=[json.JSONDecodeError]):

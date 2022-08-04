@@ -16,15 +16,15 @@ class Event:
         self.data = data
 
     def __str__(self):
-        return f'{self.instance} Bot:{self.instance.appid} Event:{self.event_name}'
+        return f'Bot:{self.instance.appid} Event:{self.event_name}'
 
 
 class Message:
-    def __init__(self, bot, message: dict = None):
+    def __init__(self, instance, message: dict = None):
         """
         二次封装的消息对象
         """
-        self.bot = bot
+        self.instance = instance
         self.message = message
         self.message_id = None
         self.message_type = None
@@ -60,10 +60,9 @@ class Message:
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
 
-        return '{adapter} Bot:{bot} Guild:{guild} Channel:{channel} {direct}{nickname}: {message}'.format(
+        return 'Bot:{bot} Guild:{guild} Channel:{channel} {direct}{nickname}: {message}'.format(
             **{
-                'adapter': self.bot,
-                'bot': self.bot.appid,
+                'bot': self.instance.appid,
                 'guild': self.guild_id,
                 'channel': self.channel_id,
                 'direct': '(direct)' if self.is_direct else '',
@@ -73,7 +72,7 @@ class Message:
         )
 
     async def send(self, reply):
-        await self.bot.send_chain_message(reply)
+        await self.instance.send_chain_message(reply)
 
     async def wait(self,
                    reply=None,
@@ -81,12 +80,12 @@ class Message:
                    max_time: int = 30,
                    data_filter: Callable = None):
         if self.is_direct:
-            target_id = f'{self.bot.appid}_{self.guild_id}_{self.user_id}'
+            target_id = f'{self.instance.appid}_{self.guild_id}_{self.user_id}'
         else:
-            target_id = f'{self.bot.appid}_{self.channel_id}_{self.user_id}'
+            target_id = f'{self.instance.appid}_{self.channel_id}_{self.user_id}'
 
         if reply:
-            await self.bot.send_chain_message(reply)
+            await self.instance.send_chain_message(reply)
 
         event: WaitEvent = await wait_events_bucket.set_event(target_id, force)
         asyncio.create_task(event.timer(max_time))
@@ -115,10 +114,10 @@ class Message:
         if self.is_direct:
             raise WaitEventException('direct message not support "wait_channel"')
 
-        target_id = f'{self.bot.appid}_{self.channel_id}'
+        target_id = f'{self.instance.appid}_{self.channel_id}'
 
         if reply:
-            await self.bot.send_chain_message(reply)
+            await self.instance.send_chain_message(reply)
 
         if target_id not in wait_events_bucket:
             event: ChannelWaitEvent = await wait_events_bucket.set_event(target_id, force, for_channel=True)

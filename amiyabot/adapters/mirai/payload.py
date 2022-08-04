@@ -4,7 +4,7 @@ import json
 from typing import List
 
 
-class GeneralDefinition:
+class MiraiPostPayload:
     @classmethod
     @abc.abstractmethod
     def builder(cls,
@@ -58,7 +58,7 @@ class GeneralDefinition:
         })
 
 
-class WebsocketAdapter(GeneralDefinition):
+class WebsocketAdapter(MiraiPostPayload):
     @classmethod
     def builder(cls,
                 command: str,
@@ -78,7 +78,7 @@ class WebsocketAdapter(GeneralDefinition):
         )
 
 
-class HttpAdapter(GeneralDefinition):
+class HttpAdapter(MiraiPostPayload):
     @classmethod
     def builder(cls,
                 command: str,

@@ -3,11 +3,13 @@ import json
 
 from typing import Callable, Optional
 from amiyabot.network.httpRequests import http_requests
-from amiyabot import log
+from amiyabot.log import LoggerManager
 
 from .url import APIConstant, get_url
 from .model import GateWay, ConnectionHandler
 from .builder import MessageSendRequest
+
+log = LoggerManager('Tencent')
 
 
 class TencentAPI:
@@ -20,6 +22,8 @@ class TencentAPI:
         }
 
     async def connect(self, private: bool, handler: Callable):
+        log.info(f'requesting appid {self.appid} gateway')
+
         resp = await self.__get_request(APIConstant.gatewayBotURI)
         gateway = GateWay(**resp)
 
