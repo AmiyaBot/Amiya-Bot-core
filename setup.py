@@ -10,7 +10,8 @@ with open('requirements.txt', mode='w', encoding='utf-8') as req:
     req.write('\n'.join(requirements))
 
 data_files = [
-    'amiyabot/assets/font/HarmonyOS_Sans_SC.ttf'
+    'amiyabot/assets/font/HarmonyOS_Sans_SC.ttf',
+    'amiyabot/network/httpServer/server.yaml'
 ]
 
 setuptools.setup(

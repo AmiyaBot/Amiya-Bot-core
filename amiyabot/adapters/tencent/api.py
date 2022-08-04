@@ -1,5 +1,6 @@
 import abc
 import json
+import asyncio
 
 from typing import Callable, Optional
 from amiyabot.network.httpRequests import http_requests
@@ -25,6 +26,12 @@ class TencentAPI:
         log.info(f'requesting appid {self.appid} gateway')
 
         resp = await self.__get_request(APIConstant.gatewayBotURI)
+
+        if not resp:
+            await asyncio.sleep(10)
+            asyncio.create_task(self.connect(private, handler))
+            return False
+
         gateway = GateWay(**resp)
 
         log.info(f'appid {self.appid} gateway resp: shards {gateway.shards}, remaining %d/%d' % (
