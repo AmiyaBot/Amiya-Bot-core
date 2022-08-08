@@ -39,6 +39,11 @@ class MiraiBotInstance(BotAdapterProtocol):
         return 'Mirai'
 
     async def connect(self, private: bool, handler: Callable):
+        while self.alive:
+            await self.keep_connect(handler)
+            await asyncio.sleep(10)
+
+    async def keep_connect(self, handler):
         mark = f'websocket({self.appid})'
 
         log.info(f'connecting {mark}...')
@@ -51,6 +56,7 @@ class MiraiBotInstance(BotAdapterProtocol):
 
                     if message == b'':
                         await websocket.close()
+                        log.warning(f'{mark} mirai-api-http close the connection.')
                         return False
 
                     await self.handle_message(str(message), handler)
@@ -59,13 +65,10 @@ class MiraiBotInstance(BotAdapterProtocol):
 
                 log.info(f'{mark} closed.')
 
-        except websockets.ConnectionClosedOK as e:
+        except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError) as e:
             log.error(f'{mark} connection closed. {e}')
         except ConnectionRefusedError:
             log.error(f'cannot connect to mirai-api-http {mark} server.')
-
-        await asyncio.sleep(10)
-        asyncio.create_task(self.connect(private, handler))
 
     async def handle_message(self, message: str, handler: Callable):
         async with log.catch(ignore=[json.JSONDecodeError]):

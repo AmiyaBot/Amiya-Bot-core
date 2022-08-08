@@ -2,6 +2,7 @@ import asyncio
 
 from typing import List, Type
 from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.tencent import TencentBotInstance
 from amiyabot.network.httpServer import HttpServer
 from amiyabot.handler import BotHandlerFactory, GroupConfig
