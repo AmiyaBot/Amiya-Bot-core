@@ -16,7 +16,7 @@ data_files = [
 
 setuptools.setup(
     name='amiyabot',
-    version='1.1.0',
+    version='1.1.1',
     author='vivien8261',
     author_email='826197021@qq.com',
     url='https://www.amiyabot.com',
