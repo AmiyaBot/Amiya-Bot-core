@@ -4,6 +4,7 @@ import websockets
 
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
@@ -93,8 +94,29 @@ class MiraiBotInstance(BotAdapterProtocol):
             for voice in voice_list:
                 await self.connection.send(voice)
 
-    async def send_message(self, channel_id: str = '', user_id: str = '', direct_src_guild_id: str = ''):
-        pass
+    async def send_message(self,
+                           chain: Chain,
+                           user_id: str = '',
+                           channel_id: str = '',
+                           direct_src_guild_id: str = ''):
+        data = Message(self)
+
+        data.user_id = user_id
+        data.channel_id = channel_id
+        data.message_type = 'group'
+
+        if not channel_id and not user_id:
+            raise TypeError(
+                'MiraiBotInstance.send_message() missing argument: "channel_id" or "user_id"')
+
+        if not channel_id and user_id:
+            data.message_type = 'friend'
+            data.is_direct = True
+
+        message = Chain(data)
+        message.chain = chain.chain
+
+        await self.send_chain_message(message)
 
     async def package_message(self, event: str, message: dict):
         return package_mirai_message(self, self.appid, message)

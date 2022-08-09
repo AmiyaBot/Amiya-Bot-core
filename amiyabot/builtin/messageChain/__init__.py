@@ -16,22 +16,23 @@ class ConvertSetting:
 
 
 class Chain:
-    def __init__(self, data: Message, at: bool = True, reference: bool = False):
+    def __init__(self, data: Message = None, at: bool = True, reference: bool = False):
         """
         创建回复消息
 
-        :param data:  Message 对象
-        :param at:    是否 at 用户
+        :param data:      Message 对象
+        :param at:        是否 at 用户
+        :param reference: 是否引用该 Message 对象的消息
         """
         self.data = data
         self.reference = reference
         self.chain: CHAIN_LIST = []
 
-        if at and not data.is_direct:
+        if data and at and not data.is_direct:
             self.at(enter=True)
 
     def at(self, user: int = None, enter: bool = False):
-        if not self.data.is_direct:
+        if self.data and not self.data.is_direct:
             self.chain.append(At(user or self.data.user_id))
             if enter:
                 return self.text('\n')

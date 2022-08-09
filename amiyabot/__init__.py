@@ -1,6 +1,6 @@
 import asyncio
 
-from typing import List, Type
+from typing import List, Dict, Type
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.tencent import TencentBotInstance
@@ -24,6 +24,7 @@ class AmiyaBot(BotHandlerFactory):
         super().__init__(appid, token, adapter)
 
         self.private = private
+        self.send_message = self.instance.send_message
 
     async def start(self, enable_chromium: bool = False):
         if enable_chromium:
@@ -52,6 +53,12 @@ class MultipleAccounts(BotHandlerFactory):
         super().__init__()
 
         self.bots = bots
+        self.__instances: Dict[str, AmiyaBot] = {
+            item.appid: item for item in bots
+        }
+
+    def __getitem__(self, appid: str):
+        return self.__instances.get(appid, None)
 
     async def start(self, enable_chromium: bool = False):
         self.__combine_factory()

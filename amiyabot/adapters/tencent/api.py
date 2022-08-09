@@ -2,7 +2,7 @@ import abc
 import json
 import asyncio
 
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 from amiyabot.network.httpRequests import http_requests
 from amiyabot.log import LoggerManager
 
@@ -103,9 +103,10 @@ class TencentAPI:
 
 
 class ResponseException(Exception):
-    def __init__(self, code: int, message: str):
+    def __init__(self, code: int, message: str, data: Any = None):
         self.code = code
         self.message = message
+        self.data = data
 
     def __str__(self):
-        return f'[{self.code}] {self.message}'
+        return f'[{self.code}] {self.message} -- data: {self.data}'

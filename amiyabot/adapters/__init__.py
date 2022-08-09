@@ -24,7 +24,20 @@ class BotAdapterProtocol(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def send_message(self, channel_id: str = '', user_id: str = '', direct_src_guild_id: str = ''):
+    async def send_message(self,
+                           chain: Chain,
+                           user_id: str = '',
+                           channel_id: str = '',
+                           direct_src_guild_id: str = ''):
+        """
+        发送主动消息
+
+        :param chain:               消息 Chain 对象
+        :param user_id:             用户 ID
+        :param channel_id:          子频道 ID
+        :param direct_src_guild_id: 来源的频道 ID（私信时需要）
+        :return:
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
