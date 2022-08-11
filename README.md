@@ -1,6 +1,8 @@
 # Amiya-Bot
 
-简洁高效的异步 Python QQ 频道机器人框架
+![PyPI](https://img.shields.io/pypi/v/amiyabot)
+
+简洁高效的异步 Python QQ 机器人框架
 
 官方文档：[www.amiyabot.com](https://www.amiyabot.com/)
 

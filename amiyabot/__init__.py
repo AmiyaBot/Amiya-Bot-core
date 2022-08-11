@@ -1,6 +1,6 @@
 import asyncio
 
-from typing import List, Dict, Type
+from typing import List, Dict, Type, Union
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.tencent import TencentBotInstance
@@ -8,7 +8,7 @@ from amiyabot.network.httpServer import HttpServer
 from amiyabot.handler import BotHandlerFactory, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
-from amiyabot.builtin.messageChain import Chain
+from amiyabot.builtin.messageChain import Chain, ChainBuilder
 from amiyabot.builtin.message import Event, Message, WaitEventCancel, WaitEventOutOfFocus, Equal
 from amiyabot import log
 
@@ -54,11 +54,11 @@ class MultipleAccounts(BotHandlerFactory):
 
         self.bots = bots
         self.__instances: Dict[str, AmiyaBot] = {
-            item.appid: item for item in bots
+            str(item.appid): item for item in bots
         }
 
-    def __getitem__(self, appid: str):
-        return self.__instances.get(appid, None)
+    def __getitem__(self, appid: Union[str, int]):
+        return self.__instances.get(str(appid), None)
 
     async def start(self, enable_chromium: bool = False):
         self.__combine_factory()

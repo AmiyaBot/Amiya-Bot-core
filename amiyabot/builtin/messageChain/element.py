@@ -1,9 +1,11 @@
 import asyncio
 
 from dataclasses import dataclass
-from typing import Optional, Union, List
+from typing import Optional, Callable, Coroutine, Union, List, Any
 from amiyabot import log
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser, debug
+
+IMAGE_GETTER_HOOK = Callable[[Union[str, bytes]], Coroutine[Any, Any, Union[str, bytes]]]
 
 
 @dataclass
@@ -25,6 +27,14 @@ class Text:
 class Image:
     url: Optional[str] = None
     content: Optional[bytes] = None
+    getter_hook: IMAGE_GETTER_HOOK = None
+
+    async def get(self):
+        if self.getter_hook:
+            res = await self.getter_hook(self.url or self.content)
+            if res:
+                return res
+        return self.url or self.content
 
 
 @dataclass
@@ -41,6 +51,7 @@ class Html:
     render_time: int
     width: int = 1280
     height: int = 720
+    getter_hook: IMAGE_GETTER_HOOK = None
 
     async def create_html_image(self):
         async with log.catch('html convert error:'):
@@ -59,6 +70,11 @@ class Html:
             await asyncio.sleep(self.render_time / 1000)
 
             result = await page.make_image()
+
+            if self.getter_hook:
+                res = await self.getter_hook(result)
+                if res:
+                    result = res
 
             if not debug:
                 await page.close()

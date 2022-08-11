@@ -184,6 +184,7 @@ class TencentBotInstance(TencentAPI, BotAdapterProtocol):
 
         message = Chain(data)
         message.chain = chain.chain
+        message.builder = chain.builder
 
         await self.send_chain_message(message)
 

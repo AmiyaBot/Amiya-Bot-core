@@ -6,7 +6,7 @@ from .payload import WebsocketAdapter
 from .api import MiraiAPI
 
 
-async def get_image_id(http: MiraiAPI, target, msg_type):
+async def get_image_id(http: MiraiAPI, target: Union[str, bytes], msg_type: str):
     if type(target) is str:
         with open(target, mode='rb') as file:
             target = file.read()
@@ -14,7 +14,7 @@ async def get_image_id(http: MiraiAPI, target, msg_type):
     return await http.upload_image(target, msg_type)
 
 
-async def get_voice_id(http: MiraiAPI, path, msg_type):
+async def get_voice_id(http: MiraiAPI, path: str, msg_type: str):
     return await http.upload_voice(await silkcoder.async_encode(path), msg_type)
 
 
@@ -52,7 +52,7 @@ async def build_message_send(address: str, session: str, chain: Chain, custom_ch
             if type(item) is Image:
                 chain_data.append({
                     'type': 'Image',
-                    'imageId': await get_image_id(api, item.url or item.content, chain.data.message_type)
+                    'imageId': await get_image_id(api, await item.get(), chain.data.message_type)
                 })
 
             # Voice

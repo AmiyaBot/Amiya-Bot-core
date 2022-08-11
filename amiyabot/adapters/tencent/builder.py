@@ -1,7 +1,3 @@
-import asyncio
-
-from amiyabot import log
-from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser, debug
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
@@ -25,6 +21,7 @@ class MessageSendRequestGroup:
         self.direct: bool = direct
 
     def __insert_req(self, content: str = '', image: Union[str, bytes] = None):
+        # noinspection PyArgumentList
         req = MessageSendRequest(
             data={
                 'msg_id': self.message_id
@@ -95,10 +92,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
 
         # Image
         if type(item) is Image:
-            if item.url:
-                messages.add_image(item.url)
-            if item.content:
-                messages.add_image(item.content)
+            messages.add_image(await item.get())
 
         # Voice
         if type(item) is Voice:
