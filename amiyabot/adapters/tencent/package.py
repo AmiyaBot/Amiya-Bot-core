@@ -60,10 +60,10 @@ async def package_tencent_message(instance: TencentAPI,
         if 'message_reference' in message:
             reference = await instance.get_message(message['channel_id'],
                                                    message['message_reference']['message_id'])
-            reference_data = await package_tencent_message(instance, event, reference['message'], True)
-
-            if reference_data:
-                data.image += reference_data.image
+            if reference:
+                reference_data = await package_tencent_message(instance, event, reference['message'], True)
+                if reference_data:
+                    data.image += reference_data.image
 
         return data
     else:
