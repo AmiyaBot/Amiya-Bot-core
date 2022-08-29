@@ -1,9 +1,11 @@
 import os
 import uvicorn
 
-from typing import Dict, Callable
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_utils.cbv import cbv
+from fastapi_utils.inferring_router import InferringRouter
+
 from amiyabot.log import LoggerManager
 from amiyabot.util import snake_case_to_pascal_case
 
@@ -27,7 +29,6 @@ class HttpServer:
                  description: str = '<a href="https://www.amiyabot.com" target="__blank">https://www.amiyabot.com</a>',
                  ssl_keyfile: str = None,
                  ssl_certfile: str = None):
-
         self.app = FastAPI(title=title, description=description)
         self.server = self.__load_server(options={
             'host': host,
@@ -35,22 +36,36 @@ class HttpServer:
             'ssl_keyfile': ssl_keyfile,
             'ssl_certfile': ssl_certfile
         })
+        self.router = InferringRouter()
+        self.controller = cbv(self.router)
 
         self.__routes = []
-        self.__controllers = []
 
-    @staticmethod
-    def router(router_path: str = None, method: str = 'post', **kwargs):
+    def route(self, router_path: str = None, method: str = 'post', **kwargs):
         def decorator(fn):
-            def options():
-                return fn, router_path, method, kwargs
+            nonlocal router_path
 
-            return options
+            path = fn.__qualname__.split('.')
+            c_name = path[0][0].lower() + path[0][1:]
+            f_name = snake_case_to_pascal_case(path[1])
+
+            if not router_path:
+                router_path = f'/{c_name}/{f_name}'
+
+            arguments = {
+                'path': router_path,
+                'tags': [c_name.title()],
+                **kwargs
+            }
+
+            router_builder = getattr(self.router, method)
+            router = router_builder(**arguments)
+
+            self.__routes.append(router_path)
+
+            return router(fn)
 
         return decorator
-
-    def controller(self, cls):
-        self.__controllers.append(cls)
 
     def __load_server(self, options):
         return uvicorn.Server(config=uvicorn.Config(self.app,
@@ -58,41 +73,7 @@ class HttpServer:
                                                     log_config=os.path.join(cur_file_folder, './server.yaml'),
                                                     **options))
 
-    @staticmethod
-    def __load_controller(controller):
-        attrs = [item for item in dir(controller) if not item.startswith('__')]
-        methods: Dict[str, Callable] = {}
-
-        for n in attrs:
-            obj = getattr(controller, n)
-            if hasattr(obj, '__call__'):
-                methods[n] = obj
-
-        cname = controller.__name__[0].lower() + controller.__name__[1:]
-
-        for name, options in methods.items():
-            fn, router_path, method, kwargs = options()
-
-            router_path = router_path or f'/{cname}/' + snake_case_to_pascal_case(name.strip('_'))
-
-            yield fn, router_path, method, cname, kwargs
-
     async def serve(self):
-        for cls in self.__controllers:
-            for fn, router_path, method, cname, options in self.__load_controller(cls):
-                arguments = {
-                    'path': router_path,
-                    'tags': [cname.title()],
-                    **options
-                }
-
-                router_builder = getattr(self.app, method)
-                router = router_builder(**arguments)
-                router(fn)
-
-                if cname != 'index':
-                    self.__routes.append(router_path)
-
         async with ServerLog.logger.catch('Http server Error:'):
             self.app.add_middleware(
                 CORSMiddleware,
@@ -101,5 +82,6 @@ class HttpServer:
                 allow_headers=['*'],
                 allow_credentials=True
             )
+            self.app.include_router(self.router)
 
             await self.server.serve()
