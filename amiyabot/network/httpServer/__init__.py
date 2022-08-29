@@ -1,7 +1,8 @@
 import os
 import uvicorn
 
-from fastapi import FastAPI
+from typing import Any
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
@@ -40,6 +41,18 @@ class HttpServer:
         self.controller = cbv(self.router)
 
         self.__routes = []
+
+        @self.app.middleware('http')
+        async def interceptor(request: Request, call_next):
+            return await call_next(request)
+
+    @staticmethod
+    def response(data: Any = None, code: int = 200, message: str = 'success'):
+        return {
+            'data': data,
+            'code': code,
+            'message': message
+        }
 
     def route(self, router_path: str = None, method: str = 'post', **kwargs):
         def decorator(fn):

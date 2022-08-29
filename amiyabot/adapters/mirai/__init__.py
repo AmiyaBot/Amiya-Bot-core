@@ -34,13 +34,12 @@ class MiraiBotInstance(BotAdapterProtocol):
         self.http_port = http_port
 
         self.session = None
-        self.alive = True
 
     def __str__(self):
         return 'Mirai'
 
     async def connect(self, private: bool, handler: Callable):
-        while self.alive:
+        while self.hold_on:
             await self.keep_connect(handler)
             await asyncio.sleep(10)
 
@@ -52,7 +51,9 @@ class MiraiBotInstance(BotAdapterProtocol):
             async with websockets.connect(self.url) as websocket:
                 log.info(f'{mark} connect successful. waiting handshake...')
                 self.connection = websocket
-                while self.alive:
+                self.set_alive(True)
+
+                while self.hold_on:
                     message = await websocket.recv()
 
                     if message == b'':
@@ -64,6 +65,7 @@ class MiraiBotInstance(BotAdapterProtocol):
 
                 await websocket.close()
 
+                self.set_alive(False)
                 log.info(f'{mark} closed.')
 
         except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError) as e:

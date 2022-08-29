@@ -10,11 +10,15 @@ from .url import APIConstant, get_url
 from .model import GateWay, ConnectionHandler
 from .builder import MessageSendRequest
 
+from .. import BotAdapterProtocol
+
 log = LoggerManager('Tencent')
 
 
-class TencentAPI:
+class TencentAPI(BotAdapterProtocol):
     def __init__(self, appid: str, token: str):
+        super().__init__(appid, token)
+
         self.appid = appid
         self.token = token
 
