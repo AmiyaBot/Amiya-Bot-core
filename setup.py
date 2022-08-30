@@ -1,4 +1,18 @@
+import json
 import setuptools
+
+from urllib import request
+
+pypi = json.loads(request.urlopen('https://pypi.python.org/pypi/amiyabot/json').read())
+latest = list(pypi['releases'].keys())[-1]
+
+print(f'latest: {latest}')
+
+new_version = latest[:-1] + str(int(latest[-1]) + 1)
+release_new = input(f'new?: {new_version} (Y/n)')
+
+if not (not release_new or release_new.lower() == 'y'):
+    new_version = ''
 
 with open('README.md', mode='r', encoding='utf-8') as md:
     description = md.read()
@@ -16,7 +30,7 @@ data_files = [
 
 setuptools.setup(
     name='amiyabot',
-    version=input('version: '),
+    version=new_version or input('version: '),
     author='vivien8261',
     author_email='826197021@qq.com',
     url='https://www.amiyabot.com',
