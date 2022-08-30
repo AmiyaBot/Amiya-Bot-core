@@ -6,7 +6,7 @@ from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.message import Event, Message, MessageMatch, Verify, Equal
 from amiyabot.adapters import BotAdapterProtocol
 
-PREFIX = Union[bool, List[str]]
+PREFIX = Optional[Union[bool, List[str]]]
 KEYWORDS = Union[str, Equal, re.Pattern, List[Union[str, Equal, re.Pattern]]]
 FUNC_CORO = Callable[[Message], Coroutine[Any, Any, Optional[Chain]]]
 EVENT_CORO = Callable[[Event, BotAdapterProtocol], Coroutine[Any, Any, None]]
@@ -41,7 +41,7 @@ class MessageHandlerItem:
     keywords: KEYWORDS = None
     allow_direct: Optional[bool] = None
     direct_only: bool = False
-    check_prefix: PREFIX = True
+    check_prefix: PREFIX = None
     custom_verify: VERIFY_CORO = None
     prefix_keywords: List[str] = None
     level: int = 0
@@ -72,11 +72,10 @@ class MessageHandlerItem:
         return Verify(False)
 
     async def verify(self, data: Message):
-
         group_config = self.group_config.get_config(self.group_id)
 
         direct_only = self.direct_only or (group_config and group_config.direct_only)
-        need_check_prefix = group_config.check_prefix if group_config else self.check_prefix
+        need_check_prefix = self.check_prefix or (group_config and group_config.check_prefix)
 
         if data.is_direct:
             if not direct_only:

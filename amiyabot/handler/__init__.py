@@ -29,7 +29,7 @@ class BotHandlerFactory:
                    group_id: str = None,
                    keywords: KEYWORDS = None,
                    verify: VERIFY_CORO = None,
-                   check_prefix: PREFIX = True,
+                   check_prefix: PREFIX = None,
                    allow_direct: Optional[bool] = None,
                    direct_only: bool = False,
                    level: int = 0):
