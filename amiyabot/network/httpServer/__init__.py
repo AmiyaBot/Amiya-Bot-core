@@ -2,7 +2,7 @@ import os
 import uvicorn
 
 from typing import Any
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
@@ -28,6 +28,7 @@ class HttpServer:
                  port: int,
                  title: str = 'AmiyaBot',
                  description: str = '<a href="https://www.amiyabot.com" target="__blank">https://www.amiyabot.com</a>',
+                 auth_key: str = None,
                  ssl_keyfile: str = None,
                  ssl_certfile: str = None):
         self.app = FastAPI(title=title, description=description)
@@ -44,6 +45,8 @@ class HttpServer:
 
         @self.app.middleware('http')
         async def interceptor(request: Request, call_next):
+            if auth_key and request.headers.get('authKey') != auth_key:
+                return Response('Invalid authKey', status_code=401)
             return await call_next(request)
 
     @staticmethod

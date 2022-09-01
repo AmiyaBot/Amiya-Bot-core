@@ -75,7 +75,14 @@ class MessageHandlerItem:
         group_config = self.group_config.get_config(self.group_id)
 
         direct_only = self.direct_only or (group_config and group_config.direct_only)
-        need_check_prefix = self.check_prefix or (group_config and group_config.check_prefix)
+
+        if self.check_prefix is None:
+            if group_config:
+                need_check_prefix = group_config and group_config.check_prefix
+            else:
+                need_check_prefix = True
+        else:
+            need_check_prefix = self.check_prefix
 
         if data.is_direct:
             if not direct_only:

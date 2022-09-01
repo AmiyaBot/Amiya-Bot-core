@@ -52,7 +52,7 @@ class MultipleAccounts(BotHandlerFactory):
     def __init__(self, bots: List[AmiyaBot]):
         super().__init__()
 
-        self.bots = bots
+        self.__ready = False
         self.__instances: Dict[str, AmiyaBot] = {
             str(item.appid): item for item in bots
         }
@@ -61,24 +61,46 @@ class MultipleAccounts(BotHandlerFactory):
         return self.__instances.get(str(appid), None)
 
     async def start(self, enable_chromium: bool = False):
-        self.__combine_factory()
+        assert not self.__ready, 'MultipleAccounts already started'
 
-        await asyncio.wait(
-            [item.start(enable_chromium) for item in self.bots]
-        )
+        self.__ready = True
 
-    def __combine_factory(self):
-        for item in self.bots:
-            item.prefix_keywords += self.prefix_keywords
-            item.message_handlers += self.message_handlers
-            item.after_reply_handlers += self.after_reply_handlers
-            item.before_reply_handlers += self.before_reply_handlers
-            item.message_handler_middleware += self.message_handler_middleware
+        if self.__instances:
+            await asyncio.wait(
+                [
+                    self.append(item, start_up=False).start(enable_chromium) for _, item in self.__instances.items()
+                ]
+            )
 
-            item.group_config.config.update(self.group_config.config)
+        while True:
+            await asyncio.sleep(1)
 
-            self.__combine_dict_handlers(item, 'event_handlers')
-            self.__combine_dict_handlers(item, 'exception_handlers')
+    def append(self, item: AmiyaBot, enable_chromium: bool = False, start_up: bool = True):
+        assert self.__ready, 'MultipleAccounts not started'
+
+        item = self.__combine_factory(item)
+        appid = str(item.appid)
+
+        if appid not in self.__instances:
+            self.__instances[appid] = item
+            if start_up:
+                asyncio.create_task(item.start(enable_chromium))
+
+        return item
+
+    def __combine_factory(self, item: AmiyaBot):
+        item.prefix_keywords += self.prefix_keywords
+        item.message_handlers += self.message_handlers
+        item.after_reply_handlers += self.after_reply_handlers
+        item.before_reply_handlers += self.before_reply_handlers
+        item.message_handler_middleware += self.message_handler_middleware
+
+        item.group_config.config.update(self.group_config.config)
+
+        self.__combine_dict_handlers(item, 'event_handlers')
+        self.__combine_dict_handlers(item, 'exception_handlers')
+
+        return item
 
     def __combine_dict_handlers(self, item: AmiyaBot, keyname: str):
         for e in getattr(self, keyname):
