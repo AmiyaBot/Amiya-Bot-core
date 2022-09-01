@@ -32,6 +32,9 @@ class AmiyaBot(BotHandlerFactory):
 
         await self.instance.connect(self.private, self.__message_handler)
 
+    def close(self):
+        self.instance.close()
+
     async def __message_handler(self, event: str, message: dict):
         async with log.catch(desc='handler error:',
                              ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
@@ -60,6 +63,10 @@ class MultipleAccounts(BotHandlerFactory):
     def __getitem__(self, appid: Union[str, int]):
         return self.__instances.get(str(appid), None)
 
+    def __delitem__(self, appid: Union[str, int]):
+        self.__instances[str(appid)].close()
+        del self.__instances[str(appid)]
+
     async def start(self, enable_chromium: bool = False):
         assert not self.__ready, 'MultipleAccounts already started'
 
@@ -87,6 +94,10 @@ class MultipleAccounts(BotHandlerFactory):
                 asyncio.create_task(item.start(enable_chromium))
 
         return item
+
+    def close(self):
+        for _, item in self.__instances.items():
+            item.close()
 
     def __combine_factory(self, item: AmiyaBot):
         item.prefix_keywords += self.prefix_keywords

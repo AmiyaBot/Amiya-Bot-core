@@ -43,7 +43,7 @@ async def package_tencent_message(instance: TencentAPI,
                 me = await instance.get_me()
                 for user in message['mentions']:
                     text = text.replace('<@!{id}>'.format(**user), '')
-                    if user['id'] == me['id']:
+                    if me and user['id'] == me['id']:
                         data.is_at = True
                         continue
                     if user['bot']:

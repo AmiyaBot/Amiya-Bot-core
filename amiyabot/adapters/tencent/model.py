@@ -1,4 +1,5 @@
 import json
+import websockets
 
 from typing import Any, Callable
 from dataclasses import dataclass
@@ -24,6 +25,7 @@ class ShardsRecord:
     session_id: str = None
     last_s: int = None
     reconnect_limit: int = 3
+    connection: websockets.WebSocketClientProtocol = None
     heartbeat_key: str = None
 
 

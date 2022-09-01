@@ -1,3 +1,4 @@
+import sys
 import json
 import asyncio
 import websockets
@@ -23,7 +24,9 @@ log = LoggerManager('Tencent')
 @asynccontextmanager
 async def ws(cls: BotAdapterProtocol, sign, url):
     async with log.catch(f'connection({sign}) error:',
-                         ignore=[asyncio.CancelledError, websockets.ConnectionClosedError]):
+                         ignore=[asyncio.CancelledError,
+                                 websockets.ConnectionClosedError,
+                                 websockets.ConnectionClosedOK]):
         cls.set_alive(True)
         async with websockets.connect(url) as websocket:
             yield websocket
@@ -54,6 +57,14 @@ class TencentBotInstance(TencentAPI):
                                     heartbeat_key)
         )
 
+    def close(self):
+        log.info(f'closing {self}(appid {self.appid})...')
+        self.keep_run = False
+
+        for _, item in self.shards_record.items():
+            if item.connection:
+                asyncio.create_task(item.connection.close())
+
     async def create_connection(self, handler: ConnectionHandler, shards_index: int = 0):
         gateway = handler.gateway
         sign = f'{self.appid} {shards_index + 1}/{gateway.shards}'
@@ -61,9 +72,9 @@ class TencentBotInstance(TencentAPI):
         log.info(f'connecting({sign})...')
 
         async with ws(self, sign, gateway.url) as websocket:
-            self.shards_record[shards_index] = ShardsRecord(shards_index)
+            self.shards_record[shards_index] = ShardsRecord(shards_index, connection=websocket)
 
-            while self.hold_on:
+            while self.keep_run:
                 await asyncio.sleep(0)
 
                 recv = await websocket.recv()
@@ -76,8 +87,11 @@ class TencentBotInstance(TencentAPI):
                                 payload.d['user']['username'], 'private' if handler.private else 'public'
                             )
                         )
-                        self.bot_name = payload.d['user']['username']
                         self.shards_record[shards_index].session_id = payload.d['session_id']
+
+                        if shards_index == 0 and gateway.shards > 1:
+                            for n in range(gateway.shards - 1):
+                                asyncio.create_task(self.create_connection(handler, n + 1))
                     else:
                         asyncio.create_task(handler.message_handler(payload.t, payload.d))
 
@@ -87,7 +101,7 @@ class TencentBotInstance(TencentAPI):
                         'intents': Intents(handler.private).intents.get_all_intents(),
                         'shard': [shards_index, gateway.shards],
                         'properties': {
-                            '$os': '',
+                            '$os': sys.platform,
                             '$browser': '',
                             '$device': ''
                         }
@@ -101,16 +115,16 @@ class TencentBotInstance(TencentAPI):
                 if payload.s:
                     self.shards_record[shards_index].last_s = payload.s
 
-        while self.shards_record[shards_index].reconnect_limit > 0:
+        while self.keep_run and self.shards_record[shards_index].reconnect_limit > 0:
             await self.reconnect(handler, self.shards_record[shards_index], sign)
-
-        self.alive = False
 
     async def reconnect(self, handler: ConnectionHandler, record: ShardsRecord, sign: str):
         log.info(f'reconnecting({sign})...')
 
         async with ws(self, sign, handler.gateway.url) as websocket:
-            while self.alive:
+            record.connection = websocket
+
+            while self.keep_run:
                 await asyncio.sleep(0)
 
                 recv = await websocket.recv()
@@ -147,7 +161,7 @@ class TencentBotInstance(TencentAPI):
                                  shards_index: int,
                                  heartbeat_key: str):
         sec = 0
-        while self.alive and self.shards_record[shards_index].heartbeat_key == heartbeat_key:
+        while self.keep_run and self.shards_record[shards_index].heartbeat_key == heartbeat_key:
             await asyncio.sleep(1)
             sec += 1
             if sec >= interval / 1000:

@@ -1,5 +1,4 @@
 import abc
-import time
 
 from typing import Any, Union, Callable, Coroutine
 from amiyabot.builtin.message import Event, Message
@@ -13,21 +12,17 @@ class BotAdapterProtocol(object):
         self.appid = appid
         self.token = token
         self.alive = False
-        self.hold_on = True
-
-        self.bot_name = ''
-        self.last_alive_time = 0
-        self.last_death_time = 0
+        self.keep_run = True
 
     def __str__(self):
         return 'Adapter'
 
     def set_alive(self, status: bool):
         self.alive = status
-        if status:
-            self.last_alive_time = int(time.time())
-        else:
-            self.last_death_time = int(time.time())
+
+    @abc.abstractmethod
+    def close(self):
+        raise NotImplementedError
 
     @abc.abstractmethod
     async def connect(self, private: bool, handler: handler_type):
