@@ -1,7 +1,7 @@
 import os
 import uvicorn
 
-from typing import Any
+from typing import Any, List, Callable
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.cbv import cbv
@@ -20,6 +20,10 @@ class ServerLog:
     @classmethod
     def write(cls, text: str):
         cls.logger.info(text, 'server')
+
+
+class ServerEventHandler:
+    on_shutdown: List[Callable] = []
 
 
 class HttpServer:
@@ -48,6 +52,11 @@ class HttpServer:
             if auth_key and request.headers.get('authKey') != auth_key:
                 return Response('Invalid authKey', status_code=401)
             return await call_next(request)
+
+        @self.app.on_event('shutdown')
+        def on_shutdown():
+            for action in ServerEventHandler.on_shutdown:
+                action()
 
     @staticmethod
     def response(data: Any = None, code: int = 200, message: str = 'success'):

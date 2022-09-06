@@ -4,7 +4,7 @@ from typing import List, Dict, Type, Union
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.tencent import TencentBotInstance
-from amiyabot.network.httpServer import HttpServer
+from amiyabot.network.httpServer import HttpServer, ServerEventHandler
 from amiyabot.handler import BotHandlerFactory, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
@@ -26,6 +26,10 @@ class AmiyaBot(BotHandlerFactory):
         self.private = private
         self.send_message = self.instance.send_message
 
+        self.__allow_close = True
+
+        ServerEventHandler.on_shutdown.append(self.close)
+
     async def start(self, enable_chromium: bool = False):
         if enable_chromium:
             await chromium.launch()
@@ -33,7 +37,9 @@ class AmiyaBot(BotHandlerFactory):
         await self.instance.connect(self.private, self.__message_handler)
 
     def close(self):
-        self.instance.close()
+        if self.__allow_close:
+            self.__allow_close = False
+            self.instance.close()
 
     async def __message_handler(self, event: str, message: dict):
         async with log.catch(desc='handler error:',
@@ -59,6 +65,9 @@ class MultipleAccounts(BotHandlerFactory):
         self.__instances: Dict[str, AmiyaBot] = {
             str(item.appid): item for item in bots
         }
+        self.__keep_alive = True
+
+        ServerEventHandler.on_shutdown.append(self.close)
 
     def __getitem__(self, appid: Union[str, int]):
         return self.__instances.get(str(appid), None)
@@ -79,7 +88,7 @@ class MultipleAccounts(BotHandlerFactory):
                 ]
             )
 
-        while True:
+        while self.__keep_alive:
             await asyncio.sleep(1)
 
     def append(self, item: AmiyaBot, enable_chromium: bool = False, start_up: bool = True):
@@ -98,6 +107,8 @@ class MultipleAccounts(BotHandlerFactory):
     def close(self):
         for _, item in self.__instances.items():
             item.close()
+
+        self.__keep_alive = False
 
     def __combine_factory(self, item: AmiyaBot):
         item.prefix_keywords += self.prefix_keywords
