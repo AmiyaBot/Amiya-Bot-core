@@ -69,6 +69,9 @@ class MultipleAccounts(BotHandlerFactory):
 
         ServerEventHandler.on_shutdown.append(self.close)
 
+    def __contains__(self, appid: Union[str, int]):
+        return str(appid) in self.__instances
+
     def __getitem__(self, appid: Union[str, int]):
         return self.__instances.get(str(appid), None)
 

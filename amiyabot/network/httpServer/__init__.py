@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
 
+from pydantic import BaseModel
+
 from amiyabot.log import LoggerManager
 from amiyabot.util import snake_case_to_pascal_case
 
