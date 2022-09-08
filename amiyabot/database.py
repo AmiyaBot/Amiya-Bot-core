@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from playhouse.migrate import *
 from playhouse.shortcuts import ReconnectMixin, model_to_dict
 from amiyabot.util import create_dir, pascal_case_to_snake_case
-from amiyabot import log
 
 
 @dataclass
@@ -40,24 +39,6 @@ class ModelClass(Model):
             conflict['conflict_target'] = conflict_target
 
         cls.insert(**insert).on_conflict(**conflict).execute()
-
-
-class SearchParams:
-    def __init__(self, params, equal: list = None, contains: list = None):
-        self.equal = {}
-        self.contains = {}
-
-        if equal:
-            for item in equal:
-                value = getattr(params, item)
-                if value:
-                    self.equal[item] = value
-
-        if contains:
-            for item in contains:
-                value = getattr(params, item)
-                if value:
-                    self.contains[item] = value
 
 
 def table(cls: ModelClass) -> Any:
@@ -104,60 +85,26 @@ def connect_database(database, mysql: bool = False, config: MysqlConfig = None):
         })
 
 
-def query_to_list(query) -> List[dict]:
-    return [model_to_dict(item) for item in query]
+def convert_model(model, select_model: peewee.Select = None) -> dict:
+    data = {
+        **model_to_dict(model)
+    }
+    for field in select_model._returning:
+        if field.name not in data:
+            data[field.name] = getattr(model, field.name)
+
+    return data
 
 
-def exec_sql_file(file, db):
-    with open(file, mode='r', encoding='utf-8') as f:
-        sql = f.read().strip('\n').split('\n')
-    for line in sql:
-        if line.startswith('--'):
-            continue
-        try:
-            db.execute_sql(line)
-        except Exception as e:
-            log.error(e, desc='Execute error:')
+def query_to_list(query, select_model: peewee.Select = None) -> List[dict]:
+    return [convert_model(item, select_model) for item in query]
 
 
-def select_for_paginate(model,
-                        search: SearchParams = None,
-                        fields: tuple = (),
-                        join: dict = None,
-                        order_by: tuple = None,
-                        page: int = 1,
-                        page_size: int = 10):
-    model: ModelClass
-
-    data = model.select(*fields)
-    where = []
-
-    if search:
-        if search.equal:
-            for name, value in search.equal.items():
-                if hasattr(model, name) and value != '':
-                    where.append(
-                        getattr(model, name) == value
-                    )
-        if search.contains:
-            for name, value in search.contains.items():
-                if hasattr(model, name) and value != '':
-                    where.append(
-                        getattr(model, name).contains(value)
-                    )
-
-    if where:
-        data = data.where(*tuple(where))
-
-    if join:
-        data = data.join(**join)
-
-    if order_by:
-        data = data.order_by(*order_by)
-
-    count = data.count()
-    query = data.paginate(page=page, paginate_by=page_size)
-
-    results = [model_to_dict(item) for item in query]
-
-    return results, count
+def select_for_paginate(select: peewee.ModelSelect, page: int, page_size: int):
+    return {
+        'list': query_to_list(
+            select.objects().paginate(page=page, paginate_by=page_size),
+            select_model=select
+        ),
+        'total': select.count()
+    }

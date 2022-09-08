@@ -32,8 +32,9 @@ class TencentAPI(BotAdapterProtocol):
         resp = await self.__get_request(APIConstant.gatewayBotURI)
 
         if not resp:
-            await asyncio.sleep(10)
-            asyncio.create_task(self.connect(private, handler))
+            if self.keep_run:
+                await asyncio.sleep(10)
+                asyncio.create_task(self.connect(private, handler))
             return False
 
         gateway = GateWay(**resp)

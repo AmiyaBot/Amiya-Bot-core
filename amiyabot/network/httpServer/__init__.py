@@ -61,7 +61,7 @@ class HttpServer:
                 action()
 
     @staticmethod
-    def response(data: Any = None, code: int = 200, message: str = 'success'):
+    def response(data: Any = None, code: int = 200, message: str = ''):
         return {
             'data': data,
             'code': code,
