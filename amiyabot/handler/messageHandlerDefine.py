@@ -24,6 +24,9 @@ class GroupConfig:
     allow_direct: bool = False
     direct_only: bool = False
 
+    def __str__(self):
+        return self.group_id
+
 
 @dataclass
 class GroupConfigManager:

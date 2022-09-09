@@ -58,8 +58,11 @@ class AmiyaBot(BotHandlerFactory):
 
 
 class MultipleAccounts(BotHandlerFactory):
-    def __init__(self, bots: List[AmiyaBot]):
+    def __init__(self, bots: List[AmiyaBot] = None):
         super().__init__()
+
+        if bots is None:
+            bots = []
 
         self.__ready = False
         self.__instances: Dict[str, AmiyaBot] = {

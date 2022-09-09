@@ -26,7 +26,7 @@ class BotHandlerFactory:
         self.message_handler_middleware: List[MIDDLE_WARE] = list()
 
     def on_message(self,
-                   group_id: str = None,
+                   group_id: Union[GroupConfig, str] = None,
                    keywords: KEYWORDS = None,
                    verify: VERIFY_CORO = None,
                    check_prefix: PREFIX = None,
@@ -50,7 +50,7 @@ class BotHandlerFactory:
             _handler = MessageHandlerItem(func,
                                           self.group_config,
                                           level=level,
-                                          group_id=group_id,
+                                          group_id=str(group_id),
                                           direct_only=direct_only,
                                           allow_direct=allow_direct,
                                           check_prefix=check_prefix,
