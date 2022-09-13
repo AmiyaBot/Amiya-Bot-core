@@ -48,17 +48,22 @@ class HttpServer:
         self.controller = cbv(self.router)
 
         self.__routes = []
+        self.__allow_path = []
 
         @self.app.middleware('http')
         async def interceptor(request: Request, call_next):
-            if auth_key and request.headers.get('authKey') != auth_key:
-                return Response('Invalid authKey', status_code=401)
+            if not request.scope['path'] in self.__allow_path + ['/docs', '/favicon.ico', '/openapi.json']:
+                if auth_key and request.headers.get('authKey') != auth_key:
+                    return Response('Invalid authKey', status_code=401)
             return await call_next(request)
 
         @self.app.on_event('shutdown')
         def on_shutdown():
             for action in ServerEventHandler.on_shutdown:
                 action()
+
+    def set_allow_path(self, paths: list):
+        self.__allow_path = paths
 
     @staticmethod
     def response(data: Any = None, code: int = 200, message: str = ''):
@@ -73,15 +78,16 @@ class HttpServer:
             nonlocal router_path
 
             path = fn.__qualname__.split('.')
-            c_name = path[0][0].lower() + path[0][1:]
-            f_name = snake_case_to_pascal_case(path[1])
+            c_name = snake_case_to_pascal_case(path[0][0].lower() + path[0][1:])
 
             if not router_path:
-                router_path = f'/{c_name}/{f_name}'
+                router_path = f'/{c_name}'
+                if len(path) > 1:
+                    router_path += f'/{snake_case_to_pascal_case(path[1])}'
 
             arguments = {
                 'path': router_path,
-                'tags': [c_name.title()],
+                'tags': [c_name.title()] if len(path) > 1 else ['Alone'],
                 **kwargs
             }
 

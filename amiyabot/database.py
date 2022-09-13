@@ -89,9 +89,10 @@ def convert_model(model, select_model: peewee.Select = None) -> dict:
     data = {
         **model_to_dict(model)
     }
-    for field in select_model._returning:
-        if field.name not in data:
-            data[field.name] = getattr(model, field.name)
+    if select_model:
+        for field in select_model._returning:
+            if field.name not in data:
+                data[field.name] = getattr(model, field.name)
 
     return data
 
