@@ -41,6 +41,11 @@ def argv(name, formatter=str):
             return formatter(sys.argv[index])
 
 
+def append_sys_path(path: str):
+    if path not in sys.path:
+        sys.path.append(path)
+
+
 def create_dir(path: str, is_file: bool = False):
     if is_file:
         path = '/'.join(path.replace('\\', '/').split('/')[:-1])

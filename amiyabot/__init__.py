@@ -1,11 +1,11 @@
 import asyncio
 
-from typing import List, Dict, Type, Union
+from typing import Dict, Type, Union
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.tencent import TencentBotInstance
 from amiyabot.network.httpServer import HttpServer, ServerEventHandler
-from amiyabot.handler import BotHandlerFactory, GroupConfig
+from amiyabot.handler import BotInstance, PluginInstance, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
 from amiyabot.builtin.messageChain import Chain, ChainBuilder
@@ -15,7 +15,7 @@ from amiyabot import log
 chromium = ChromiumBrowser()
 
 
-class AmiyaBot(BotHandlerFactory):
+class AmiyaBot(BotInstance):
     def __init__(self,
                  appid: str,
                  token: str,
@@ -57,12 +57,9 @@ class AmiyaBot(BotHandlerFactory):
                 await func(err, self.instance)
 
 
-class MultipleAccounts(BotHandlerFactory):
-    def __init__(self, bots: List[AmiyaBot] = None):
+class MultipleAccounts(BotInstance):
+    def __init__(self, *bots: AmiyaBot):
         super().__init__()
-
-        if bots is None:
-            bots = []
 
         self.__ready = False
         self.__instances: Dict[str, AmiyaBot] = {
@@ -100,7 +97,7 @@ class MultipleAccounts(BotHandlerFactory):
     def append(self, item: AmiyaBot, enable_chromium: bool = False, start_up: bool = True):
         assert self.__ready, 'MultipleAccounts not started'
 
-        item = self.__combine_factory(item)
+        self.combine_factory(item, self)
         appid = str(item.appid)
 
         if appid not in self.__instances:
@@ -115,24 +112,3 @@ class MultipleAccounts(BotHandlerFactory):
             item.close()
 
         self.__keep_alive = False
-
-    def __combine_factory(self, item: AmiyaBot):
-        item.prefix_keywords += self.prefix_keywords
-        item.message_handlers += self.message_handlers
-        item.after_reply_handlers += self.after_reply_handlers
-        item.before_reply_handlers += self.before_reply_handlers
-        item.message_handler_middleware += self.message_handler_middleware
-
-        item.group_config.config.update(self.group_config.config)
-
-        self.__combine_dict_handlers(item, 'event_handlers')
-        self.__combine_dict_handlers(item, 'exception_handlers')
-
-        return item
-
-    def __combine_dict_handlers(self, item: AmiyaBot, keyname: str):
-        for e in getattr(self, keyname):
-            if e not in getattr(item, keyname):
-                getattr(item, keyname)[e] = getattr(self, keyname)[e]
-            else:
-                getattr(item, keyname)[e] += getattr(self, keyname)[e]

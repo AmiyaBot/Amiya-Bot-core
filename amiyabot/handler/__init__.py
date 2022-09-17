@@ -1,19 +1,16 @@
+import os
+import zipimport
+import importlib
+
 from typing import Type
+from amiyabot import log
+from amiyabot.util import append_sys_path
 
 from .messageHandlerDefine import *
 
 
 class BotHandlerFactory:
-    def __init__(self,
-                 appid: str = None,
-                 token: str = None,
-                 adapter: Type[BotAdapterProtocol] = None):
-
-        self.instance: Optional[BotAdapterProtocol] = None
-        if adapter:
-            self.instance = adapter(appid, token)
-
-        self.appid = appid
+    def __init__(self):
         self.prefix_keywords = list()
         self.group_config = GroupConfigManager()
 
@@ -135,3 +132,63 @@ class BotHandlerFactory:
 
     def set_group_config(self, config: GroupConfig):
         self.group_config.config[config.group_id] = config
+
+
+class PluginInstance(BotHandlerFactory):
+    def __init__(self, name: str, description: str = None):
+        super().__init__()
+
+        self.name = name
+        self.description = description
+
+
+class BotInstance(BotHandlerFactory):
+    def __init__(self,
+                 appid: str = None,
+                 token: str = None,
+                 adapter: Type[BotAdapterProtocol] = None):
+        super().__init__()
+
+        self.instance: Optional[BotAdapterProtocol] = None
+        if adapter:
+            self.instance = adapter(appid, token)
+
+        self.appid = appid
+
+    def load_plugin(self, path: str):
+        with log.sync_catch('plugin load error:'):
+            if path.endswith('.py'):
+                append_sys_path(os.path.abspath(os.path.dirname(path)))
+                module = importlib.import_module(os.path.basename(path).strip('.py'))
+            elif path.endswith('.zip'):
+                append_sys_path(path)
+                module = zipimport.zipimporter(path).load_module('__init__')
+            else:
+                return None
+
+            plugin: PluginInstance = getattr(module, 'plugin')
+
+            self.combine_factory(self, plugin)
+
+            return plugin
+
+    @staticmethod
+    def combine_factory(target: BotHandlerFactory, parent: BotHandlerFactory):
+        target.prefix_keywords += parent.prefix_keywords
+        target.message_handlers += parent.message_handlers
+        target.after_reply_handlers += parent.after_reply_handlers
+        target.before_reply_handlers += parent.before_reply_handlers
+        target.message_handler_middleware += parent.message_handler_middleware
+
+        target.group_config.config.update(parent.group_config.config)
+
+        dict_handlers = [
+            'event_handlers',
+            'exception_handlers'
+        ]
+        for keyname in dict_handlers:
+            for e in getattr(parent, keyname):
+                if e not in getattr(target, keyname):
+                    getattr(target, keyname)[e] = getattr(parent, keyname)[e]
+                else:
+                    getattr(target, keyname)[e] += getattr(parent, keyname)[e]
