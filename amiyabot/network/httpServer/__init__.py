@@ -103,7 +103,8 @@ class HttpServer:
     def __load_server(self, options):
         return uvicorn.Server(config=uvicorn.Config(self.app,
                                                     loop='asyncio',
-                                                    log_config=os.path.join(cur_file_folder, './server.yaml'),
+                                                    log_config=os.path.join(cur_file_folder,
+                                                                            '../../_assets/serverLogger.yaml'),
                                                     **options))
 
     async def serve(self):

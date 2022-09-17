@@ -12,7 +12,7 @@ cur_file_folder = os.path.dirname(cur_file_path)
 
 
 class FontStyle:
-    file: str = os.path.join(cur_file_folder, '../../assets/font/HarmonyOS_Sans_SC.ttf')
+    file: str = os.path.join(cur_file_folder, '../../_assets/font/HarmonyOS_Sans_SC.ttf')
     font_size: int = 15
     line_height: int = 16
     color: str = '#000000'
