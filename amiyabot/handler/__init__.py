@@ -135,8 +135,10 @@ class BotHandlerFactory:
 
 
 class PluginInstance(BotHandlerFactory):
-    def __init__(self, name: str, description: str = None):
+    def __init__(self, plugin_id: str, name: str, description: str = None):
         super().__init__()
+
+        self.plugin_id = plugin_id
 
         self.name = name
         self.description = description
@@ -154,14 +156,19 @@ class BotInstance(BotHandlerFactory):
             self.instance = adapter(appid, token)
 
         self.appid = appid
+        self.plugins: Dict[str, PluginInstance] = {}
 
     def load_plugin(self, path: str):
         with log.sync_catch('plugin load error:'):
-            if path.endswith('.py'):
+            if os.path.isdir(path):
+                path_split = path.replace('\\', '/').split('/')
+                append_sys_path(os.path.abspath('/'.join(path_split[:-1])))
+                module = importlib.import_module(path_split[-1])
+            elif path.endswith('.py'):
                 append_sys_path(os.path.abspath(os.path.dirname(path)))
                 module = importlib.import_module(os.path.basename(path).strip('.py'))
             elif path.endswith('.zip'):
-                append_sys_path(path)
+                append_sys_path(os.path.abspath(path))
                 module = zipimport.zipimporter(path).load_module('__init__')
             else:
                 return None
@@ -169,6 +176,7 @@ class BotInstance(BotHandlerFactory):
             plugin: PluginInstance = getattr(module, 'plugin')
 
             self.combine_factory(self, plugin)
+            self.plugins[plugin.plugin_id] = plugin
 
             return plugin
 
