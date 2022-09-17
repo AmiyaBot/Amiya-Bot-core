@@ -167,11 +167,9 @@ class BotInstance(BotHandlerFactory):
             elif path.endswith('.py'):
                 append_sys_path(os.path.abspath(os.path.dirname(path)))
                 module = importlib.import_module(os.path.basename(path).strip('.py'))
-            elif path.endswith('.zip'):
+            else:
                 append_sys_path(os.path.abspath(path))
                 module = zipimport.zipimporter(path).load_module('__init__')
-            else:
-                return None
 
             plugin: PluginInstance = getattr(module, 'plugin')
 
