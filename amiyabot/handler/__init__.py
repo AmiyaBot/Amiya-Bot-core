@@ -74,9 +74,9 @@ class BotHandlerFactory:
 
         attr_type = type(self_attr)
 
-        if attr_type == list:
+        if attr_type is list:
             return self_attr + list(chain(*plugin_attr))
-        elif attr_type == dict:
+        elif attr_type is dict:
             value = {**self_attr}
             plugin_value = dict(ChainMap(*plugin_attr))
             for k in plugin_value:
@@ -239,33 +239,37 @@ class BotInstance(BotHandlerFactory):
             adapter
         )
 
-    def install_plugin(self, path: str):
+    def install_plugin(self, plugin: Union[str, PluginInstance]):
         with log.sync_catch('plugin install error:'):
-            if os.path.isdir(path):
-                # 以 Python Package 的形式加载
-                path_split = path.replace('\\', '/').split('/')
-                append_sys_path(os.path.abspath('/'.join(path_split[:-1])))
-                module = importlib.import_module(path_split[-1])
-            elif path.endswith('.py'):
-                # 以 py 文件的形式加载
-                append_sys_path(os.path.abspath(os.path.dirname(path)))
-                module = importlib.import_module(os.path.basename(path).strip('.py'))
-            else:
-                # 以包的形式加载，方式同 Python Package
-                append_sys_path(os.path.abspath(path))
-                module = zipimport.zipimporter(path).load_module('__init__')
+            if type(plugin) is str:
+                if os.path.isdir(plugin):
+                    # 以 Python Package 的形式加载
+                    path_split = plugin.replace('\\', '/').split('/')
+                    append_sys_path(os.path.abspath('/'.join(path_split[:-1])))
+                    module = importlib.import_module(path_split[-1])
+                elif plugin.endswith('.py'):
+                    # 以 py 文件的形式加载
+                    append_sys_path(os.path.abspath(os.path.dirname(plugin)))
+                    module = importlib.import_module(os.path.basename(plugin).strip('.py'))
+                else:
+                    # 以包的形式加载，方式同 Python Package
+                    append_sys_path(os.path.abspath(plugin))
+                    module = zipimport.zipimporter(plugin).load_module('__init__')
 
-            plugin: PluginInstance = getattr(module, 'bot')
-            plugin_id = plugin.plugin_id
+                instance: PluginInstance = getattr(module, 'bot')
+            else:
+                instance = plugin
+
+            plugin_id = instance.plugin_id
 
             assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
 
             # 继承父级的前缀检查词
-            plugin.set_prefix_keywords(self.prefix_keywords)
+            instance.set_prefix_keywords(self.prefix_keywords)
 
-            self.plugins[plugin_id] = plugin
+            self.plugins[plugin_id] = instance
 
-            return plugin
+            return instance
 
     def uninstall_plugin(self, plugin_id: str):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
