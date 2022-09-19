@@ -2,31 +2,99 @@ import os
 import zipimport
 import importlib
 
-from typing import Type
+from itertools import chain
+from collections import ChainMap
+
 from amiyabot import log
 from amiyabot.util import append_sys_path
+from amiyabot.help import Helper
 
 from .messageHandlerDefine import *
 
 
 class BotHandlerFactory:
-    def __init__(self):
-        self.prefix_keywords = list()
-        self.group_config = GroupConfigManager()
+    def __init__(self,
+                 appid: str = None,
+                 token: str = None,
+                 adapter: Type[BotAdapterProtocol] = None):
 
-        self.event_handlers: Dict[str, List[EVENT_CORO]] = dict()
-        self.message_handlers: List[MessageHandlerItem] = list()
-        self.exception_handlers: Dict[Type[Exception], List[EXCEPTION_CORO]] = dict()
+        self.appid = appid
+        self.instance: Optional[BotAdapterProtocol] = None
+        if adapter:
+            self.instance = adapter(appid, token)
 
-        self.after_reply_handlers: List[AFTER_CORO] = list()
-        self.before_reply_handlers: List[BEFORE_CORO] = list()
-        self.message_handler_middleware: List[MIDDLE_WARE] = list()
+        self._prefix_keywords: PrefixKeywords = list()
 
+        self._event_handlers: EventHandlers = dict()
+        self._message_handlers: MessageHandlers = list()
+        self._exception_handlers: ExceptionHandlers = dict()
+        self._after_reply_handlers: AfterReplyHandlers = list()
+        self._before_reply_handlers: BeforeReplyHandlers = list()
+        self._message_handler_middleware: MessageHandlerMiddleware = list()
+
+        self._group_config: Dict[str, GroupConfig] = dict()
+
+        self.plugins: Dict[str, BotHandlerFactory] = dict()
+
+    @property
+    def prefix_keywords(self) -> PrefixKeywords:
+        return self.__get_with_plugins('_prefix_keywords')
+
+    @property
+    def event_handlers(self) -> EventHandlers:
+        return self.__get_with_plugins('_event_handlers')
+
+    @property
+    def message_handlers(self) -> MessageHandlers:
+        return self.__get_with_plugins('_message_handlers')
+
+    @property
+    def exception_handlers(self) -> ExceptionHandlers:
+        return self.__get_with_plugins('_exception_handlers')
+
+    @property
+    def after_reply_handlers(self) -> AfterReplyHandlers:
+        return self.__get_with_plugins('_after_reply_handlers')
+
+    @property
+    def before_reply_handlers(self) -> BeforeReplyHandlers:
+        return self.__get_with_plugins('_before_reply_handlers')
+
+    @property
+    def message_handler_middleware(self) -> MessageHandlerMiddleware:
+        return self.__get_with_plugins('_message_handler_middleware')
+
+    @property
+    def group_config(self) -> Dict[str, GroupConfig]:
+        return self.__get_with_plugins('_group_config')
+
+    def __get_with_plugins(self, attr: str):
+        self_attr = getattr(self, attr)
+        plugin_attr = (getattr(n, attr.strip('_')) for _, n in self.plugins.items())
+
+        attr_type = type(self_attr)
+
+        if attr_type == list:
+            return self_attr + list(chain(*plugin_attr))
+        elif attr_type == dict:
+            value = {**self_attr}
+            plugin_value = dict(ChainMap(*plugin_attr))
+            for k in plugin_value:
+                if k not in value:
+                    value[k] = plugin_value[k]
+                else:
+                    value[k] += plugin_value[k]
+            return value
+
+    def __get_prefix_keywords(self):
+        return list(set(self.prefix_keywords))
+
+    @Helper.record
     def on_message(self,
                    group_id: Union[GroupConfig, str] = None,
-                   keywords: KEYWORDS = None,
-                   verify: VERIFY_CORO = None,
-                   check_prefix: PREFIX = None,
+                   keywords: KeywordsType = None,
+                   verify: VerifyMethodType = None,
+                   check_prefix: CheckPrefixType = None,
                    allow_direct: Optional[bool] = None,
                    direct_only: bool = False,
                    level: int = 0):
@@ -43,24 +111,25 @@ class BotHandlerFactory:
         :return:              注册函数的装饰器
         """
 
-        def register(func: FUNC_CORO):
-            _handler = MessageHandlerItem(func,
-                                          self.group_config,
-                                          level=level,
-                                          group_id=str(group_id),
-                                          direct_only=direct_only,
-                                          allow_direct=allow_direct,
-                                          check_prefix=check_prefix,
-                                          prefix_keywords=self.prefix_keywords)
+        def register(func: FunctionType):
+            handler = MessageHandlerItem(func,
+                                         group_id=str(group_id),
+                                         group_config=self.group_config.get(str(group_id)),
+                                         level=level,
+                                         direct_only=direct_only,
+                                         allow_direct=allow_direct,
+                                         check_prefix=check_prefix,
+                                         prefix_keywords=self.__get_prefix_keywords)
             if verify:
-                _handler.custom_verify = verify
+                handler.custom_verify = verify
             else:
-                _handler.keywords = keywords
+                handler.keywords = keywords
 
-            self.message_handlers.append(_handler)
+            self._message_handlers.append(handler)
 
         return register
 
+    @Helper.record
     def on_event(self, events: Union[str, List[str]]):
         """
         事件响应注册器
@@ -69,19 +138,20 @@ class BotHandlerFactory:
         :return:
         """
 
-        def register(func: EVENT_CORO):
+        def register(func: EventHandlerType):
             nonlocal events
             if type(events) is not list:
                 events = [events]
 
             for item in events:
-                if item not in self.event_handlers:
-                    self.event_handlers[item] = []
+                if item not in self._event_handlers:
+                    self._event_handlers[item] = []
 
-                self.event_handlers[item].append(func)
+                self._event_handlers[item].append(func)
 
         return register
 
+    @Helper.record
     def on_exception(self, exceptions: Union[Type[Exception], List[Type[Exception]]] = Exception):
         """
         注册异常处理器，参数为异常类型或异常类型列表，在执行通过本实例注册的所有方法产生异常时会被调用
@@ -90,57 +160,69 @@ class BotHandlerFactory:
         :return:           注册函数的装饰器
         """
 
-        def handler(func: EXCEPTION_CORO):
+        def handler(func: ExceptionHandlerType):
             nonlocal exceptions
             if type(exceptions) is not list:
                 exceptions = [exceptions]
 
             for item in exceptions:
-                if item not in self.exception_handlers:
-                    self.exception_handlers[item] = []
+                if item not in self._exception_handlers:
+                    self._exception_handlers[item] = []
 
-                self.exception_handlers[item].append(func)
+                self._exception_handlers[item].append(func)
 
         return handler
 
-    def before_bot_reply(self, handler: BEFORE_CORO):
+    @Helper.record
+    def before_bot_reply(self, handler: BeforeReplyHandlerType):
         """
         Bot 回复前处理，用于定义当 Bot 即将回复消息时的操作，该操作会在处理消息前执行
 
         :param handler: 处理函数
         :return:
         """
-        self.before_reply_handlers.append(handler)
+        self._before_reply_handlers.append(handler)
 
-    def after_bot_reply(self, handler: AFTER_CORO):
+    @Helper.record
+    def after_bot_reply(self, handler: AfterReplyHandlerType):
         """
         Bot 回复后处理，用于定义当 Bot 回复消息后的操作，该操作会在发送消息后执行
 
         :param handler: 处理函数
         :return:
         """
-        self.after_reply_handlers.append(handler)
+        self._after_reply_handlers.append(handler)
 
-    def handler_middleware(self, handler: MIDDLE_WARE):
+    @Helper.record
+    def handler_middleware(self, handler: MessageHandlerMiddlewareType):
         """
         Message 对象与消息处理器的中间件，用于对 Message 作进一步的客制化处理，允许存在多个，但会根据加载顺序叠加使用
 
         :param handler: 处理函数
         :return:
         """
-        self.message_handler_middleware.append(handler)
+        self._message_handler_middleware.append(handler)
 
     def set_group_config(self, config: GroupConfig):
-        self.group_config.config[config.group_id] = config
+        self._group_config[config.group_id] = config
+
+    def set_prefix_keywords(self, keyword: Union[str, List[str]]):
+        self._prefix_keywords += [keyword] if type(keyword) != list else keyword
 
 
 class PluginInstance(BotHandlerFactory):
-    def __init__(self, plugin_id: str, name: str, description: str = None):
+    def __init__(self,
+                 name: str,
+                 version: str,
+                 plugin_id: str,
+                 plugin_type: str = None,
+                 description: str = None):
         super().__init__()
 
-        self.plugin_id = plugin_id
-
         self.name = name
+        self.version = version
+        self.plugin_id = plugin_id
+        self.plugin_type = plugin_type
         self.description = description
 
 
@@ -149,52 +231,44 @@ class BotInstance(BotHandlerFactory):
                  appid: str = None,
                  token: str = None,
                  adapter: Type[BotAdapterProtocol] = None):
-        super().__init__()
+        super().__init__(
+            appid,
+            token,
+            adapter
+        )
 
-        self.instance: Optional[BotAdapterProtocol] = None
-        if adapter:
-            self.instance = adapter(appid, token)
-
-        self.appid = appid
-        self.plugins: Dict[str, PluginInstance] = {}
-
-    def load_plugin(self, path: str):
-        with log.sync_catch('plugin load error:'):
+    def install_plugin(self, path: str):
+        with log.sync_catch('plugin install error:'):
             if os.path.isdir(path):
+                # 以 Python Package 的形式加载
                 path_split = path.replace('\\', '/').split('/')
                 append_sys_path(os.path.abspath('/'.join(path_split[:-1])))
                 module = importlib.import_module(path_split[-1])
             elif path.endswith('.py'):
+                # 以 py 文件的形式加载
                 append_sys_path(os.path.abspath(os.path.dirname(path)))
                 module = importlib.import_module(os.path.basename(path).strip('.py'))
             else:
+                # 以包的形式加载，方式同 Python Package
                 append_sys_path(os.path.abspath(path))
                 module = zipimport.zipimporter(path).load_module('__init__')
 
-            plugin: PluginInstance = getattr(module, 'plugin')
+            plugin: PluginInstance = getattr(module, 'bot')
+            plugin_id = plugin.plugin_id
 
-            self.combine_factory(self, plugin)
-            self.plugins[plugin.plugin_id] = plugin
+            assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
+
+            # 继承父级的前缀检查词
+            plugin.set_prefix_keywords(self.prefix_keywords)
+
+            self.plugins[plugin_id] = plugin
 
             return plugin
 
-    @staticmethod
-    def combine_factory(target: BotHandlerFactory, parent: BotHandlerFactory):
-        target.prefix_keywords += parent.prefix_keywords
-        target.message_handlers += parent.message_handlers
-        target.after_reply_handlers += parent.after_reply_handlers
-        target.before_reply_handlers += parent.before_reply_handlers
-        target.message_handler_middleware += parent.message_handler_middleware
+    def uninstall_plugin(self, plugin_id: str):
+        assert plugin_id != '__factory__'
 
-        target.group_config.config.update(parent.group_config.config)
+        del self.plugins[plugin_id]
 
-        dict_handlers = [
-            'event_handlers',
-            'exception_handlers'
-        ]
-        for keyname in dict_handlers:
-            for e in getattr(parent, keyname):
-                if e not in getattr(target, keyname):
-                    getattr(target, keyname)[e] = getattr(parent, keyname)[e]
-                else:
-                    getattr(target, keyname)[e] += getattr(parent, keyname)[e]
+    def combine_factory(self, factory: BotHandlerFactory):
+        self.plugins['__factory__'] = factory

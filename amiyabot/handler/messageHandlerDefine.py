@@ -1,20 +1,20 @@
 import re
 
-from typing import Any, Dict, List, Tuple, Union, Optional, Callable, Coroutine
-from dataclasses import dataclass, field
+from typing import Any, Type, Dict, List, Tuple, Union, Optional, Callable, Coroutine
+from dataclasses import dataclass
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.message import Event, Message, MessageMatch, Verify, Equal
 from amiyabot.adapters import BotAdapterProtocol
 
-PREFIX = Optional[Union[bool, List[str]]]
-KEYWORDS = Union[str, Equal, re.Pattern, List[Union[str, Equal, re.Pattern]]]
-FUNC_CORO = Callable[[Message], Coroutine[Any, Any, Optional[Chain]]]
-EVENT_CORO = Callable[[Event, BotAdapterProtocol], Coroutine[Any, Any, None]]
-AFTER_CORO = Callable[[Chain], Coroutine[Any, Any, None]]
-BEFORE_CORO = Callable[[Message], Coroutine[Any, Any, bool]]
-VERIFY_CORO = Callable[[Message], Coroutine[Any, Any, Union[bool, Tuple[bool, int]]]]
-MIDDLE_WARE = Callable[[Message], Coroutine[Any, Any, Optional[Message]]]
-EXCEPTION_CORO = Callable[[Exception, BotAdapterProtocol], Coroutine[Any, Any, None]]
+KeywordsType = Union[str, Equal, re.Pattern, List[Union[str, Equal, re.Pattern]]]
+FunctionType = Callable[[Message], Coroutine[Any, Any, Optional[Chain]]]
+CheckPrefixType = Optional[Union[bool, List[str]]]
+VerifyMethodType = Callable[[Message], Coroutine[Any, Any, Union[bool, Tuple[bool, int]]]]
+EventHandlerType = Callable[[Event, BotAdapterProtocol], Coroutine[Any, Any, None]]
+ExceptionHandlerType = Callable[[Exception, BotAdapterProtocol], Coroutine[Any, Any, None]]
+AfterReplyHandlerType = Callable[[Chain], Coroutine[Any, Any, None]]
+BeforeReplyHandlerType = Callable[[Message], Coroutine[Any, Any, bool]]
+MessageHandlerMiddlewareType = Callable[[Message], Coroutine[Any, Any, Optional[Message]]]
 
 
 @dataclass
@@ -29,30 +29,23 @@ class GroupConfig:
 
 
 @dataclass
-class GroupConfigManager:
-    config: Dict[str, GroupConfig] = field(default_factory=dict)
-
-    def get_config(self, config_id: str):
-        return self.config.get(config_id, None) if config_id else None
-
-
-@dataclass
 class MessageHandlerItem:
-    function: FUNC_CORO
-    group_config: GroupConfigManager
+    function: FunctionType
+    prefix_keywords: Callable[[], List[str]]
+
     group_id: str = None
-    keywords: KEYWORDS = None
+    group_config: GroupConfig = None
+    keywords: KeywordsType = None
     allow_direct: Optional[bool] = None
     direct_only: bool = False
-    check_prefix: PREFIX = None
-    custom_verify: VERIFY_CORO = None
-    prefix_keywords: List[str] = None
+    check_prefix: CheckPrefixType = None
+    custom_verify: VerifyMethodType = None
     level: int = 0
 
     def __repr__(self):
         return f'<MessageHandlerItem, {self.custom_verify or self.keywords}>'
 
-    def __check(self, data: Message, obj: KEYWORDS) -> Verify:
+    def __check(self, data: Message, obj: KeywordsType) -> Verify:
         methods = {
             str: MessageMatch.check_str,
             Equal: MessageMatch.check_equal,
@@ -75,13 +68,11 @@ class MessageHandlerItem:
         return Verify(False)
 
     async def verify(self, data: Message):
-        group_config = self.group_config.get_config(self.group_id)
-
-        direct_only = self.direct_only or (group_config and group_config.direct_only)
+        direct_only = self.direct_only or (self.group_config and self.group_config.direct_only)
 
         if self.check_prefix is None:
-            if group_config:
-                need_check_prefix = group_config and group_config.check_prefix
+            if self.group_config:
+                need_check_prefix = self.group_config and self.group_config.check_prefix
             else:
                 need_check_prefix = True
         else:
@@ -92,7 +83,7 @@ class MessageHandlerItem:
 
                 # 检查是否支持私信
                 if self.allow_direct is None:
-                    if not group_config or not group_config.allow_direct:
+                    if not self.group_config or not self.group_config.allow_direct:
                         return Verify(False)
 
                 if self.allow_direct is False:
@@ -110,7 +101,7 @@ class MessageHandlerItem:
                 if data.is_at:
                     flag = True
                 else:
-                    for word in (need_check_prefix if type(need_check_prefix) is list else self.prefix_keywords):
+                    for word in (need_check_prefix if type(need_check_prefix) is list else self.prefix_keywords()):
                         if data.text_origin.startswith(word):
                             flag = True
                             break
@@ -141,3 +132,12 @@ class MessageHandlerItem:
 
     async def action(self, data: Message):
         return await self.function(data)
+
+
+PrefixKeywords = List[str]
+EventHandlers = Dict[str, List[EventHandlerType]]
+MessageHandlers = List[MessageHandlerItem]
+ExceptionHandlers = Dict[Type[Exception], List[ExceptionHandlerType]]
+AfterReplyHandlers = List[AfterReplyHandlerType]
+BeforeReplyHandlers = List[BeforeReplyHandlerType]
+MessageHandlerMiddleware = List[MessageHandlerMiddlewareType]

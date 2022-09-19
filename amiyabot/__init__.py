@@ -97,7 +97,8 @@ class MultipleAccounts(BotInstance):
     def append(self, item: AmiyaBot, enable_chromium: bool = False, start_up: bool = True):
         assert self.__ready, 'MultipleAccounts not started'
 
-        self.combine_factory(item, self)
+        item.combine_factory(self)
+
         appid = str(item.appid)
 
         if appid not in self.__instances:
