@@ -17,7 +17,7 @@ class MysqlConfig:
 
 
 class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase, ABC):
-    pass
+    ...
 
 
 class ModelClass(Model):

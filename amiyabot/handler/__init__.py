@@ -34,7 +34,7 @@ class BotHandlerFactory:
 
         self._group_config: Dict[str, GroupConfig] = dict()
 
-        self.plugins: Dict[str, BotHandlerFactory] = dict()
+        self.plugins: Dict[str, Union[BotHandlerFactory, PluginInstance]] = dict()
 
     @property
     def prefix_keywords(self) -> PrefixKeywords:
@@ -225,6 +225,8 @@ class PluginInstance(BotHandlerFactory):
         self.plugin_type = plugin_type
         self.description = description
 
+    def uninstall(self): ...
+
 
 class BotInstance(BotHandlerFactory):
     def __init__(self,
@@ -266,8 +268,9 @@ class BotInstance(BotHandlerFactory):
             return plugin
 
     def uninstall_plugin(self, plugin_id: str):
-        assert plugin_id != '__factory__'
+        assert plugin_id != '__factory__' and plugin_id in self.plugins
 
+        self.plugins[plugin_id].uninstall()
         del self.plugins[plugin_id]
 
     def combine_factory(self, factory: BotHandlerFactory):
