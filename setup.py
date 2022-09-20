@@ -1,3 +1,4 @@
+import os
 import json
 import setuptools
 
@@ -23,10 +24,10 @@ with open('requirements.txt', mode='r', encoding='utf-8') as req:
 with open('requirements.txt', mode='w', encoding='utf-8') as req:
     req.write('\n'.join(requirements))
 
-data_files = [
-    'amiyabot/_assets/font/HarmonyOS_Sans_SC.ttf',
-    'amiyabot/_assets/serverLogger.yaml'
-]
+data_files = []
+for root, dirs, files in os.walk('amiyabot/_assets'):
+    for item in files:
+        data_files.append(os.path.join(root, item))
 
 setuptools.setup(
     name='amiyabot',

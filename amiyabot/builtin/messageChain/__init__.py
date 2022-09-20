@@ -6,6 +6,11 @@ from amiyabot.builtin.lib.imageCreator import create_image, IMAGES_TYPE
 
 from .element import *
 
+cur_file_path = os.path.abspath(__file__)
+cur_file_folder = os.path.dirname(cur_file_path)
+
+md_template = os.path.join(cur_file_folder, '../../_assets/markdown/template.html')
+
 PADDING = 10
 IMAGE_WIDTH = 700
 MAX_SEAT = IMAGE_WIDTH - PADDING * 2
@@ -119,6 +124,9 @@ class Chain:
     def voice(self, url: str, title: str = 'voice'):
         self.chain.append(Voice(url, title))
         return self
+
+    def markdown(self, content: str, render_time: int = 200):
+        return self.html(md_template, data={'content': content}, render_time=render_time)
 
     def html(self,
              path: str,
