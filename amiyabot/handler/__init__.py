@@ -216,7 +216,8 @@ class PluginInstance(BotHandlerFactory):
                  version: str,
                  plugin_id: str,
                  plugin_type: str = None,
-                 description: str = None):
+                 description: str = None,
+                 document: str = None):
         super().__init__()
 
         self.name = name
@@ -224,6 +225,7 @@ class PluginInstance(BotHandlerFactory):
         self.plugin_id = plugin_id
         self.plugin_type = plugin_type
         self.description = description
+        self.document = document
 
     def uninstall(self): ...
 
