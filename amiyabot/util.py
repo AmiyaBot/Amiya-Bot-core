@@ -7,6 +7,7 @@ import asyncio
 
 from string import punctuation
 from functools import partial
+from contextlib import contextmanager
 from zhon.hanzi import punctuation as punctuation_cn
 from concurrent.futures import ThreadPoolExecutor
 
@@ -27,6 +28,18 @@ async def run_in_thread_pool(block_func, *args, **kwargs):
     return await loop.run_in_executor(executor, partial(block_func, *args, **kwargs))
 
 
+@contextmanager
+def temp_sys_path(path: str):
+    sys.path.insert(0, path)
+    yield
+    sys.path.remove(path)
+
+
+def append_sys_path(path: str):
+    if path not in sys.path:
+        sys.path.append(path)
+
+
 def argv(name, formatter=str):
     key = f'--{name}'
     if key in sys.argv:
@@ -39,11 +52,6 @@ def argv(name, formatter=str):
             return True
         else:
             return formatter(sys.argv[index])
-
-
-def append_sys_path(path: str):
-    if path not in sys.path:
-        sys.path.append(path)
 
 
 def create_dir(path: str, is_file: bool = False):

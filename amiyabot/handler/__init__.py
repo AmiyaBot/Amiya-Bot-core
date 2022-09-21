@@ -6,7 +6,7 @@ from itertools import chain
 from collections import ChainMap
 
 from amiyabot import log
-from amiyabot.util import append_sys_path
+from amiyabot.util import temp_sys_path
 from amiyabot.help import Helper
 
 from .messageHandlerDefine import *
@@ -227,6 +227,8 @@ class PluginInstance(BotHandlerFactory):
         self.description = description
         self.document = document
 
+    def install(self): ...
+
     def uninstall(self): ...
 
 
@@ -247,16 +249,16 @@ class BotInstance(BotHandlerFactory):
                 if os.path.isdir(plugin):
                     # 以 Python Package 的形式加载
                     path_split = plugin.replace('\\', '/').split('/')
-                    append_sys_path(os.path.abspath('/'.join(path_split[:-1])))
-                    module = importlib.import_module(path_split[-1])
+                    with temp_sys_path(os.path.abspath('/'.join(path_split[:-1]))):
+                        module = importlib.import_module(path_split[-1])
                 elif plugin.endswith('.py'):
                     # 以 py 文件的形式加载
-                    append_sys_path(os.path.abspath(os.path.dirname(plugin)))
-                    module = importlib.import_module(os.path.basename(plugin).strip('.py'))
+                    with temp_sys_path(os.path.abspath(os.path.dirname(plugin))):
+                        module = importlib.import_module(os.path.basename(plugin).strip('.py'))
                 else:
                     # 以包的形式加载，方式同 Python Package
-                    append_sys_path(os.path.abspath(plugin))
-                    module = zipimport.zipimporter(plugin).load_module('__init__')
+                    with temp_sys_path(os.path.abspath(plugin)):
+                        module = zipimport.zipimporter(plugin).load_module('__init__')
 
                 instance: PluginInstance = getattr(module, 'bot')
             else:
@@ -266,8 +268,9 @@ class BotInstance(BotHandlerFactory):
 
             assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
 
-            # 继承父级的前缀检查词
+            # 安装插件
             instance.set_prefix_keywords(self.prefix_keywords)
+            instance.install()
 
             self.plugins[plugin_id] = instance
 
