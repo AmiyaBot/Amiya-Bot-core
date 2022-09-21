@@ -5,11 +5,16 @@ import setuptools
 from urllib import request
 
 pypi = json.loads(request.urlopen('https://pypi.python.org/pypi/amiyabot/json').read())
-latest = list(pypi['releases'].keys())[-1]
+v_list = {int(v.replace('.', '')): v for v in pypi['releases'].keys()}
+s_list = sorted(v_list)
+latest = v_list[s_list[-1]]
 
 print(f'latest: {latest}')
 
-new_version = latest[:-1] + str(int(latest[-1]) + 1)
+latest = latest.split('.')
+latest[-1] = str(int(latest[-1]) + 1)
+
+new_version = '.'.join(latest)
 release_new = input(f'new?: {new_version} (Y/n)')
 
 if not (not release_new or release_new.lower() == 'y'):
