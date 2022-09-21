@@ -1,4 +1,5 @@
 import os
+import shutil
 import zipimport
 import importlib
 
@@ -227,6 +228,8 @@ class PluginInstance(BotHandlerFactory):
         self.description = description
         self.document = document
 
+        self.path = ''
+
     def install(self): ...
 
     def uninstall(self): ...
@@ -261,6 +264,7 @@ class BotInstance(BotHandlerFactory):
                         module = zipimport.zipimporter(plugin).load_module('__init__')
 
                 instance: PluginInstance = getattr(module, 'bot')
+                instance.path = plugin
             else:
                 instance = plugin
 
@@ -276,11 +280,19 @@ class BotInstance(BotHandlerFactory):
 
             return instance
 
-    def uninstall_plugin(self, plugin_id: str):
+    def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
+
+        path = self.plugins[plugin_id].path
 
         self.plugins[plugin_id].uninstall()
         del self.plugins[plugin_id]
+
+        if remove and path:
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
 
     def combine_factory(self, factory: BotHandlerFactory):
         self.plugins['__factory__'] = factory
