@@ -48,7 +48,7 @@ class Chain:
         if data and at and not data.is_direct:
             self.at(enter=True)
 
-    def at(self, user: int = None, enter: bool = False):
+    def at(self, user: str = None, enter: bool = False):
         if self.data and not self.data.is_direct:
             self.chain.append(At(user or self.data.user_id))
             if enter:
