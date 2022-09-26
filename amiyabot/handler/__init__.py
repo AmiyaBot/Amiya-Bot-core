@@ -7,7 +7,7 @@ from itertools import chain
 from collections import ChainMap
 
 from amiyabot import log
-from amiyabot.util import temp_sys_path
+from amiyabot.util import temp_sys_path, extract_zip
 from amiyabot.help import Helper
 
 from .messageHandlerDefine import *
@@ -246,22 +246,32 @@ class BotInstance(BotHandlerFactory):
             adapter
         )
 
-    def install_plugin(self, plugin: Union[str, PluginInstance]):
+    def install_plugin(self,
+                       plugin: Union[str, PluginInstance],
+                       extract_plugin: bool = False,
+                       extract_plugin_dest: str = None):
         with log.sync_catch('plugin install error:'):
             if type(plugin) is str:
                 if os.path.isdir(plugin):
                     # 以 Python Package 的形式加载
-                    path_split = plugin.replace('\\', '/').split('/')
-                    with temp_sys_path(os.path.abspath('/'.join(path_split[:-1]))):
-                        module = importlib.import_module(path_split[-1])
+                    with temp_sys_path(os.path.dirname(plugin)):
+                        module = importlib.import_module(os.path.basename(plugin))
                 elif plugin.endswith('.py'):
                     # 以 py 文件的形式加载
                     with temp_sys_path(os.path.abspath(os.path.dirname(plugin))):
                         module = importlib.import_module(os.path.basename(plugin).strip('.py'))
                 else:
                     # 以包的形式加载，方式同 Python Package
-                    with temp_sys_path(os.path.abspath(plugin)):
-                        module = zipimport.zipimporter(plugin).load_module('__init__')
+                    if not extract_plugin:
+                        with temp_sys_path(os.path.abspath(plugin)):
+                            module = zipimport.zipimporter(plugin).load_module('__init__')
+                    else:
+                        dest = (extract_plugin_dest or os.path.abspath(os.path.splitext(plugin)[0])).replace('.', '_')
+
+                        extract_zip(plugin, dest)
+
+                        with temp_sys_path(os.path.dirname(dest)):
+                            module = importlib.import_module(os.path.basename(dest))
 
                 instance: PluginInstance = getattr(module, 'bot')
                 instance.path = plugin

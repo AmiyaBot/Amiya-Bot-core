@@ -1,7 +1,7 @@
 aiohttp~=3.7.4.post0
 fastapi-utils~=0.2.1
 fastapi~=0.79.0
-graiax-silkcoder~=0.2.8
+graiax-silkcoder~=0.3.4
 jieba~=0.42.1
 peewee~=3.14.10
 pillow~=9.1.1
