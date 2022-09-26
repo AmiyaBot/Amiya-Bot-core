@@ -52,7 +52,7 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         if bot.before_reply_handlers:
             for action in bot.before_reply_handlers:
                 res = await action(data)
-                if not res:
+                if res is False:
                     flag = False
         if not flag:
             return None

@@ -39,7 +39,7 @@ class BotHandlerFactory:
 
     @property
     def prefix_keywords(self) -> PrefixKeywords:
-        return self.__get_with_plugins('_prefix_keywords')
+        return list(set(self.__get_with_plugins('_prefix_keywords')))
 
     @property
     def event_handlers(self) -> EventHandlers:
