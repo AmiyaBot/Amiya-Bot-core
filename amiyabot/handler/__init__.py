@@ -228,7 +228,7 @@ class PluginInstance(BotHandlerFactory):
         self.description = description
         self.document = document
 
-        self.path = ''
+        self.path = []
 
     def install(self): ...
 
@@ -266,7 +266,7 @@ class BotInstance(BotHandlerFactory):
                         with temp_sys_path(os.path.abspath(plugin)):
                             module = zipimport.zipimporter(plugin).load_module('__init__')
                     else:
-                        dest = (extract_plugin_dest or os.path.abspath(os.path.splitext(plugin)[0])).replace('.', '_')
+                        dest = os.path.abspath(extract_plugin_dest or os.path.splitext(plugin)[0].replace('.', '_'))
 
                         extract_zip(plugin, dest)
 
@@ -274,7 +274,9 @@ class BotInstance(BotHandlerFactory):
                             module = importlib.import_module(os.path.basename(dest))
 
                 instance: PluginInstance = getattr(module, 'bot')
-                instance.path = plugin
+                instance.path.append(plugin)
+                if extract_plugin:
+                    instance.path.append(dest)
             else:
                 instance = plugin
 
@@ -293,16 +295,16 @@ class BotInstance(BotHandlerFactory):
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
 
-        path = self.plugins[plugin_id].path
-
         self.plugins[plugin_id].uninstall()
-        del self.plugins[plugin_id]
 
-        if remove and path:
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            else:
-                os.remove(path)
+        if remove and self.plugins[plugin_id].path:
+            for item in self.plugins[plugin_id].path:
+                if os.path.isdir(item):
+                    shutil.rmtree(item)
+                else:
+                    os.remove(item)
+
+        del self.plugins[plugin_id]
 
     def combine_factory(self, factory: BotHandlerFactory):
         self.plugins['__factory__'] = factory
