@@ -27,7 +27,8 @@ class MiraiPostPayload:
         return cls.builder('sendGroupMessage', options={'quote': quote}, content={
             'sessionKey': session,
             'target': target_id,
-            'messageChain': chains
+            'messageChain': chains,
+            'quote': quote
         })
 
     @classmethod

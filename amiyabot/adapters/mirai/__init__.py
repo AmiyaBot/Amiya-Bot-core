@@ -98,7 +98,6 @@ class MiraiBotInstance(BotAdapterProtocol):
             await self.connection.send(reply)
 
         if voice_list:
-            chain.reference = False
             for voice in voice_list:
                 await self.connection.send(voice)
 

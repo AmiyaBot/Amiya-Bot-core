@@ -57,10 +57,10 @@ async def build_message_send(address: str, session: str, chain: Chain, custom_ch
 
             # Voice
             if type(item) is Voice:
-                voice_list.append(select_type(chain, session, {
+                voice_list.append(select_type(chain, session, [{
                     'type': 'Voice',
                     'voiceId': await get_voice_id(api, item.url, chain.data.message_type)
-                }))
+                }]))
 
             # Html
             if type(item) is Html:
