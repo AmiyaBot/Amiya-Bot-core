@@ -1,12 +1,15 @@
 import os
 import sys
-import time
 import logging
 import traceback
 
-from typing import Union, Dict, List, Type, Iterator, Callable, Coroutine
+from typing import Union, Dict, List, Type, Any, Callable, Coroutine
 from contextlib import asynccontextmanager, contextmanager
 from logging.handlers import TimedRotatingFileHandler
+
+
+class UserLogger:
+    logger: Any = None
 
 
 class LoggerManager:
@@ -25,14 +28,17 @@ class LoggerManager:
         self.save_path = save_path
         self.default_file = default_file
 
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-
     def __handler(self, filename: str):
+        if UserLogger.logger:
+            return UserLogger.logger
+
         if not filename:
             filename = self.default_file
 
         if filename not in self.handlers:
+            if not os.path.exists(self.save_path):
+                os.makedirs(self.save_path)
+
             formatter = logging.Formatter(self.formatter)
 
             file_handler = TimedRotatingFileHandler(
@@ -59,14 +65,14 @@ class LoggerManager:
 
         return self.handlers[filename]
 
+    def debug(self, message: str, filename: str = None):
+        self.__handler(filename).debug(message.strip('\n'))
+
     def info(self, message: str, filename: str = None):
         self.__handler(filename).info(message.strip('\n'))
 
     def warning(self, message: str, filename: str = None):
         self.__handler(filename).warning(message.strip('\n'))
-
-    def debug(self, message: str, filename: str = None):
-        self.__handler(filename).debug(message.strip('\n'))
 
     def error(self, message: Union[str, Exception], desc: str = None, filename: str = None):
         handler = self.__handler(filename)
@@ -81,6 +87,9 @@ class LoggerManager:
         handler.error(text.strip('\n'))
 
         return text
+
+    def critical(self, message: str, filename: str = None):
+        self.__handler(filename).critical(message.strip('\n'))
 
     @asynccontextmanager
     async def catch(self,
@@ -113,48 +122,3 @@ class LoggerManager:
 
             if handler and error_message:
                 handler(err)
-
-
-def download_progress(title: str, max_size: int, chunk_size: int, iter_content: Iterator):
-    def print_bar():
-        curr = int(curr_size / max_size * 100)
-
-        used = time.time() - start_time
-        c_size = round(curr_size / 1024 / 1024, 2)
-        size = round(max_size / 1024 / 1024, 2)
-        average = (c_size / used) if used and curr_size else 0
-
-        average_text = f'{int(average)}mb/s'
-        if average < 1:
-            average_text = f'{int(average * 1024)}kb/s'
-
-        block = int(curr / 4)
-        bar = '=' * block + ' ' * (25 - block)
-
-        msg = f'{title} [{bar}] {c_size} / {size}mb ({curr}%) {average_text}'
-
-        print('\r', end='')
-        print(msg, end='')
-
-        sys.stdout.flush()
-
-    curr_size = 0
-    start_time = time.time()
-
-    print_bar()
-    for chunk in iter_content:
-        yield chunk
-        curr_size += chunk_size
-        print_bar()
-
-    print()
-
-
-basic = LoggerManager('Bot')
-
-info = basic.info
-error = basic.error
-debug = basic.debug
-catch = basic.catch
-warning = basic.warning
-sync_catch = basic.sync_catch

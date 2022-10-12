@@ -7,12 +7,10 @@ from amiyabot.adapters.tencent import TencentBotInstance
 from amiyabot.network.httpServer import HttpServer, ServerEventHandler
 from amiyabot.handler import BotInstance, PluginInstance, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
-from amiyabot.builtin.lib.htmlConverter import ChromiumBrowser
+from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
 from amiyabot.builtin.messageChain import Chain, ChainBuilder
 from amiyabot.builtin.message import Event, Message, WaitEventCancel, WaitEventOutOfFocus, Equal
 from amiyabot import log
-
-chromium = ChromiumBrowser()
 
 
 class AmiyaBot(BotInstance):
@@ -30,9 +28,9 @@ class AmiyaBot(BotInstance):
 
         ServerEventHandler.on_shutdown.append(self.close)
 
-    async def start(self, enable_chromium: bool = False):
-        if enable_chromium:
-            await chromium.launch()
+    async def start(self, launch_browser: Union[bool, BrowserLaunchConfig] = False):
+        if launch_browser:
+            await basic_browser_service.launch(BrowserLaunchConfig() if launch_browser is True else launch_browser)
 
         await self.instance.connect(self.private, self.__message_handler)
 
@@ -79,7 +77,7 @@ class MultipleAccounts(BotInstance):
         self.__instances[str(appid)].close()
         del self.__instances[str(appid)]
 
-    async def start(self, enable_chromium: bool = False):
+    async def start(self, launch_browser: Union[bool, BrowserLaunchConfig] = False):
         assert not self.__ready, 'MultipleAccounts already started'
 
         self.__ready = True
@@ -87,14 +85,14 @@ class MultipleAccounts(BotInstance):
         if self.__instances:
             await asyncio.wait(
                 [
-                    self.append(item, start_up=False).start(enable_chromium) for _, item in self.__instances.items()
+                    self.append(item, start_up=False).start(launch_browser) for _, item in self.__instances.items()
                 ]
             )
 
         while self.__keep_alive:
             await asyncio.sleep(1)
 
-    def append(self, item: AmiyaBot, enable_chromium: bool = False, start_up: bool = True):
+    def append(self, item: AmiyaBot, launch_browser: Union[bool, BrowserLaunchConfig] = False, start_up: bool = True):
         assert self.__ready, 'MultipleAccounts not started'
 
         item.combine_factory(self)
@@ -104,7 +102,7 @@ class MultipleAccounts(BotInstance):
         if appid not in self.__instances:
             self.__instances[appid] = item
             if start_up:
-                asyncio.create_task(item.start(enable_chromium))
+                asyncio.create_task(item.start(launch_browser))
 
         return item
 

@@ -54,7 +54,7 @@ class BotAdapterProtocol(object):
         """
         预处理并封装消息对象
 
-        :param event:        事件名
-        :param message:      消息对象
+        :param event:   事件名
+        :param message: 消息对象
         """
         raise NotImplementedError
