@@ -8,25 +8,25 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
-from .package import package_mirai_message
+from .package import package_cqhttp_message
 from .builder import build_message_send
-from .api import MiraiAPI
+from .api import CQHttpAPI
 
-log = LoggerManager('Mirai')
+log = LoggerManager('CQHttp')
 
 
-def mirai_api_http(host: str, ws_port: int, http_port: int):
+def cq_http(host: str, ws_port: int, http_port: int):
     def adapter(appid: str, token: str):
-        return MiraiBotInstance(appid, token, host, ws_port, http_port)
+        return CQHttpBotInstance(appid, token, host, ws_port, http_port)
 
     return adapter
 
 
-class MiraiBotInstance(BotAdapterProtocol):
+class CQHttpBotInstance(BotAdapterProtocol):
     def __init__(self, appid: str, token: str, host: str, ws_port: int, http_port: int):
         super().__init__(appid, token)
 
-        self.url = f'ws://{host}:{ws_port}/all?verifyKey={token}&&qq={appid}'
+        self.url = f'ws://{host}:{ws_port}/'
 
         self.connection: websockets.WebSocketClientProtocol = None
 
@@ -34,18 +34,10 @@ class MiraiBotInstance(BotAdapterProtocol):
         self.ws_port = ws_port
         self.http_port = http_port
 
-        self.session = None
-
-        self.api = MiraiAPI(f'{host}:{http_port}')
-
-    def __str__(self):
-        return 'Mirai'
+        self.api = CQHttpAPI(f'{host}:{http_port}')
 
     def close(self):
-        log.info(f'closing {self}(appid {self.appid})...')
-        self.keep_run = False
-
-        asyncio.create_task(self.connection.close())
+        pass
 
     async def connect(self, private: bool, handler: Callable):
         while self.keep_run:
@@ -58,7 +50,7 @@ class MiraiBotInstance(BotAdapterProtocol):
         log.info(f'connecting {mark}...')
         try:
             async with websockets.connect(self.url) as websocket:
-                log.info(f'{mark} connect successful. waiting handshake...')
+                log.info(f'{mark} connect successful.')
                 self.connection = websocket
                 self.set_alive(True)
 
@@ -67,10 +59,11 @@ class MiraiBotInstance(BotAdapterProtocol):
 
                     if message == b'':
                         await websocket.close()
-                        log.warning(f'{mark} mirai-api-http close the connection.')
+                        log.warning(f'{mark} cq-http close the connection.')
                         return False
 
-                    await self.handle_message(str(message), handler)
+                    async with log.catch(ignore=[json.JSONDecodeError]):
+                        asyncio.create_task(handler('', json.loads(message)))
 
                 await websocket.close()
 
@@ -80,22 +73,10 @@ class MiraiBotInstance(BotAdapterProtocol):
         except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError) as e:
             log.error(f'{mark} connection closed. {e}')
         except ConnectionRefusedError:
-            log.error(f'cannot connect to mirai-api-http {mark} server.')
-
-    async def handle_message(self, message: str, handler: Callable):
-        async with log.catch(ignore=[json.JSONDecodeError]):
-            data = json.loads(message)
-            data = data['data']
-
-            if 'session' in data:
-                self.api.session = self.session = data['session']
-                log.info('websocket handshake successful. session: ' + self.session)
-                return False
-
-            asyncio.create_task(handler('', data))
+            log.error(f'cannot connect to cq-http {mark} server.')
 
     async def send_chain_message(self, chain: Chain):
-        reply, voice_list = await build_message_send(self.api, chain)
+        reply, voice_list = await build_message_send(chain)
 
         if reply:
             await self.connection.send(reply)
@@ -117,10 +98,10 @@ class MiraiBotInstance(BotAdapterProtocol):
 
         if not channel_id and not user_id:
             raise TypeError(
-                'MiraiBotInstance.send_message() missing argument: "channel_id" or "user_id"')
+                'CQHttpBotInstance.send_message() missing argument: "channel_id" or "user_id"')
 
         if not channel_id and user_id:
-            data.message_type = 'friend'
+            data.message_type = 'private'
             data.is_direct = True
 
         message = Chain(data)
@@ -130,4 +111,4 @@ class MiraiBotInstance(BotAdapterProtocol):
         await self.send_chain_message(message)
 
     async def package_message(self, event: str, message: dict):
-        return package_mirai_message(self, self.appid, message)
+        return package_cqhttp_message(self, self.appid, message)

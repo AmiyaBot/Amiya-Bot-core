@@ -29,12 +29,12 @@ class BrowserService:
             return None
         self.launched = True
 
-        log.info(f'launching browser({config.browser_type})...')
+        log.info(f'launching browser...')
 
         self.playwright = await async_playwright().start()
         self.browser = await config.launch_browser(self.playwright)
 
-        log.info(f'browser({config.browser_type}) launched successful.')
+        log.info(f'browser({self.browser._impl_obj._browser_type.name}) launched successful.')
 
     async def close(self):
         await self.browser.close()

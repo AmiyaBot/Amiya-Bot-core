@@ -39,7 +39,7 @@ class Image:
 
 @dataclass
 class Voice:
-    url: str
+    file: str
     title: str
 
 

@@ -7,7 +7,7 @@ from .payload import HttpAdapter
 
 
 class MiraiAPI:
-    def __init__(self, address: str, session: str):
+    def __init__(self, address: str, session: str = None):
         self.address = address
         self.session = session
 

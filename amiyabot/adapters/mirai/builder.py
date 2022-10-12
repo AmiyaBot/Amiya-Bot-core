@@ -6,24 +6,10 @@ from .payload import WebsocketAdapter
 from .api import MiraiAPI
 
 
-async def get_image_id(http: MiraiAPI, target: Union[str, bytes], msg_type: str):
-    if type(target) is str:
-        with open(target, mode='rb') as file:
-            target = file.read()
-
-    return await http.upload_image(target, msg_type)
-
-
-async def get_voice_id(http: MiraiAPI, path: str, msg_type: str):
-    return await http.upload_voice(await silkcoder.async_encode(path), msg_type)
-
-
-async def build_message_send(address: str, session: str, chain: Chain, custom_chain: CHAIN_LIST = None):
+async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LIST = None):
     chain_list = custom_chain or chain.chain
     chain_data = []
     voice_list = []
-
-    api = MiraiAPI(address, session)
 
     if chain_list:
         for item in chain_list:
@@ -57,9 +43,9 @@ async def build_message_send(address: str, session: str, chain: Chain, custom_ch
 
             # Voice
             if type(item) is Voice:
-                voice_list.append(select_type(chain, session, [{
+                voice_list.append(select_type(chain, api.session, [{
                     'type': 'Voice',
-                    'voiceId': await get_voice_id(api, item.url, chain.data.message_type)
+                    'voiceId': await get_voice_id(api, item.file, chain.data.message_type)
                 }]))
 
             # Html
@@ -69,7 +55,19 @@ async def build_message_send(address: str, session: str, chain: Chain, custom_ch
                     'imageId': await get_image_id(api, await item.create_html_image(), chain.data.message_type)
                 })
 
-    return select_type(chain, session, chain_data), voice_list
+    return select_type(chain, api.session, chain_data), voice_list
+
+
+async def get_image_id(http: MiraiAPI, target: Union[str, bytes], msg_type: str):
+    if type(target) is str:
+        with open(target, mode='rb') as file:
+            target = file.read()
+
+    return await http.upload_image(target, msg_type)
+
+
+async def get_voice_id(http: MiraiAPI, path: str, msg_type: str):
+    return await http.upload_voice(await silkcoder.async_encode(path, ios_adaptive=True), msg_type)
 
 
 def select_type(chain: Chain, session: str, chain_data):
