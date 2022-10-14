@@ -4,8 +4,11 @@ from amiyabot.network.httpRequests import http_requests
 
 
 class CQHttpAPI:
-    def __init__(self, address: str):
+    def __init__(self, address: str, token: str):
         self.address = address
+        self.headers = {
+            'Authorization': f'Bearer {token}'
+        }
 
     @classmethod
     def __json(cls, interface, res):
@@ -18,11 +21,11 @@ class CQHttpAPI:
         return f'http://{self.address}/{interface}'
 
     async def get(self, interface):
-        res = await http_requests.get(self.__url(interface))
+        res = await http_requests.get(self.__url(interface), headers=self.headers)
         if res:
             return self.__json(interface, res)
 
-    async def post(self, interface, data):
-        res = await http_requests.post(self.__url(interface), data)
+    async def post(self, interface, data=None):
+        res = await http_requests.post(self.__url(interface), data, headers=self.headers)
         if res:
             return self.__json(interface, res)

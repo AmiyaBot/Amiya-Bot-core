@@ -30,7 +30,7 @@ class MiraiAPI:
         if res:
             return self.__json(interface, res)
 
-    async def post(self, interface, data):
+    async def post(self, interface, data=None):
         res = await http_requests.post(self.__url(interface), data)
         if res:
             return self.__json(interface, res)

@@ -29,9 +29,6 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
     else:
         return Event(instance, data['post_type'], data)
 
-    if 'group_id' not in data or data['group_id'] != 653031149:
-        return None
-
     msg.message_id = data['message_id']
     msg.user_id = data['sender']['user_id']
     msg.avatar = f'https://q.qlogo.cn/headimg_dl?dst_uin={msg.user_id}&spec=100'

@@ -27,6 +27,9 @@ class CQHttpBotInstance(BotAdapterProtocol):
         super().__init__(appid, token)
 
         self.url = f'ws://{host}:{ws_port}/'
+        self.headers = {
+            'Authorization': f'Bearer {token}'
+        }
 
         self.connection: websockets.WebSocketClientProtocol = None
 
@@ -34,7 +37,10 @@ class CQHttpBotInstance(BotAdapterProtocol):
         self.ws_port = ws_port
         self.http_port = http_port
 
-        self.api = CQHttpAPI(f'{host}:{http_port}')
+        self.api = CQHttpAPI(f'{host}:{http_port}', token)
+
+    def __str__(self):
+        return 'CQHttp'
 
     def close(self):
         pass
@@ -49,7 +55,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
 
         log.info(f'connecting {mark}...')
         try:
-            async with websockets.connect(self.url) as websocket:
+            async with websockets.connect(self.url, extra_headers=self.headers) as websocket:
                 log.info(f'{mark} connect successful.')
                 self.connection = websocket
                 self.set_alive(True)
@@ -70,7 +76,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
                 self.set_alive(False)
                 log.info(f'{mark} closed.')
 
-        except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError) as e:
+        except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError, websockets.InvalidStatusCode) as e:
             log.error(f'{mark} connection closed. {e}')
         except ConnectionRefusedError:
             log.error(f'cannot connect to cq-http {mark} server.')

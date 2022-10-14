@@ -49,10 +49,13 @@ class Chain:
             self.at(enter=True)
 
     def at(self, user: str = None, enter: bool = False):
-        if self.data and not self.data.is_direct:
-            self.chain.append(At(user or self.data.user_id))
-            if enter:
-                return self.text('\n')
+        if self.data and self.data.is_direct:
+            return self
+
+        self.chain.append(At(user or self.data.user_id))
+        if enter:
+            return self.text('\n')
+
         return self
 
     def face(self, face_id: int):
