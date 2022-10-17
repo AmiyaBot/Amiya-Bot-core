@@ -43,7 +43,10 @@ class CQHttpBotInstance(BotAdapterProtocol):
         return 'CQHttp'
 
     def close(self):
-        pass
+        log.info(f'closing {self}(appid {self.appid})...')
+        self.keep_run = False
+
+        asyncio.create_task(self.connection.close())
 
     async def connect(self, private: bool, handler: Callable):
         while self.keep_run:
