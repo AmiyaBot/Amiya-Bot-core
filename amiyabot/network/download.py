@@ -18,7 +18,9 @@ def download_sync(url: str, headers=None, stringify=False, progress=False):
 
     try:
         stream = requests.get(url, headers=headers or default_headers, stream=True)
-        file_size = int(stream.headers['content-length'])
+        file_size = 0
+        if 'content-length' in stream.headers:
+            file_size = int(stream.headers['content-length'])
 
         container = BytesIO()
 
