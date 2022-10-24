@@ -48,8 +48,13 @@ class BrowserService:
             if is_file:
                 url = 'file:///' + os.path.abspath(url)
 
-            await page.goto(url)
-            await page.wait_for_load_state()
+            try:
+                await page.goto(url)
+                await page.wait_for_load_state()
+            except Exception as e:
+                log.critical(e)
+                await page.close()
+                return None
 
             return PageController(page)
 
