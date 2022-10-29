@@ -50,10 +50,14 @@ async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LI
 
             # Html
             if type(item) is Html:
-                chain_data.append({
-                    'type': 'Image',
-                    'imageId': await get_image_id(api, await item.create_html_image(), chain.data.message_type)
-                })
+                result = await item.create_html_image()
+                if result:
+                    chain_data.append({
+                        'type': 'Image',
+                        'imageId': await get_image_id(api, result, chain.data.message_type)
+                    })
+                else:
+                    log.warning('html convert fail.')
 
     return select_type(chain, api.session, chain_data), voice_list
 
