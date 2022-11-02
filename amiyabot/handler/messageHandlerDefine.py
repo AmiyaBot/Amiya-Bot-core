@@ -80,7 +80,6 @@ class MessageHandlerItem:
 
         if data.is_direct:
             if not direct_only:
-
                 # 检查是否支持私信
                 if self.allow_direct is None:
                     if not self.group_config or not self.group_config.allow_direct:
@@ -90,30 +89,29 @@ class MessageHandlerItem:
                     return Verify(False)
 
         else:
-
             # 是否仅支持私信
             if direct_only:
                 return Verify(False)
 
-            # 检查是否包含“前缀触发词”或被 @
-            flag = False
-            if need_check_prefix:
-                if data.is_at:
-                    flag = True
-                else:
-                    for word in (need_check_prefix if type(need_check_prefix) is list else self.prefix_keywords()):
-                        if data.text_origin.startswith(word):
-                            flag = True
-                            break
+        # 检查是否包含“前缀触发词”或被 @
+        flag = False
+        if need_check_prefix:
+            if data.is_at:
+                flag = True
+            else:
+                for word in (need_check_prefix if type(need_check_prefix) is list else self.prefix_keywords()):
+                    if data.text_origin.startswith(word):
+                        flag = True
+                        break
 
-            # 若不通过以上检查，且关键字不为全等句式（Equal）
-            # 则允许当关键字为列表时，筛选列表内的全等句式继续执行校验，否则校验不通过
-            if need_check_prefix and not flag and not type(self.keywords) is Equal:
-                equal_filter = [n for n in self.keywords if type(n) is Equal] if type(self.keywords) is list else []
-                if equal_filter:
-                    self.keywords = equal_filter
-                else:
-                    return Verify(False)
+        # 若不通过以上检查，且关键字不为全等句式（Equal）
+        # 则允许当关键字为列表时，筛选列表内的全等句式继续执行校验，否则校验不通过
+        if need_check_prefix and not flag and not type(self.keywords) is Equal:
+            equal_filter = [n for n in self.keywords if type(n) is Equal] if type(self.keywords) is list else []
+            if equal_filter:
+                self.keywords = equal_filter
+            else:
+                return Verify(False)
 
         # 执行自定义校验并修正其返回值
         if self.custom_verify:
