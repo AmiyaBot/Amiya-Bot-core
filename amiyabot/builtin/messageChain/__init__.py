@@ -128,21 +128,21 @@ class Chain:
         self.chain.append(Voice(file, title))
         return self
 
-    def markdown(self, content: str, render_time: int = 200):
+    def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME):
         return self.html(md_template, data={'content': content}, render_time=render_time)
 
     def html(self,
              path: str,
              data: Union[dict, list] = None,
-             width: int = 1280,
-             height: int = 720,
+             width: int = DEFAULT_WIDTH,
+             height: int = DEFAULT_HEIGHT,
              is_template: bool = True,
-             render_time: int = 200):
+             render_time: int = DEFAULT_RENDER_TIME):
         self.chain.append(Html(
+            url=path,
             data=data,
             width=width,
             height=height,
-            template=path,
             is_file=is_template,
             render_time=render_time,
             getter_hook=self.builder.image_getter_hook

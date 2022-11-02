@@ -100,7 +100,11 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
 
         # Html
         if type(item) is Html:
-            messages.add_image(await item.create_html_image())
+            result = await item.create_html_image()
+            if result:
+                messages.add_image(result)
+            else:
+                log.warning('html convert fail.')
 
     messages.done()
 

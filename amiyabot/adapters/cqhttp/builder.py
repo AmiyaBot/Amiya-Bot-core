@@ -5,6 +5,7 @@ import base64
 from graiax import silkcoder
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
+from amiyabot import log
 
 
 async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
@@ -52,7 +53,11 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
 
             # Html
             if type(item) is Html:
-                chain_data.append(await append_image(await item.create_html_image()))
+                result = await item.create_html_image()
+                if result:
+                    chain_data.append(await append_image(result))
+                else:
+                    log.warning('html convert fail.')
 
     return send_msg(chain, chain_data), voice_list
 
