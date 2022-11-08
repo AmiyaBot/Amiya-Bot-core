@@ -7,8 +7,9 @@ from itertools import chain
 from collections import ChainMap
 
 from amiyabot import log
-from amiyabot.util import temp_sys_path, extract_zip
 from amiyabot.help import Helper
+from amiyabot.util import temp_sys_path, extract_zip
+from amiyabot.builtin.lib.timedTask import tasks_control, CUSTOM_CHECK
 
 from .messageHandlerDefine import *
 
@@ -212,6 +213,15 @@ class BotHandlerFactory:
         """
         self._message_handler_middleware.append(handler)
 
+    @Helper.record
+    def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None):
+        def register(task: Callable[[BotHandlerFactory], Coroutine[Any, Any, None]]):
+            @tasks_control.timed_task(each, custom, self.factory_name)
+            async def _():
+                await task(self)
+
+        return register
+
     def set_group_config(self, config: GroupConfig):
         self._group_config[config.group_id] = config
 
@@ -304,6 +314,8 @@ class BotInstance(BotHandlerFactory):
 
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
+
+        tasks_control.remove_tag(plugin_id)
 
         self.plugins[plugin_id].uninstall()
 
