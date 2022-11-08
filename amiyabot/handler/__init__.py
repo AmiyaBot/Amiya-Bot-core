@@ -32,10 +32,13 @@ class BotHandlerFactory:
         self._after_reply_handlers: AfterReplyHandlers = list()
         self._before_reply_handlers: BeforeReplyHandlers = list()
         self._message_handler_middleware: MessageHandlerMiddleware = list()
+        self._handlers_id_map: HandlersIDMap = dict()
 
         self._group_config: Dict[str, GroupConfig] = dict()
 
         self.plugins: Dict[str, Union[BotHandlerFactory, PluginInstance]] = dict()
+
+        self.factory_name = 'default_factory'
 
     @property
     def prefix_keywords(self) -> PrefixKeywords:
@@ -64,6 +67,10 @@ class BotHandlerFactory:
     @property
     def message_handler_middleware(self) -> MessageHandlerMiddleware:
         return self.__get_with_plugins('_message_handler_middleware')
+
+    @property
+    def handlers_id_map(self) -> HandlersIDMap:
+        return self.__get_with_plugins('_handlers_id_map')
 
     @property
     def group_config(self) -> Dict[str, GroupConfig]:
@@ -126,6 +133,7 @@ class BotHandlerFactory:
             else:
                 handler.keywords = keywords
 
+            self._handlers_id_map[id(func)] = self.factory_name
             self._message_handlers.append(handler)
 
         return register
@@ -229,6 +237,8 @@ class PluginInstance(BotHandlerFactory):
         self.document = document
 
         self.path = []
+
+        self.factory_name = plugin_id
 
     def install(self): ...
 
