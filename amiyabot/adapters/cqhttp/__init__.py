@@ -46,7 +46,8 @@ class CQHttpBotInstance(BotAdapterProtocol):
         log.info(f'closing {self}(appid {self.appid})...')
         self.keep_run = False
 
-        await self.connection.close()
+        if self.connection:
+            await self.connection.close()
 
     async def connect(self, private: bool, handler: Callable):
         while self.keep_run:
