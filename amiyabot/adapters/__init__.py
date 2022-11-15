@@ -21,7 +21,7 @@ class BotAdapterProtocol(object):
         self.alive = status
 
     @abc.abstractmethod
-    def close(self):
+    async def close(self):
         raise NotImplementedError
 
     @abc.abstractmethod

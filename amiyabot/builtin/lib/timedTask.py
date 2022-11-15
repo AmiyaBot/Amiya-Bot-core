@@ -32,6 +32,9 @@ class TasksControl(metaclass=Singleton):
 
         ServerEventHandler.on_shutdown.append(self.stop)
 
+    async def stop(self):
+        self.alive = False
+
     async def run_tasks(self, step: int = 1, max_step: int = 31536000):
         if self.start:
             return None
@@ -80,9 +83,6 @@ class TasksControl(metaclass=Singleton):
     def remove_tag(self, tag: str):
         if tag in self._timed_tasks:
             del self._timed_tasks[tag]
-
-    def stop(self):
-        self.alive = False
 
 
 tasks_control = TasksControl()

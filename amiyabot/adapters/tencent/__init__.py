@@ -57,13 +57,13 @@ class TencentBotInstance(TencentAPI):
                                     heartbeat_key)
         )
 
-    def close(self):
+    async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
         self.keep_run = False
 
         for _, item in self.shards_record.items():
             if item.connection:
-                asyncio.create_task(item.connection.close())
+                await item.connection.close()
 
     async def create_connection(self, handler: ConnectionHandler, shards_index: int = 0):
         gateway = handler.gateway
