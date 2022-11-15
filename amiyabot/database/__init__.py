@@ -57,9 +57,16 @@ def table(cls: ModelClass) -> Any:
 
     migrate_list = []
 
+    # 取 AB 差集增加字段
     for f in set(model_columns) - set(table_columns):
         migrate_list.append(
             migrator.add_column(table_name, f, getattr(cls, f))
+        )
+
+    # 取 BA 差集删除字段
+    for f in set(table_columns) - set(model_columns):
+        migrate_list.append(
+            migrator.drop_column(table_name, f)
         )
 
     if migrate_list:

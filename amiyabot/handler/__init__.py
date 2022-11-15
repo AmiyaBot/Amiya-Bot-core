@@ -7,8 +7,9 @@ from itertools import chain
 from collections import ChainMap
 
 from amiyabot import log
-from amiyabot.util import temp_sys_path, extract_zip
 from amiyabot.help import Helper
+from amiyabot.util import temp_sys_path, extract_zip
+from amiyabot.builtin.lib.timedTask import tasks_control, CUSTOM_CHECK
 
 from .messageHandlerDefine import *
 
@@ -32,10 +33,13 @@ class BotHandlerFactory:
         self._after_reply_handlers: AfterReplyHandlers = list()
         self._before_reply_handlers: BeforeReplyHandlers = list()
         self._message_handler_middleware: MessageHandlerMiddleware = list()
+        self._handlers_id_map: HandlersIDMap = dict()
 
         self._group_config: Dict[str, GroupConfig] = dict()
 
         self.plugins: Dict[str, Union[BotHandlerFactory, PluginInstance]] = dict()
+
+        self.factory_name = 'default_factory'
 
     @property
     def prefix_keywords(self) -> PrefixKeywords:
@@ -64,6 +68,10 @@ class BotHandlerFactory:
     @property
     def message_handler_middleware(self) -> MessageHandlerMiddleware:
         return self.__get_with_plugins('_message_handler_middleware')
+
+    @property
+    def handlers_id_map(self) -> HandlersIDMap:
+        return self.__get_with_plugins('_handlers_id_map')
 
     @property
     def group_config(self) -> Dict[str, GroupConfig]:
@@ -126,6 +134,7 @@ class BotHandlerFactory:
             else:
                 handler.keywords = keywords
 
+            self._handlers_id_map[id(func)] = self.factory_name
             self._message_handlers.append(handler)
 
         return register
@@ -204,6 +213,15 @@ class BotHandlerFactory:
         """
         self._message_handler_middleware.append(handler)
 
+    @Helper.record
+    def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None):
+        def register(task: Callable[[BotHandlerFactory], Coroutine[Any, Any, None]]):
+            @tasks_control.timed_task(each, custom, self.factory_name)
+            async def _():
+                await task(self)
+
+        return register
+
     def set_group_config(self, config: GroupConfig):
         self._group_config[config.group_id] = config
 
@@ -229,6 +247,8 @@ class PluginInstance(BotHandlerFactory):
         self.document = document
 
         self.path = []
+
+        self.factory_name = plugin_id
 
     def install(self): ...
 
@@ -294,6 +314,8 @@ class BotInstance(BotHandlerFactory):
 
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
+
+        tasks_control.remove_tag(plugin_id)
 
         self.plugins[plugin_id].uninstall()
 

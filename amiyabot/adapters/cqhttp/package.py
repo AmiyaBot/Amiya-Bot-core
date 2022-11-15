@@ -1,5 +1,3 @@
-import re
-
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters import BotAdapterProtocol
 

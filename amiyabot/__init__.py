@@ -8,6 +8,7 @@ from amiyabot.network.httpServer import HttpServer, ServerEventHandler
 from amiyabot.handler import BotInstance, PluginInstance, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
+from amiyabot.builtin.lib.timedTask import tasks_control
 from amiyabot.builtin.messageChain import Chain, ChainBuilder
 from amiyabot.builtin.message import Event, Message, WaitEventCancel, WaitEventOutOfFocus, Equal
 from amiyabot import log
@@ -29,15 +30,17 @@ class AmiyaBot(BotInstance):
         ServerEventHandler.on_shutdown.append(self.close)
 
     async def start(self, launch_browser: Union[bool, BrowserLaunchConfig] = False):
+        asyncio.create_task(tasks_control.run_tasks())
+
         if launch_browser:
             await basic_browser_service.launch(BrowserLaunchConfig() if launch_browser is True else launch_browser)
 
         await self.instance.connect(self.private, self.__message_handler)
 
-    def close(self):
+    async def close(self):
         if self.__allow_close:
             self.__allow_close = False
-            self.instance.close()
+            await self.instance.close()
 
     async def __message_handler(self, event: str, message: dict):
         async with log.catch(desc='handler error:',
@@ -106,8 +109,8 @@ class MultipleAccounts(BotInstance):
 
         return item
 
-    def close(self):
+    async def close(self):
         for _, item in self.__instances.items():
-            item.close()
+            await item.close()
 
         self.__keep_alive = False

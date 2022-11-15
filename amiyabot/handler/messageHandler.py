@@ -46,12 +46,13 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
     choice = await choice_handlers(data, bot.message_handlers)
     if choice:
         handler = choice[1]
+        factory_name = bot.handlers_id_map[id(handler.function)]
 
         # 执行前置处理函数
         flag = True
         if bot.before_reply_handlers:
             for action in bot.before_reply_handlers:
-                res = await action(data)
+                res = await action(data, factory_name)
                 if res is False:
                     flag = False
         if not flag:
@@ -67,7 +68,7 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
             # 执行后置处理函数
             if bot.after_reply_handlers:
                 for action in bot.after_reply_handlers:
-                    await action(reply)
+                    await action(reply, factory_name)
 
             return None
 

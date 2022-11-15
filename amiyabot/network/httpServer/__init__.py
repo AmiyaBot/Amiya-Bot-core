@@ -1,4 +1,5 @@
 import os
+import asyncio
 import uvicorn
 
 from typing import Any, List, Callable
@@ -28,21 +29,43 @@ class ServerEventHandler:
     on_shutdown: List[Callable] = []
 
 
-class HttpServer:
+class ServerMeta(type):
+    servers: List[uvicorn.Server] = []
+    shutdown_lock = False
+
+    def __call__(cls, *args, **kwargs):
+        instance = super().__call__(*args, **kwargs)
+
+        cls.servers.append(instance.server)
+
+        return instance
+
+    def shutdown_all(cls, server: uvicorn.Server):
+        if not cls.shutdown_lock:
+            cls.shutdown_lock = True
+
+            for item in cls.servers:
+                if item != server:
+                    item.should_exit = True
+
+            for action in ServerEventHandler.on_shutdown:
+                asyncio.create_task(action())
+
+
+class HttpServer(metaclass=ServerMeta):
     def __init__(self,
                  host: str,
                  port: int,
                  title: str = 'AmiyaBot',
                  description: str = '<a href="https://www.amiyabot.com" target="__blank">https://www.amiyabot.com</a>',
                  auth_key: str = None,
-                 ssl_keyfile: str = None,
-                 ssl_certfile: str = None):
-        self.app = FastAPI(title=title, description=description)
+                 fastapi_options: dict = None,
+                 uvicorn_options: dict = None):
+        self.app = FastAPI(title=title, description=description, **(fastapi_options or {}))
         self.server = self.__load_server(options={
             'host': host,
             'port': port,
-            'ssl_keyfile': ssl_keyfile,
-            'ssl_certfile': ssl_certfile
+            **(uvicorn_options or {})
         })
         self.router = InferringRouter()
         self.controller = cbv(self.router)
@@ -59,8 +82,7 @@ class HttpServer:
 
         @self.app.on_event('shutdown')
         def on_shutdown():
-            for action in ServerEventHandler.on_shutdown:
-                action()
+            HttpServer.shutdown_all(self.server)
 
     def set_allow_path(self, paths: list):
         self.__allow_path = paths
