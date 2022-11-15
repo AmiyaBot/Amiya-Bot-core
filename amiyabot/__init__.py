@@ -37,10 +37,10 @@ class AmiyaBot(BotInstance):
 
         await self.instance.connect(self.private, self.__message_handler)
 
-    def close(self):
+    async def close(self):
         if self.__allow_close:
             self.__allow_close = False
-            self.instance.close()
+            await self.instance.close()
 
     async def __message_handler(self, event: str, message: dict):
         async with log.catch(desc='handler error:',
@@ -109,8 +109,8 @@ class MultipleAccounts(BotInstance):
 
         return item
 
-    def close(self):
+    async def close(self):
         for _, item in self.__instances.items():
-            item.close()
+            await item.close()
 
         self.__keep_alive = False

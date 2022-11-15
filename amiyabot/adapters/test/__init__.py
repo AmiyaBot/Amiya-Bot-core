@@ -10,6 +10,7 @@ from amiyabot.log import LoggerManager
 
 from ..convert import text_convert
 from .builder import build_message_send
+from .ws import TestServer
 
 log = LoggerManager('Test')
 
@@ -25,55 +26,24 @@ class TestInstance(BotAdapterProtocol):
     def __init__(self, appid: str, host: str, port: int):
         super().__init__(appid, '')
 
-        self.url = f'ws://{host}:{port}/channel/bot/{appid}'
+        self.host = host
+        self.port = port
 
-        self.connection: websockets.WebSocketClientProtocol = None
+        self.server = TestServer(appid, host, port)
+
+        @self.server.app.on_event('startup')
+        async def startup():
+            log.info('The test service has been started. '
+                     'Please go to https://console.amiyabot.com/#/test Connect and start testing.')
 
     def __str__(self):
         return 'Testing'
 
     async def close(self):
-        log.info(f'closing {self}(appid {self.appid})...')
-        self.keep_run = False
-        if self.connection:
-            await self.connection.close()
+        ...
 
     async def connect(self, private: bool, handler: Callable):
-        while self.keep_run:
-            await self.keep_connect(handler)
-            await asyncio.sleep(10)
-
-    async def keep_connect(self, handler):
-        mark = f'websocket({self.appid})'
-
-        log.info(f'connecting {mark}...')
-        try:
-            async with websockets.connect(self.url) as websocket:
-                log.info(f'{mark} connect successful.')
-                self.connection = websocket
-                self.set_alive(True)
-
-                while self.keep_run:
-                    message = await websocket.recv()
-
-                    if message == b'':
-                        await websocket.close()
-                        log.warning(f'{mark} test server close the connection.')
-                        return False
-
-                    async with log.catch(ignore=[json.JSONDecodeError]):
-                        data = json.loads(message)
-                        asyncio.create_task(handler(data['event'], data['event_data']))
-
-                await websocket.close()
-
-                self.set_alive(False)
-                log.info(f'{mark} closed.')
-
-        except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError, websockets.InvalidStatusCode) as e:
-            log.error(f'{mark} connection closed. {e}')
-        except ConnectionRefusedError:
-            log.error(f'cannot connect to test server {mark}.')
+        await self.server.run(handler)
 
     async def send_message(self, chain: Chain, **kwargs):
         await self.send_chain_message(chain)
@@ -82,14 +52,13 @@ class TestInstance(BotAdapterProtocol):
         reply, voice_list = await build_message_send(chain)
 
         if reply:
-            await self.connection.send(reply)
+            await self.server.send(reply)
 
         if voice_list:
             for voice in voice_list:
-                await self.connection.send(voice)
+                await self.server.send(voice)
 
     async def package_message(self, event: str, data: dict):
-
         if event != 'message':
             return Event(self, event, data)
 
