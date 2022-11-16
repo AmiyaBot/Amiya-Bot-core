@@ -4,8 +4,16 @@ import setuptools
 
 from urllib import request
 
+
+def ver_num(_v):
+    num = int(_v.replace('.', ''))
+    if num < 1000:
+        num *= 10
+    return num
+
+
 pypi = json.loads(request.urlopen('https://pypi.python.org/pypi/amiyabot/json').read())
-v_list = {int(v.replace('.', '')): v for v in pypi['releases'].keys()}
+v_list = {ver_num(v): v for v in pypi['releases'].keys()}
 s_list = sorted(v_list)
 latest = v_list[s_list[-1]]
 
