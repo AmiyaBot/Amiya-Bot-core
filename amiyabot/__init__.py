@@ -1,17 +1,27 @@
+import typing
 import asyncio
 
-from typing import Dict, Type, Union
+from amiyabot import log
+
+# adapters
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.tencent import TencentBotInstance
+
+# network
 from amiyabot.network.httpServer import HttpServer, ServerEventHandler
-from amiyabot.handler import BotInstance, PluginInstance, GroupConfig
-from amiyabot.handler.messageHandler import message_handler
-from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
+
+# factory
+from amiyabot.factory import BotInstance, PluginInstance, GroupConfig
+from amiyabot.factory.messageHandler import message_handler
+
+# lib
 from amiyabot.builtin.lib.timedTask import tasks_control
-from amiyabot.builtin.messageChain import Chain, ChainBuilder
+from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
+
+# message
 from amiyabot.builtin.message import Event, Message, WaitEventCancel, WaitEventOutOfFocus, Equal
-from amiyabot import log
+from amiyabot.builtin.messageChain import Chain, ChainBuilder
 
 
 class AmiyaBot(BotInstance):
@@ -19,7 +29,7 @@ class AmiyaBot(BotInstance):
                  appid: str,
                  token: str,
                  private: bool = False,
-                 adapter: Type[BotAdapterProtocol] = TencentBotInstance):
+                 adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance):
         super().__init__(appid, token, adapter)
 
         self.private = private
@@ -29,7 +39,7 @@ class AmiyaBot(BotInstance):
 
         ServerEventHandler.on_shutdown.append(self.close)
 
-    async def start(self, launch_browser: Union[bool, BrowserLaunchConfig] = False):
+    async def start(self, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False):
         asyncio.create_task(tasks_control.run_tasks())
 
         if launch_browser:
@@ -63,24 +73,24 @@ class MultipleAccounts(BotInstance):
         super().__init__()
 
         self.__ready = False
-        self.__instances: Dict[str, AmiyaBot] = {
+        self.__instances: typing.Dict[str, AmiyaBot] = {
             str(item.appid): item for item in bots
         }
         self.__keep_alive = True
 
         ServerEventHandler.on_shutdown.append(self.close)
 
-    def __contains__(self, appid: Union[str, int]):
+    def __contains__(self, appid: typing.Union[str, int]):
         return str(appid) in self.__instances
 
-    def __getitem__(self, appid: Union[str, int]):
+    def __getitem__(self, appid: typing.Union[str, int]):
         return self.__instances.get(str(appid), None)
 
-    def __delitem__(self, appid: Union[str, int]):
+    def __delitem__(self, appid: typing.Union[str, int]):
         self.__instances[str(appid)].close()
         del self.__instances[str(appid)]
 
-    async def start(self, launch_browser: Union[bool, BrowserLaunchConfig] = False):
+    async def start(self, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False):
         assert not self.__ready, 'MultipleAccounts already started'
 
         self.__ready = True
@@ -95,7 +105,8 @@ class MultipleAccounts(BotInstance):
         while self.__keep_alive:
             await asyncio.sleep(1)
 
-    def append(self, item: AmiyaBot, launch_browser: Union[bool, BrowserLaunchConfig] = False, start_up: bool = True):
+    def append(self, item: AmiyaBot, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False,
+               start_up: bool = True):
         assert self.__ready, 'MultipleAccounts not started'
 
         item.combine_factory(self)

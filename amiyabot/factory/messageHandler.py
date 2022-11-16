@@ -1,5 +1,5 @@
 from amiyabot.builtin.message import *
-from amiyabot.handler import MessageHandlerItem, BotHandlerFactory
+from amiyabot.factory import MessageHandlerItem, BotHandlerFactory
 from amiyabot.log import LoggerManager
 
 CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
