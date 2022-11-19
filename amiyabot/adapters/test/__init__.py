@@ -1,7 +1,3 @@
-import json
-import asyncio
-import websockets
-
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.builtin.message import Message, Event

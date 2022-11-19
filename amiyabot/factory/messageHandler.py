@@ -43,6 +43,7 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         waiter.set(data)
         return None
 
+    # 选择功能
     choice = await choice_handlers(data, bot.message_handlers)
     if choice:
         handler = choice[1]
