@@ -266,10 +266,11 @@ class BotInstance(BotHandlerFactory):
             adapter
         )
 
-    def install_plugin(self,
-                       plugin: Union[str, PluginInstance],
-                       extract_plugin: bool = False,
-                       extract_plugin_dest: str = None):
+    @classmethod
+    def load_plugin(cls,
+                    plugin: Union[str, PluginInstance],
+                    extract_plugin: bool = False,
+                    extract_plugin_dest: str = None):
         with log.sync_catch('plugin install error:'):
             if type(plugin) is str:
                 if os.path.isdir(plugin):
@@ -300,17 +301,28 @@ class BotInstance(BotHandlerFactory):
             else:
                 instance = plugin
 
-            plugin_id = instance.plugin_id
-
-            assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
-
-            # 安装插件
-            instance.set_prefix_keywords(self.prefix_keywords)
-            instance.install()
-
-            self.plugins[plugin_id] = instance
-
             return instance
+
+    def install_plugin(self,
+                       plugin: Union[str, PluginInstance],
+                       extract_plugin: bool = False,
+                       extract_plugin_dest: str = None):
+
+        instance = self.load_plugin(plugin, extract_plugin, extract_plugin_dest)
+        if not instance:
+            return None
+
+        plugin_id = instance.plugin_id
+
+        assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
+
+        # 安装插件
+        instance.set_prefix_keywords(self.prefix_keywords)
+        instance.install()
+
+        self.plugins[plugin_id] = instance
+
+        return instance
 
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins

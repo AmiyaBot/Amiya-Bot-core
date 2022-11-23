@@ -129,7 +129,11 @@ class Chain:
         return self
 
     def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME):
-        return self.html(md_template, data={'content': content}, render_time=render_time)
+        return self.html(md_template,
+                         width=50,
+                         height=50,
+                         data={'content': content},
+                         render_time=render_time)
 
     def html(self,
              path: str,

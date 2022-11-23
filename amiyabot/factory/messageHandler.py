@@ -1,5 +1,5 @@
 from amiyabot.builtin.message import *
-from amiyabot.handler import MessageHandlerItem, BotHandlerFactory
+from amiyabot.factory import MessageHandlerItem, BotHandlerFactory
 from amiyabot.log import LoggerManager
 
 CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
@@ -43,6 +43,7 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         waiter.set(data)
         return None
 
+    # 选择功能
     choice = await choice_handlers(data, bot.message_handlers)
     if choice:
         handler = choice[1]
