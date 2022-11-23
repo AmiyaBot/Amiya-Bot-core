@@ -87,7 +87,7 @@ class MultipleAccounts(BotInstance):
         return self.__instances.get(str(appid), None)
 
     def __delitem__(self, appid: typing.Union[str, int]):
-        self.__instances[str(appid)].close()
+        asyncio.create_task(self.__instances[str(appid)].close())
         del self.__instances[str(appid)]
 
     async def start(self, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False):
