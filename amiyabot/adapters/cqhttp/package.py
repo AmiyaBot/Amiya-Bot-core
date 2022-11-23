@@ -39,7 +39,7 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
             chain_data = chain['data']
 
             if chain['type'] == 'at':
-                if chain_data['qq'] == account:
+                if str(chain_data['qq']) == str(account):
                     msg.is_at = True
                 else:
                     msg.at_target.append(chain_data['qq'])

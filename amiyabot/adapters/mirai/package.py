@@ -36,7 +36,7 @@ def package_mirai_message(instance: BotAdapterProtocol, account: str, data: dict
                 msg.message_id = chain['id']
 
             if chain['type'] == 'At':
-                if chain['target'] == account:
+                if str(chain['target']) == str(account):
                     msg.is_at = True
                 else:
                     msg.at_target.append(chain['target'])

@@ -18,9 +18,13 @@
         }
 
         #template {
-            width: 1280px;
             padding: 20px;
             position: relative;
+        }
+
+        .markdown-body {
+            width: fit-content;
+            max-width: 1680px;
         }
 
         h2 {
@@ -34,7 +38,7 @@
 </head>
 <body>
 <div id="template">
-    <div class="markdown-body" v-html="content"></div>
+    <div class="markdown-body" v-html="markdownBody"></div>
 </div>
 </body>
 <script src="js/marked.min.js"></script>
@@ -42,9 +46,14 @@
 <script>
     const template = new Vue({
         el: '#template',
+        computed: {
+            markdownBody() {
+                return marked.parse(this.content)
+            }
+        },
         methods: {
             init(data) {
-                this.$set(this, 'content', marked.parse(data['content']))
+                this.$set(this, 'content', data['content'])
             }
         },
         data() {
