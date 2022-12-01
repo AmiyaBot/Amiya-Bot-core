@@ -80,6 +80,9 @@ class MultipleAccounts(BotInstance):
 
         ServerEventHandler.on_shutdown.append(self.close)
 
+    def __iter__(self):
+        return iter(self.__instances.values())
+
     def __contains__(self, appid: typing.Union[str, int]):
         return str(appid) in self.__instances
 
