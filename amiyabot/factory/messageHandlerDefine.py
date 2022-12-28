@@ -99,7 +99,13 @@ class MessageHandlerItem:
             if data.is_at:
                 flag = True
             else:
-                for word in (need_check_prefix if type(need_check_prefix) is list else self.prefix_keywords()):
+                prefix_keywords = need_check_prefix if type(need_check_prefix) is list else self.prefix_keywords()
+
+                # 未设置前缀触发词允许直接通过
+                if not prefix_keywords:
+                    flag = True
+
+                for word in prefix_keywords:
                     if data.text_origin.startswith(word):
                         flag = True
                         break
