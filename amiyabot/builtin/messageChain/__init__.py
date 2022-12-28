@@ -107,7 +107,7 @@ class Chain:
                                               max_seat=MAX_SEAT,
                                               bgcolor=bgcolor))
 
-    def image(self, target: Union[str, bytes, List[Union[str, bytes]]], url: str = None):
+    def image(self, target: Union[str, bytes, List[Union[str, bytes]]] = None, url: str = None):
         if url:
             self.chain.append(Image(url=url, getter_hook=self.builder.image_getter_hook))
         else:

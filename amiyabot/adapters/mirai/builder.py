@@ -1,6 +1,7 @@
 from graiax import silkcoder
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
+from amiyabot.util import is_valid_url
 
 from .payload import WebsocketAdapter
 from .api import MiraiAPI
@@ -36,10 +37,17 @@ async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LI
 
             # Image
             if type(item) is Image:
-                chain_data.append({
-                    'type': 'Image',
-                    'imageId': await get_image_id(api, await item.get(), chain.data.message_type)
-                })
+                target = await item.get()
+                if is_valid_url(target):
+                    chain_data.append({
+                        'type': 'Image',
+                        'url': target
+                    })
+                else:
+                    chain_data.append({
+                        'type': 'Image',
+                        'imageId': await get_image_id(api, target, chain.data.message_type)
+                    })
 
             # Voice
             if type(item) is Voice:
