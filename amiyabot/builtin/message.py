@@ -60,11 +60,11 @@ class Message:
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
 
-        return 'Bot:{bot} Guild:{guild} Channel:{channel} {direct}{nickname}: {message}'.format(
+        return 'Bot:{bot} Channel:{channel} User:{user} {direct}{nickname}: {message}'.format(
             **{
                 'bot': self.instance.appid,
-                'guild': self.guild_id,
                 'channel': self.channel_id,
+                'user': self.user_id,
                 'direct': '(direct)' if self.is_direct else '',
                 'nickname': self.nickname,
                 'message': text + face + image

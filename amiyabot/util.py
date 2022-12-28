@@ -11,6 +11,7 @@ from string import punctuation
 from functools import partial
 from contextlib import contextmanager
 from zhon.hanzi import punctuation as punctuation_cn
+from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
 
 executor = ThreadPoolExecutor(min(32, (os.cpu_count() or 1) + 4))
@@ -185,3 +186,11 @@ def extract_zip(file: str, dest: str, overwrite: bool = False, ignore: List[re.P
         if os.path.exists(dest_file) and not overwrite:
             continue
         pack.extract(pack_file, dest)
+
+
+def is_valid_url(url: str):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False

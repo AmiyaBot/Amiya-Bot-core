@@ -5,6 +5,7 @@ import base64
 from graiax import silkcoder
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
+from amiyabot.util import is_valid_url
 from amiyabot import log
 
 
@@ -64,13 +65,21 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
 
 async def append_image(img: Union[bytes, str]):
     if type(img) is bytes:
-        img = 'base64://' + base64.b64encode(img).decode()
+        data = {
+            'file': 'base64://' + base64.b64encode(img).decode()
+        }
+    elif is_valid_url(img):
+        data = {
+            'url': img
+        }
+    else:
+        data = {
+            'file': img
+        }
 
     return {
         'type': 'image',
-        'data': {
-            'file': img
-        }
+        'data': data
     }
 
 

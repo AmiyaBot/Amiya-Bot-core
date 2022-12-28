@@ -214,13 +214,16 @@ class BotHandlerFactory:
         self._message_handler_middleware.append(handler)
 
     @Helper.record
-    def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None):
+    def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None, sub_tag: str = 'default_tag'):
         def register(task: Callable[[BotHandlerFactory], Coroutine[Any, Any, None]]):
-            @tasks_control.timed_task(each, custom, self.factory_name)
+            @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)
             async def _():
                 await task(self)
 
         return register
+
+    def remove_timed_task(self, sub_tag: str):
+        tasks_control.remove_tag(self.factory_name, sub_tag)
 
     def set_group_config(self, config: GroupConfig):
         self._group_config[config.group_id] = config
