@@ -8,6 +8,7 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
+from .forwardMessage import MiraiForwardMessage
 from .package import package_mirai_message
 from .builder import build_message_send
 from .api import MiraiAPI

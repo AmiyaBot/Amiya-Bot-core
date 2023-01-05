@@ -86,8 +86,13 @@ class Html:
             return result
 
 
+@dataclass
+class Extend:
+    data: Any
+
+
 CHAIN_LIST = List[
     Union[
-        At, Face, Text, Image, Voice, Html
+        At, Face, Text, Image, Voice, Html, Extend
     ]
 ]
