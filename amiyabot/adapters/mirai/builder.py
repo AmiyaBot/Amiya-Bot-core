@@ -1,3 +1,5 @@
+import time
+
 from graiax import silkcoder
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
@@ -85,6 +87,9 @@ async def get_image_id(http: MiraiAPI, target: Union[str, bytes], msg_type: str)
     if type(target) is str:
         with open(target, mode='rb') as file:
             target = file.read()
+
+    # 在图片里夹点私货，让 Mirai 返回不一样的 ID
+    target += str(time.time()).encode()
 
     return await http.upload_image(target, msg_type)
 
