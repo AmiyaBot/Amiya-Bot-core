@@ -29,3 +29,9 @@ class CQHttpAPI:
         res = await http_requests.post(self.__url(interface), data, headers=self.headers)
         if res:
             return self.__json(interface, res)
+
+    async def send_group_forward_msg(self, group_id: int, forward_node: list):
+        await self.post('send_group_forward_msg', {
+            'group_id': group_id,
+            'messages': forward_node
+        })

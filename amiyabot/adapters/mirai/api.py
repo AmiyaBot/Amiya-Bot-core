@@ -69,7 +69,17 @@ class MiraiAPI:
         return []
 
     async def leave_group(self, group_id):
-        await self.post('quit', {'sessionKey': self.session, 'target': group_id})
+        await self.post('quit', {
+            'sessionKey': self.session,
+            'target': group_id
+        })
+
+    async def send_group_message(self, group_id, chain_list):
+        await self.post('sendGroupMessage', {
+            'sessionKey': self.session,
+            'target': group_id,
+            'messageChain': chain_list
+        })
 
     async def send_nudge(self, user_id, group_id):
         await self.post('sendNudge', HttpAdapter.nudge(self.session, user_id, group_id))

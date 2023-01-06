@@ -1,3 +1,5 @@
+import time
+
 from graiax import silkcoder
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
@@ -7,7 +9,7 @@ from .payload import WebsocketAdapter
 from .api import MiraiAPI
 
 
-async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LIST = None):
+async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LIST = None, chain_only: bool = False):
     chain_list = custom_chain or chain.chain
     chain_data = []
     voice_list = []
@@ -51,10 +53,14 @@ async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LI
 
             # Voice
             if type(item) is Voice:
-                voice_list.append(select_type(chain, api.session, [{
+                voice_item = {
                     'type': 'Voice',
                     'voiceId': await get_voice_id(api, item.file, chain.data.message_type)
-                }]))
+                }
+                if chain_only:
+                    voice_list.append(voice_item)
+                else:
+                    voice_list.append(select_type(chain, api.session, [voice_item]))
 
             # Html
             if type(item) is Html:
@@ -67,6 +73,13 @@ async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LI
                 else:
                     log.warning('html convert fail.')
 
+            # Extend
+            if type(item) is Extend:
+                chain_data.append(item.data)
+
+    if chain_only:
+        return chain_data, voice_list
+
     return select_type(chain, api.session, chain_data), voice_list
 
 
@@ -74,6 +87,9 @@ async def get_image_id(http: MiraiAPI, target: Union[str, bytes], msg_type: str)
     if type(target) is str:
         with open(target, mode='rb') as file:
             target = file.read()
+
+    # 在图片里夹点私货，让 Mirai 返回不一样的 ID
+    target += str(time.time()).encode()
 
     return await http.upload_image(target, msg_type)
 

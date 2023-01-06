@@ -152,3 +152,7 @@ class Chain:
             getter_hook=self.builder.image_getter_hook
         ))
         return self
+
+    def extend(self, data: Any):
+        self.chain.append(Extend(data))
+        return self
