@@ -63,3 +63,6 @@ class MiraiForwardMessage:
                 'target': target
             }
         })
+
+    async def send(self):
+        await self.api.send_group_message(self.data.channel_id, [self.node])

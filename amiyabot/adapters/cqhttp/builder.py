@@ -9,7 +9,7 @@ from amiyabot.util import is_valid_url
 from amiyabot import log
 
 
-async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
+async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chain_only: bool = False):
     chain_list = custom_chain or chain.chain
     chain_data = []
     voice_list = []
@@ -50,7 +50,11 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
 
             # Voice
             if type(item) is Voice:
-                voice_list.append(send_msg(chain, [await append_voice(item.file)]))
+                voice_item = await append_voice(item.file)
+                if chain_only:
+                    voice_list.append(voice_item)
+                else:
+                    voice_list.append(send_msg(chain, [voice_item]))
 
             # Html
             if type(item) is Html:
@@ -59,6 +63,13 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
                     chain_data.append(await append_image(result))
                 else:
                     log.warning('html convert fail.')
+
+            # Extend
+            if type(item) is Extend:
+                chain_data.append(item.data)
+
+    if chain_only:
+        return chain_data, voice_list
 
     return send_msg(chain, chain_data), voice_list
 
