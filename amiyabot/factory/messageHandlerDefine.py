@@ -9,7 +9,7 @@ from amiyabot.adapters import BotAdapterProtocol
 KeywordsType = Union[str, Equal, re.Pattern, List[Union[str, Equal, re.Pattern]]]
 FunctionType = Callable[[Message], Coroutine[Any, Any, Optional[Chain]]]
 CheckPrefixType = Optional[Union[bool, List[str]]]
-VerifyMethodType = Callable[[Message], Coroutine[Any, Any, Union[bool, Tuple[bool, int]]]]
+VerifyMethodType = Callable[[Message], Coroutine[Any, Any, Union[bool, Tuple[bool, int, Any]]]]
 EventHandlerType = Callable[[Event, BotAdapterProtocol], Coroutine[Any, Any, None]]
 ExceptionHandlerType = Callable[[Exception, BotAdapterProtocol], Coroutine[Any, Any, None]]
 AfterReplyHandlerType = Callable[[Chain, str], Coroutine[Any, Any, None]]
@@ -106,7 +106,7 @@ class MessageHandlerItem:
                     flag = True
 
                 for word in prefix_keywords:
-                    if data.text_origin.startswith(word):
+                    if data.text.startswith(word):
                         flag = True
                         break
 
@@ -124,11 +124,11 @@ class MessageHandlerItem:
             result = await self.custom_verify(data)
 
             if type(result) is bool or result is None:
-                result = result, int(bool(result))
+                result = result, int(bool(result)), None
 
             elif type(result) is tuple:
-                contrast = bool(result[0]), int(bool(result[0]))
-                result = (result + contrast[len(result):])[:2]
+                contrast = bool(result[0]), int(bool(result[0])), None
+                result = (result + contrast[len(result):])[:3]
 
             return Verify(*result)
 

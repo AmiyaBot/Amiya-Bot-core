@@ -7,7 +7,6 @@ from itertools import chain
 from collections import ChainMap
 
 from amiyabot import log
-from amiyabot.help import Helper
 from amiyabot.util import temp_sys_path, extract_zip
 from amiyabot.builtin.lib.timedTask import tasks_control, CUSTOM_CHECK
 
@@ -98,7 +97,6 @@ class BotHandlerFactory:
     def __get_prefix_keywords(self):
         return list(set(self.prefix_keywords))
 
-    @Helper.record
     def on_message(self,
                    group_id: Union[GroupConfig, str] = None,
                    keywords: KeywordsType = None,
@@ -139,7 +137,6 @@ class BotHandlerFactory:
 
         return register
 
-    @Helper.record
     def on_event(self, events: Union[str, List[str]]):
         """
         事件响应注册器
@@ -161,7 +158,6 @@ class BotHandlerFactory:
 
         return register
 
-    @Helper.record
     def on_exception(self, exceptions: Union[Type[Exception], List[Type[Exception]]] = Exception):
         """
         注册异常处理器，参数为异常类型或异常类型列表，在执行通过本实例注册的所有方法产生异常时会被调用
@@ -183,7 +179,6 @@ class BotHandlerFactory:
 
         return handler
 
-    @Helper.record
     def before_bot_reply(self, handler: BeforeReplyHandlerType):
         """
         Bot 回复前处理，用于定义当 Bot 即将回复消息时的操作，该操作会在处理消息前执行
@@ -193,7 +188,6 @@ class BotHandlerFactory:
         """
         self._before_reply_handlers.append(handler)
 
-    @Helper.record
     def after_bot_reply(self, handler: AfterReplyHandlerType):
         """
         Bot 回复后处理，用于定义当 Bot 回复消息后的操作，该操作会在发送消息后执行
@@ -203,7 +197,6 @@ class BotHandlerFactory:
         """
         self._after_reply_handlers.append(handler)
 
-    @Helper.record
     def handler_middleware(self, handler: MessageHandlerMiddlewareType):
         """
         Message 对象与消息处理器的中间件，用于对 Message 作进一步的客制化处理，允许存在多个，但会根据加载顺序叠加使用
@@ -213,7 +206,6 @@ class BotHandlerFactory:
         """
         self._message_handler_middleware.append(handler)
 
-    @Helper.record
     def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None, sub_tag: str = 'default_tag'):
         def register(task: Callable[[BotHandlerFactory], Coroutine[Any, Any, None]]):
             @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)

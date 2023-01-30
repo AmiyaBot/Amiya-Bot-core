@@ -84,6 +84,7 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> 
     for item in handlers:
         check = await item.verify(data)
         if check:
+            data.verify = check
             candidate.append((check, item))
 
     if not candidate:
