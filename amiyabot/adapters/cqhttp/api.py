@@ -11,7 +11,7 @@ class CQHttpAPI:
         }
 
     @classmethod
-    def __json(cls, interface, res):
+    def __json(cls, res):
         try:
             return json.loads(res)
         except json.decoder.JSONDecodeError:
@@ -23,12 +23,12 @@ class CQHttpAPI:
     async def get(self, interface):
         res = await http_requests.get(self.__url(interface), headers=self.headers)
         if res:
-            return self.__json(interface, res)
+            return self.__json(res)
 
     async def post(self, interface, data=None):
         res = await http_requests.post(self.__url(interface), data, headers=self.headers)
         if res:
-            return self.__json(interface, res)
+            return self.__json(res)
 
     async def send_group_forward_msg(self, group_id: int, forward_node: list):
         await self.post('send_group_forward_msg', {

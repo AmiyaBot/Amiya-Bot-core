@@ -3,7 +3,7 @@ import time
 import asyncio
 import collections
 
-from typing import List, Dict, Tuple, Union, Optional, Callable
+from typing import List, Dict, Tuple, Union, Optional, Callable, Any
 from amiyabot import log
 
 Equal = collections.namedtuple('equal', ['content'])  # 全等对象，接受一个字符串，表示消息文本完全匹配该值
@@ -34,8 +34,8 @@ class Message:
 
         self.text = ''
         self.text_digits = ''
-        self.text_origin = ''
-        self.text_initial = ''
+        self.text_unsigned = ''
+        self.text_original = ''
         self.text_words = []
 
         self.at_target = []
@@ -53,14 +53,15 @@ class Message:
 
         self.joined_at = None
 
+        self.verify: Optional[Verify] = None
         self.time = int(time.time())
 
     def __str__(self):
-        text = self.text_origin.replace('\n', ' ')
+        text = self.text.replace('\n', ' ')
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
 
-        return 'Bot:{bot} Channel:{channel} User:{user} {direct}{nickname}: {message}'.format(
+        return 'Bot:{bot} Channel:{channel} User:{user}{direct} {nickname}: {message}'.format(
             **{
                 'bot': self.instance.appid,
                 'channel': self.channel_id,
@@ -155,29 +156,30 @@ class Message:
 
 class MessageMatch:
     @staticmethod
-    def check_str(data: Message, text: str, level: int) -> Tuple[bool, int]:
-        if text.lower() in data.text_origin.lower():
-            return True, level or 1
-        return False, 0
+    def check_str(data: Message, text: str, level: int) -> Tuple[bool, int, Any]:
+        if text.lower() in data.text.lower():
+            return True, level or 1, text
+        return False, 0, None
 
     @staticmethod
-    def check_equal(data: Message, text: Equal, level: int) -> Tuple[bool, int]:
-        if text.content == data.text_origin:
-            return True, level or 10000
-        return False, 0
+    def check_equal(data: Message, text: Equal, level: int) -> Tuple[bool, int, Any]:
+        if text.content == data.text:
+            return True, level or 10000, text
+        return False, 0, None
 
     @staticmethod
-    def check_reg(data: Message, reg: re.Pattern, level: int) -> Tuple[bool, int]:
-        r = re.search(reg, data.text_origin)
+    def check_reg(data: Message, reg: re.Pattern, level: int) -> Tuple[bool, int, Any]:
+        r = re.search(reg, data.text)
         if r:
-            return True, level or (r.re.groups or 1)
-        return False, 0
+            return True, level or (r.re.groups or 1), [item for item in r.groups()]
+        return False, 0, None
 
 
 class Verify:
-    def __init__(self, result: bool, weight: Union[int, float] = 0):
+    def __init__(self, result: bool, weight: Union[int, float] = 0, keypoint: Any = None):
         self.result = result
         self.weight = weight
+        self.keypoint = keypoint
 
     def __bool__(self):
         return bool(self.result)
