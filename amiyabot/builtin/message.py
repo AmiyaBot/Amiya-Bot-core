@@ -219,10 +219,13 @@ class WaitEvent:
 
     def check_alive(self):
         if self.target_id not in wait_events_bucket:
-            raise WaitEventCancel(self.target_id, 'target_id not exist')
+            raise WaitEventCancel(self, 'This event already deleted.')
 
         if self.event_id != wait_events_bucket[self.target_id].event_id:
-            raise WaitEventCancel(self.target_id, 'event_id not equal')
+            raise WaitEventCancel(self, 'Event id not equal.', del_event=False)
+
+        if not self.alive:
+            raise WaitEventCancel(self, 'Timeout.')
 
         return self.alive
 
@@ -232,10 +235,11 @@ class WaitEvent:
     def get(self) -> Message:
         return self.data
 
-    def cancel(self):
+    def cancel(self, del_event: bool = True):
         self.alive = False
-        self.event_id = None
-        del wait_events_bucket[self.target_id]
+
+        if del_event:
+            del wait_events_bucket[self.target_id]
 
 
 class ChannelWaitEvent(WaitEvent):
@@ -324,11 +328,12 @@ class WaitEventException(Exception):
 
 
 class WaitEventCancel(Exception):
-    def __init__(self, target_id: Union[int, str], reason: str):
-        self.key = target_id
-        del wait_events_bucket[target_id]
+    def __init__(self, event: WaitEvent, reason: str, del_event: bool = True):
+        self.key = event.target_id
 
-        log.info(f'Wait event cancel: {target_id}, {reason}')
+        event.cancel(del_event)
+
+        log.info(f'Wait event cancel -> {event.target_id}({event.event_id}), reason: {reason}')
 
     def __str__(self):
         return f'WaitEventCancel: {self.key}'

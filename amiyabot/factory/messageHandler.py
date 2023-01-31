@@ -49,6 +49,10 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         handler = choice[1]
         factory_name = bot.handlers_id_map[id(handler.function)]
 
+        # 取消用户的等待事件
+        if waiter and waiter.type == 'user':
+            waiter.cancel()
+
         # 执行前置处理函数
         flag = True
         if bot.before_reply_handlers:
@@ -59,23 +63,20 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         if not flag:
             return None
 
-        # 执行功能，若存在等待事件，则取消
+        # 执行功能
         reply = await handler.action(data)
         if reply:
-            if waiter and waiter.type == 'user':
-                waiter.cancel()
             await data.send(reply)
 
-            # 执行后置处理函数
-            if bot.after_reply_handlers:
-                for action in bot.after_reply_handlers:
-                    await action(reply, factory_name)
+        # 执行后置处理函数
+        if bot.after_reply_handlers:
+            for action in bot.after_reply_handlers:
+                await action(reply, factory_name)
 
-            return None
-
-    # 未选中任何功能或功能无法返回时，进入等待事件（若存在）
-    if waiter:
-        waiter.set(data)
+    else:
+        # 未选中任何功能时，进入等待事件（若存在）
+        if waiter:
+            waiter.set(data)
 
 
 async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> CHOICE:
@@ -84,13 +85,18 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> 
     for item in handlers:
         check = await item.verify(data)
         if check:
-            data.verify = check
             candidate.append((check, item))
 
     if not candidate:
         return None
 
-    return sorted(candidate, key=lambda n: len(n[0]), reverse=True)[0]
+    # 选择排序第一的结果
+    selected = sorted(candidate, key=lambda n: len(n[0]), reverse=True)[0]
+
+    # 将 Verify 结果赋值给 Message
+    data.verify = selected[0]
+
+    return selected
 
 
 async def find_wait_event(data: Message) -> Union[WaitEvent, ChannelWaitEvent, None]:
