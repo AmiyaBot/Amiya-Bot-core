@@ -12,7 +12,7 @@ CheckPrefixType = Optional[Union[bool, List[str]]]
 VerifyMethodType = Callable[[Message], Coroutine[Any, Any, Union[bool, Tuple[bool, int, Any]]]]
 EventHandlerType = Callable[[Event, BotAdapterProtocol], Coroutine[Any, Any, None]]
 ExceptionHandlerType = Callable[[Exception, BotAdapterProtocol], Coroutine[Any, Any, None]]
-AfterReplyHandlerType = Callable[[Chain, str], Coroutine[Any, Any, None]]
+AfterReplyHandlerType = Callable[[Optional[Chain], str], Coroutine[Any, Any, None]]
 BeforeReplyHandlerType = Callable[[Message, str], Coroutine[Any, Any, bool]]
 MessageHandlerMiddlewareType = Callable[[Message], Coroutine[Any, Any, Optional[Message]]]
 

@@ -91,7 +91,7 @@ class MiraiBotInstance(BotAdapterProtocol):
 
             if 'session' in data:
                 self.api.session = self.session = data['session']
-                log.info('websocket handshake successful. session: ' + self.session)
+                log.info(f'websocket({self.appid}) handshake successful. session: ' + self.session)
                 return False
 
             asyncio.create_task(handler('', data))
