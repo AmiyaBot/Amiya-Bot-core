@@ -7,13 +7,7 @@ CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
 adapter_log: Dict[str, LoggerManager] = {}
 
 
-async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
-    instance = bot.instance
-    data = await instance.package_message(event, message)
-
-    if not data:
-        return False
-
+async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event]):
     instance_name = str(bot.instance)
     if instance_name not in adapter_log:
         adapter_log[instance_name] = LoggerManager(name=instance_name)
@@ -25,7 +19,7 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         if data.event_name in bot.event_handlers:
             _log.info(data.__str__())
             for method in bot.event_handlers[data.event_name]:
-                await method(data, instance)
+                await method(data, bot.instance)
         return None
 
     _log.info(data.__str__())
@@ -49,10 +43,6 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         handler = choice[1]
         factory_name = bot.handlers_id_map[id(handler.function)]
 
-        # 取消用户的等待事件
-        if waiter and waiter.type == 'user':
-            waiter.cancel()
-
         # 执行前置处理函数
         flag = True
         if bot.before_reply_handlers:
@@ -63,20 +53,23 @@ async def message_handler(bot: BotHandlerFactory, event: str, message: dict):
         if not flag:
             return None
 
-        # 执行功能
+        # 执行功能，若存在等待事件，则取消
         reply = await handler.action(data)
         if reply:
+            if waiter and waiter.type == 'user':
+                waiter.cancel()
             await data.send(reply)
 
-        # 执行后置处理函数
-        if bot.after_reply_handlers:
-            for action in bot.after_reply_handlers:
-                await action(reply, factory_name)
+            # 执行后置处理函数
+            if bot.after_reply_handlers:
+                for action in bot.after_reply_handlers:
+                    await action(reply, factory_name)
 
-    else:
-        # 未选中任何功能时，进入等待事件（若存在）
-        if waiter:
-            waiter.set(data)
+            return None
+
+    # 未选中任何功能或功能无法返回时，进入等待事件（若存在）
+    if waiter:
+        waiter.set(data)
 
 
 async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> CHOICE:

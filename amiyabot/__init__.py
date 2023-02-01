@@ -1,6 +1,8 @@
 import typing
 import asyncio
 
+from typing import Union
+
 from amiyabot import log
 
 # adapters
@@ -53,19 +55,28 @@ class AmiyaBot(BotInstance):
             await self.instance.close()
 
     async def __message_handler(self, event: str, message: dict):
-        async with log.catch(desc='handler error:',
-                             ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
-                             handler=self.__exception_handler):
-            await message_handler(self, event, message)
+        async with log.catch(desc='package error:'):
+            data = await self.instance.package_message(event, message)
 
-    async def __exception_handler(self, err: Exception):
-        if self.exception_handlers:
-            subclass = type(err)
-            if subclass not in self.exception_handlers:
-                subclass = Exception
+            if not data:
+                return False
 
-            for func in self.exception_handlers[subclass]:
-                await func(err, self.instance)
+            async with log.catch(desc='handler error:',
+                                 ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
+                                 handler=self.__exception_handler(data)):
+                await message_handler(self, data)
+
+    def __exception_handler(self, data: Union[Message, Event]):
+        async def handler(err: Exception):
+            if self.exception_handlers:
+                subclass = type(err)
+                if subclass not in self.exception_handlers:
+                    subclass = Exception
+
+                for func in self.exception_handlers[subclass]:
+                    await func(err, self.instance, data)
+
+        return handler
 
 
 class MultipleAccounts(BotInstance):

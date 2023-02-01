@@ -1,12 +1,15 @@
 import re
 import time
 import asyncio
-import collections
 
 from typing import List, Dict, Tuple, Union, Optional, Callable, Any
+from dataclasses import dataclass
 from amiyabot import log
 
-Equal = collections.namedtuple('equal', ['content'])  # 全等对象，接受一个字符串，表示消息文本完全匹配该值
+
+@dataclass
+class Equal:
+    content: str
 
 
 class Event:
@@ -21,9 +24,6 @@ class Event:
 
 class Message:
     def __init__(self, instance, message: dict = None):
-        """
-        二次封装的消息对象
-        """
         self.instance = instance
         self.message = message
         self.message_id = None
