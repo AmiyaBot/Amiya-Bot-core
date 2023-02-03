@@ -5,7 +5,7 @@ import traceback
 
 from typing import Union, Dict, List, Type, Any, Callable, Coroutine
 from contextlib import asynccontextmanager, contextmanager
-from logging.handlers import TimedRotatingFileHandler
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 
 class UserLogger:
@@ -41,11 +41,11 @@ class LoggerManager:
 
             formatter = logging.Formatter(self.formatter)
 
-            file_handler = TimedRotatingFileHandler(
-                encoding='utf-8',
+            file_handler = ConcurrentRotatingFileHandler(
                 filename=f'{self.save_path}/{filename}.log',
-                backupCount=7,
-                when='D'
+                encoding='utf-8',
+                maxBytes=512 * 1024,
+                backupCount=10
             )
             file_handler.setFormatter(formatter)
             file_handler.setLevel(self.level)
