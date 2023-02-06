@@ -3,7 +3,7 @@ import asyncio
 import websockets
 
 from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters import BotAdapterProtocol, MessageCallback
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
@@ -18,6 +18,12 @@ def mirai_api_http(host: str, ws_port: int, http_port: int):
         return MiraiBotInstance(appid, token, host, ws_port, http_port)
 
     return adapter
+
+
+class MiraiMessageCallback(MessageCallback):
+    async def recall(self):
+        chain: Chain = self.chain
+        await self.instance.recall_message(self.response['messageId'], chain.data.channel_id or chain.data.user_id)
 
 
 class MiraiBotInstance(BotAdapterProtocol):
@@ -115,7 +121,7 @@ class MiraiBotInstance(BotAdapterProtocol):
                 else:
                     await self.connection.send(voice[1])
 
-        return res
+        return [MiraiMessageCallback(chain, self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,
@@ -140,7 +146,7 @@ class MiraiBotInstance(BotAdapterProtocol):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        await self.send_chain_message(message)
+        return await self.send_chain_message(message)
 
     async def package_message(self, event: str, message: dict):
         return package_mirai_message(self, self.appid, message)
@@ -151,6 +157,3 @@ class MiraiBotInstance(BotAdapterProtocol):
             'messageId': message_id,
             'target': target_id
         })
-
-    async def recall_message_by_response(self, response, target_id=None):
-        await self.recall_message(response['messageId'], target_id)

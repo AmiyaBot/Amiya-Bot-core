@@ -1,9 +1,10 @@
 import re
 import asyncio
 
-from typing import Callable, Tuple, Any
+from typing import Callable, List, Tuple, Any
 from dataclasses import dataclass
 
+from .callback import MessageCallback
 from .structure import EventStructure, MessageStructure, Verify
 from .waitEvent import (
     WaitEvent,
@@ -28,12 +29,11 @@ class Event(EventStructure):
 
 class Message(MessageStructure):
     async def send(self, reply):
-        callbacks = [
-            MessageCallback(self, self.instance, item)
-            for item in await self.instance.send_chain_message(reply, use_http=True)
-        ]
+        callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, use_http=True)
+
         if not callbacks:
             return None
+
         return callbacks if len(callbacks) > 1 else callbacks[0]
 
     async def wait(self,
@@ -138,13 +138,3 @@ class MessageMatch:
         if r:
             return True, level or (r.re.groups or 1), [item for item in r.groups()]
         return False, 0, None
-
-
-class MessageCallback:
-    def __init__(self, message: Message, instance, response):
-        self.message = message
-        self.instance = instance
-        self.response = response
-
-    async def recall(self):
-        await self.instance.recall_message_by_response(self.response, self.message.channel_id)

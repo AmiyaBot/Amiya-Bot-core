@@ -3,7 +3,7 @@ import asyncio
 import websockets
 
 from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters import BotAdapterProtocol, MessageCallback
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
@@ -21,6 +21,11 @@ def cq_http(host: str, ws_port: int, http_port: int):
         return CQHttpBotInstance(appid, token, host, ws_port, http_port)
 
     return adapter
+
+
+class CQHttpMessageCallback(MessageCallback):
+    async def recall(self):
+        await self.instance.recall_message(self.response['data']['message_id'])
 
 
 class CQHttpBotInstance(BotAdapterProtocol):
@@ -110,7 +115,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
                         'params': voice
                     }))
 
-        return res
+        return [CQHttpMessageCallback(chain, self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,
@@ -135,7 +140,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        await self.send_chain_message(message)
+        return await self.send_chain_message(message)
 
     async def package_message(self, event: str, message: dict):
         return package_cqhttp_message(self, self.appid, message)
