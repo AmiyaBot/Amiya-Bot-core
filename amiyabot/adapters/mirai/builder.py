@@ -1,18 +1,25 @@
 import time
 
+from typing import Type
 from graiax import silkcoder
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 from amiyabot.util import is_valid_url
 
-from .payload import WebsocketAdapter
+from .payload import WebsocketAdapter, HttpAdapter, MiraiPostPayload
 from .api import MiraiAPI
 
 
-async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LIST = None, chain_only: bool = False):
+async def build_message_send(api: MiraiAPI,
+                             chain: Chain,
+                             custom_chain: CHAIN_LIST = None,
+                             chain_only: bool = False,
+                             use_http: bool = False):
     chain_list = custom_chain or chain.chain
     chain_data = []
     voice_list = []
+
+    payload_builder = HttpAdapter if use_http else WebsocketAdapter
 
     if chain_list:
         for item in chain_list:
@@ -60,7 +67,7 @@ async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LI
                 if chain_only:
                     voice_list.append(voice_item)
                 else:
-                    voice_list.append(select_type(chain, api.session, [voice_item]))
+                    voice_list.append(select_type(chain, api.session, [voice_item], payload_builder))
 
             # Html
             if type(item) is Html:
@@ -80,7 +87,7 @@ async def build_message_send(api: MiraiAPI, chain: Chain, custom_chain: CHAIN_LI
     if chain_only:
         return chain_data, voice_list
 
-    return select_type(chain, api.session, chain_data), voice_list
+    return select_type(chain, api.session, chain_data, payload_builder), voice_list
 
 
 async def get_image_id(http: MiraiAPI, target: Union[str, bytes], msg_type: str):
@@ -98,23 +105,23 @@ async def get_voice_id(http: MiraiAPI, path: str, msg_type: str):
     return await http.upload_voice(await silkcoder.async_encode(path, ios_adaptive=True), msg_type)
 
 
-def select_type(chain: Chain, session: str, chain_data):
+def select_type(chain: Chain, session: str, chain_data: List[dict], payload_builder: Type[MiraiPostPayload]):
     reply = None
 
     if chain_data:
         if chain.data.message_type == 'group':
-            reply = WebsocketAdapter.group_message(session,
-                                                   chain.data.channel_id,
-                                                   chain_data,
-                                                   quote=chain.data.message_id if chain.reference else None)
-        if chain.data.message_type == 'temp':
-            reply = WebsocketAdapter.temp_message(session,
-                                                  chain.data.user_id,
+            reply = payload_builder.group_message(session,
                                                   chain.data.channel_id,
-                                                  chain_data)
+                                                  chain_data,
+                                                  quote=chain.data.message_id if chain.reference else None)
+        if chain.data.message_type == 'temp':
+            reply = payload_builder.temp_message(session,
+                                                 chain.data.user_id,
+                                                 chain.data.channel_id,
+                                                 chain_data)
         if chain.data.message_type == 'friend':
-            reply = WebsocketAdapter.friend_message(session,
-                                                    chain.data.user_id,
-                                                    chain_data)
+            reply = payload_builder.friend_message(session,
+                                                   chain.data.user_id,
+                                                   chain_data)
 
     return reply

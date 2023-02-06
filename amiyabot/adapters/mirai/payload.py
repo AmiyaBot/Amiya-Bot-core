@@ -1,7 +1,7 @@
 import abc
 import json
 
-from typing import List
+from typing import List, Tuple, Union
 
 
 class MiraiPostPayload:
@@ -11,7 +11,7 @@ class MiraiPostPayload:
                 command: str,
                 sub_command: str = None,
                 content: dict = None,
-                options: dict = None):
+                options: dict = None) -> Tuple[str, Union[dict, str]]:
         raise NotImplementedError('builder must be implemented when inheriting class GeneralDefinition.')
 
     @classmethod
@@ -67,7 +67,7 @@ class WebsocketAdapter(MiraiPostPayload):
                 content: dict = None,
                 options: dict = None,
                 sync_id: int = 1):
-        return json.dumps(
+        return command, json.dumps(
             {
                 'syncId': sync_id,
                 'command': command,
@@ -86,4 +86,4 @@ class HttpAdapter(MiraiPostPayload):
                 sub_command: str = None,
                 content: dict = None,
                 options: dict = None):
-        return content
+        return command, content

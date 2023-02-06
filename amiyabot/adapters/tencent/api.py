@@ -94,6 +94,9 @@ class TencentAPI(BotAdapterProtocol):
             headers=self.headers
         )
 
+    async def recall_message_by_response(self, response: Any, target_id=None):
+        await self.recall_message(response['id'], response['channel_id'])
+
     @abc.abstractmethod
     async def create_connection(self, gateway: ConnectionHandler, shards_index: int = 0):
         raise NotImplementedError

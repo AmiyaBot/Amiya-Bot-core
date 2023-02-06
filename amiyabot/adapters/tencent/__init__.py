@@ -168,14 +168,17 @@ class TencentBotInstance(TencentAPI):
                 sec = 0
                 await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_dict())
 
-    async def send_chain_message(self, chain: Chain):
+    async def send_chain_message(self, chain: Chain, use_http: bool = False):
         reqs = await build_message_send(chain)
+        res = []
+
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                await self.post_message(chain.data.guild_id,
-                                        chain.data.src_guild_id,
-                                        chain.data.channel_id,
-                                        req)
+                res.append(await self.post_message(chain.data.guild_id,
+                                                   chain.data.src_guild_id,
+                                                   chain.data.channel_id,
+                                                   req))
+        return res
 
     async def send_message(self,
                            chain: Chain,

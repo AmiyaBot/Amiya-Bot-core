@@ -86,15 +86,31 @@ class CQHttpBotInstance(BotAdapterProtocol):
         except ConnectionRefusedError:
             log.error(f'cannot connect to cq-http {mark} server.')
 
-    async def send_chain_message(self, chain: Chain):
+    async def send_chain_message(self, chain: Chain, use_http: bool = False):
         reply, voice_list = await build_message_send(chain)
 
+        res = []
+
         if reply:
-            await self.connection.send(reply)
+            if use_http:
+                res.append(await self.api.post('send_msg', reply))
+            else:
+                await self.connection.send(json.dumps({
+                    'action': 'send_msg',
+                    'params': reply
+                }))
 
         if voice_list:
             for voice in voice_list:
-                await self.connection.send(voice)
+                if use_http:
+                    res.append(await self.api.post('send_msg', reply))
+                else:
+                    await self.connection.send(json.dumps({
+                        'action': 'send_msg',
+                        'params': voice
+                    }))
+
+        return res
 
     async def send_message(self,
                            chain: Chain,
@@ -126,3 +142,6 @@ class CQHttpBotInstance(BotAdapterProtocol):
 
     async def recall_message(self, message_id, target_id=None):
         await self.api.post('delete_msg', {'message_id': message_id})
+
+    async def recall_message_by_response(self, response, target_id=None):
+        await self.recall_message(response['data']['message_id'])

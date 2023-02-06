@@ -29,7 +29,7 @@ class BotAdapterProtocol(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def send_chain_message(self, chain: Chain):
+    async def send_chain_message(self, chain: Chain, use_http: bool = False):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -66,6 +66,17 @@ class BotAdapterProtocol(object):
 
         :param message_id: 消息 ID
         :param target_id:  目标 ID
+        :return:
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def recall_message_by_response(self, response: Any, target_id: Union[str, int] = None):
+        """
+        撤回消息（使用返回的数据）
+
+        :param response:  返回数据
+        :param target_id: 目标 ID
         :return:
         """
         raise NotImplementedError
