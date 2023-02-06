@@ -6,14 +6,11 @@ from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.log import LoggerManager
 
 from .forwardMessage import MiraiForwardMessage
 from .package import package_mirai_message
 from .builder import build_message_send
-from .api import MiraiAPI
-
-log = LoggerManager('Mirai')
+from .api import MiraiAPI, log
 
 
 def mirai_api_http(host: str, ws_port: int, http_port: int):
@@ -133,3 +130,10 @@ class MiraiBotInstance(BotAdapterProtocol):
 
     async def package_message(self, event: str, message: dict):
         return package_mirai_message(self, self.appid, message)
+
+    async def recall_message(self, message_id, target_id=None):
+        await self.api.post('recall', {
+            'sessionKey': self.api.session,
+            'messageId': message_id,
+            'target': target_id
+        })

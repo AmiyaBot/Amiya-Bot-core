@@ -58,3 +58,14 @@ class BotAdapterProtocol(object):
         :param message: 消息对象
         """
         raise NotImplementedError
+
+    @abc.abstractmethod
+    async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
+        """
+        撤回消息
+
+        :param message_id: 消息 ID
+        :param target_id:  目标 ID
+        :return:
+        """
+        raise NotImplementedError
