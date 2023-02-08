@@ -116,7 +116,7 @@ class Message(MessageStructure):
 
     async def recall(self):
         if self.message_id:
-            await self.instance.recall_message(self.message_id, self.channel_id)
+            await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
 
 
 class MessageMatch:
