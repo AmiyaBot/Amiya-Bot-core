@@ -3,7 +3,7 @@ import asyncio
 from typing import List, Dict, Union, Optional
 from amiyabot import log
 
-from .structure import MessageStructure as Message
+from .structure import MessageStructure
 
 
 class WaitEvent:
@@ -14,7 +14,7 @@ class WaitEvent:
 
         self.curr_time = 0
 
-        self.data: Optional[Message] = None
+        self.data: Optional[MessageStructure] = None
         self.type = 'user'
 
         self.alive = True
@@ -40,14 +40,14 @@ class WaitEvent:
             raise WaitEventCancel(self, 'Event id not equal.', del_event=False)
 
         if not self.alive:
-            raise WaitEventCancel(self, 'Timeout.')
+            WaitEventCancel(self, 'Timeout.')
 
         return self.alive
 
-    def set(self, data: Optional[Message]):
+    def set(self, data: Optional[MessageStructure]):
         self.data = data
 
-    def get(self) -> Message:
+    def get(self) -> MessageStructure:
         return self.data
 
     def cancel(self, del_event: bool = True):
@@ -61,18 +61,18 @@ class ChannelWaitEvent(WaitEvent):
     def __init__(self, event_id: int, target_id: int, force: bool):
         super().__init__(event_id, target_id, force)
 
-        self.data: List[Message] = list()
+        self.data: List[MessageStructure] = list()
         self.type = 'channel'
         self.token = None
 
     def __repr__(self):
         return f'ChannelWaitEvent(target_id:{self.target_id} alive:{self.alive} token:{self.token})'
 
-    def set(self, data: Optional[Message]):
+    def set(self, data: Optional[MessageStructure]):
         if data:
             self.data.append(data)
 
-    def get(self) -> Message:
+    def get(self) -> MessageStructure:
         if self.data:
             return self.data.pop(0)
 
@@ -87,7 +87,7 @@ class ChannelWaitEvent(WaitEvent):
 
 
 class ChannelMessagesItem:
-    def __init__(self, event: ChannelWaitEvent, item: Message):
+    def __init__(self, event: ChannelWaitEvent, item: MessageStructure):
         self.event = event
         self.message = item
 

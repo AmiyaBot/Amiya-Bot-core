@@ -1,6 +1,7 @@
+import abc
 import time
 
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Callable
 
 
 class EventStructure:
@@ -62,6 +63,31 @@ class MessageStructure:
                 'message': text + face + image
             }
         )
+
+    @abc.abstractmethod
+    async def send(self, reply):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def wait(self,
+                   reply=None,
+                   force: bool = False,
+                   max_time: int = 30,
+                   data_filter: Callable = None):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def wait_channel(self,
+                           reply=None,
+                           force: bool = False,
+                           clean: bool = True,
+                           max_time: int = 30,
+                           data_filter: Callable = None):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def recall(self):
+        raise NotImplementedError
 
 
 class Verify:
