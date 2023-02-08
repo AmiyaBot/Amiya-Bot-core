@@ -3,7 +3,7 @@ import asyncio
 import websockets
 
 from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters import BotAdapterProtocol, MessageCallback
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
@@ -21,6 +21,11 @@ def cq_http(host: str, ws_port: int, http_port: int):
         return CQHttpBotInstance(appid, token, host, ws_port, http_port)
 
     return adapter
+
+
+class CQHttpMessageCallback(MessageCallback):
+    async def recall(self):
+        await self.instance.recall_message(self.response['data']['message_id'])
 
 
 class CQHttpBotInstance(BotAdapterProtocol):
@@ -86,15 +91,31 @@ class CQHttpBotInstance(BotAdapterProtocol):
         except ConnectionRefusedError:
             log.error(f'cannot connect to cq-http {mark} server.')
 
-    async def send_chain_message(self, chain: Chain):
+    async def send_chain_message(self, chain: Chain, use_http: bool = False):
         reply, voice_list = await build_message_send(chain)
 
+        res = []
+
         if reply:
-            await self.connection.send(reply)
+            if use_http:
+                res.append(await self.api.post('send_msg', reply))
+            else:
+                await self.connection.send(json.dumps({
+                    'action': 'send_msg',
+                    'params': reply
+                }))
 
         if voice_list:
             for voice in voice_list:
-                await self.connection.send(voice)
+                if use_http:
+                    res.append(await self.api.post('send_msg', reply))
+                else:
+                    await self.connection.send(json.dumps({
+                        'action': 'send_msg',
+                        'params': voice
+                    }))
+
+        return [CQHttpMessageCallback(chain, self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,
@@ -119,7 +140,13 @@ class CQHttpBotInstance(BotAdapterProtocol):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        await self.send_chain_message(message)
+        return await self.send_chain_message(message)
 
     async def package_message(self, event: str, message: dict):
         return package_cqhttp_message(self, self.appid, message)
+
+    async def recall_message(self, message_id, target_id=None):
+        await self.api.post('delete_msg', {'message_id': message_id})
+
+    async def recall_message_by_response(self, response, target_id=None):
+        await self.recall_message(response['data']['message_id'])

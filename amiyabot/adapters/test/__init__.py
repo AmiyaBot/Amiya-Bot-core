@@ -68,3 +68,6 @@ class TestInstance(BotAdapterProtocol):
         msg.is_admin = data['is_admin']
 
         return text_convert(msg, text, text)
+
+    async def recall_message(self, message_id, target_id=None):
+        pass

@@ -1,7 +1,7 @@
 import abc
 
-from typing import Any, Union, Callable, Coroutine
-from amiyabot.builtin.message import Event, Message
+from typing import Any, List, Union, Callable, Coroutine
+from amiyabot.builtin.message import Event, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 
 handler_type = Callable[[str, dict], Coroutine[Any, Any, None]]
@@ -29,7 +29,7 @@ class BotAdapterProtocol(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def send_chain_message(self, chain: Chain):
+    async def send_chain_message(self, chain: Chain, use_http: bool = False) -> List[MessageCallback]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -37,7 +37,7 @@ class BotAdapterProtocol(object):
                            chain: Chain,
                            user_id: str = '',
                            channel_id: str = '',
-                           direct_src_guild_id: str = ''):
+                           direct_src_guild_id: str = '') -> List[MessageCallback]:
         """
         发送主动消息
 
@@ -56,5 +56,16 @@ class BotAdapterProtocol(object):
 
         :param event:   事件名
         :param message: 消息对象
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
+        """
+        撤回消息
+
+        :param message_id: 消息 ID
+        :param target_id:  目标 ID
+        :return:
         """
         raise NotImplementedError

@@ -1,5 +1,4 @@
 import os
-import json
 import base64
 
 from graiax import silkcoder
@@ -107,12 +106,9 @@ async def append_voice(file: str):
 
 
 def send_msg(chain: Chain, chain_data: list):
-    return json.dumps({
-        'action': 'send_msg',
-        'params': {
-            'message_type': chain.data.message_type,
-            'user_id': chain.data.user_id,
-            'group_id': chain.data.channel_id,
-            'message': chain_data
-        }
-    })
+    return {
+        'message_type': chain.data.message_type,
+        'user_id': chain.data.user_id,
+        'group_id': chain.data.channel_id,
+        'message': chain_data
+    }

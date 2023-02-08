@@ -29,7 +29,7 @@ class TencentAPI(BotAdapterProtocol):
     async def connect(self, private: bool, handler: Callable):
         log.info(f'requesting appid {self.appid} gateway')
 
-        resp = await self.__get_request(APIConstant.gatewayBotURI)
+        resp = await self.get_request(APIConstant.gatewayBotURI)
 
         if not resp:
             if self.keep_run:
@@ -52,16 +52,30 @@ class TencentAPI(BotAdapterProtocol):
             )
         )
 
+    async def get_request(self, url: str):
+        return self.__check_response(
+            await http_requests.get(get_url(url), headers=self.headers)
+        )
+
+    async def post_request(self, url: str, payload: dict = None, is_form_data: bool = False):
+        if is_form_data:
+            return self.__check_response(
+                await http_requests.post_form_data(get_url(url), payload, headers=self.headers)
+            )
+        return self.__check_response(
+            await http_requests.post(get_url(url), payload, headers=self.headers)
+        )
+
     async def get_me(self):
-        return await self.__get_request(APIConstant.userMeURI)
+        return await self.get_request(APIConstant.userMeURI)
 
     async def get_message(self, channel_id: str, message_id: str):
-        return await self.__get_request(APIConstant.messageURI.format(channel_id=channel_id, message_id=message_id))
+        return await self.get_request(APIConstant.messageURI.format(channel_id=channel_id, message_id=message_id))
 
     async def post_message(self, guild_id: str, src_guild_id: str, channel_id: str, req: MessageSendRequest):
         if req.direct:
             if not guild_id or not req.data['msg_id']:
-                create_direct = await self.__post_request(APIConstant.userMeDMURI, {
+                create_direct = await self.post_request(APIConstant.userMeDMURI, {
                     'recipient_id': req.user_id,
                     'source_guild_id': src_guild_id
                 })
@@ -71,7 +85,14 @@ class TencentAPI(BotAdapterProtocol):
         else:
             api = APIConstant.messagesURI.format(channel_id=channel_id)
 
-        return await self.__post_request(api, req.data, req.upload_image)
+        return await self.post_request(api, req.data, req.upload_image)
+
+    async def recall_message(self, message_id, target_id=None):
+        await http_requests.request(
+            get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
+            method='delete',
+            headers=self.headers
+        )
 
     @abc.abstractmethod
     async def create_connection(self, gateway: ConnectionHandler, shards_index: int = 0):
@@ -91,20 +112,6 @@ class TencentAPI(BotAdapterProtocol):
             raise ResponseException(**data)
 
         return data
-
-    async def __get_request(self, url: str):
-        return self.__check_response(
-            await http_requests.get(get_url(url), headers=self.headers)
-        )
-
-    async def __post_request(self, url: str, payload: dict = None, is_form_data: bool = False):
-        if is_form_data:
-            return self.__check_response(
-                await http_requests.post_form_data(get_url(url), payload, headers=self.headers)
-            )
-        return self.__check_response(
-            await http_requests.post(get_url(url), payload, headers=self.headers)
-        )
 
 
 class ResponseException(Exception):

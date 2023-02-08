@@ -1,3 +1,5 @@
+from typing import List, Dict, Union, Optional
+
 from amiyabot.builtin.message import *
 from amiyabot.factory import MessageHandlerItem, BotHandlerFactory
 from amiyabot.log import LoggerManager

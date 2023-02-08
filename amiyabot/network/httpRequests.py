@@ -30,10 +30,8 @@ class HttpRequests:
             log.error(e)
 
     @classmethod
-    async def get(cls, interface: str, *args, **kwargs):
-        async with cls.__handle_requests('GET', interface) as (session, handler):
-            async with session.get(interface, *args, **kwargs) as res:
-                return await handler(res)
+    async def get(cls, interface: str, **kwargs):
+        return await cls.request(interface, 'get', **kwargs)
 
     @classmethod
     async def post(cls, interface: str, payload: Union[dict, list] = None, headers: dict = None):
@@ -44,8 +42,12 @@ class HttpRequests:
         _payload = {
             **(payload or {})
         }
-        async with cls.__handle_requests('POST', interface) as (session, handler):
-            async with session.post(interface, data=json.dumps(_payload), headers=_headers) as res:
+        return await cls.request(interface, 'post', data=json.dumps(_payload), headers=_headers)
+
+    @classmethod
+    async def request(cls, url: str, method: str = 'post', **kwargs):
+        async with cls.__handle_requests(method.upper(), url) as (session, handler):
+            async with session.request(method, url, **kwargs) as res:
                 return await handler(res)
 
     @classmethod

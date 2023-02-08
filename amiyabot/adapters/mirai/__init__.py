@@ -3,17 +3,14 @@ import asyncio
 import websockets
 
 from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters import BotAdapterProtocol, MessageCallback
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.log import LoggerManager
 
 from .forwardMessage import MiraiForwardMessage
 from .package import package_mirai_message
 from .builder import build_message_send
-from .api import MiraiAPI
-
-log = LoggerManager('Mirai')
+from .api import MiraiAPI, log
 
 
 def mirai_api_http(host: str, ws_port: int, http_port: int):
@@ -21,6 +18,12 @@ def mirai_api_http(host: str, ws_port: int, http_port: int):
         return MiraiBotInstance(appid, token, host, ws_port, http_port)
 
     return adapter
+
+
+class MiraiMessageCallback(MessageCallback):
+    async def recall(self):
+        chain: Chain = self.chain
+        await self.instance.recall_message(self.response['messageId'], chain.data.channel_id or chain.data.user_id)
 
 
 class MiraiBotInstance(BotAdapterProtocol):
@@ -96,15 +99,29 @@ class MiraiBotInstance(BotAdapterProtocol):
 
             asyncio.create_task(handler('', data))
 
-    async def send_chain_message(self, chain: Chain):
-        reply, voice_list = await build_message_send(self.api, chain)
+    async def send_chain_message(self, chain: Chain, use_http: bool = False):
+        reply, voice_list = await build_message_send(self.api, chain, use_http=use_http)
+
+        res = []
 
         if reply:
-            await self.connection.send(reply)
+            if use_http:
+                res.append({
+                    **await self.api.post(reply[0], reply[1])
+                })
+            else:
+                await self.connection.send(reply[1])
 
         if voice_list:
             for voice in voice_list:
-                await self.connection.send(voice)
+                if use_http:
+                    res.append({
+                        **await self.api.post(voice[0], voice[1])
+                    })
+                else:
+                    await self.connection.send(voice[1])
+
+        return [MiraiMessageCallback(chain, self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,
@@ -129,7 +146,14 @@ class MiraiBotInstance(BotAdapterProtocol):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        await self.send_chain_message(message)
+        return await self.send_chain_message(message)
 
     async def package_message(self, event: str, message: dict):
         return package_mirai_message(self, self.appid, message)
+
+    async def recall_message(self, message_id, target_id=None):
+        await self.api.post('recall', {
+            'sessionKey': self.api.session,
+            'messageId': message_id,
+            'target': target_id
+        })

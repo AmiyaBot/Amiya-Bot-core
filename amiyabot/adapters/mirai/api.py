@@ -1,9 +1,11 @@
 import json
 
-from amiyabot import log
+from amiyabot.log import LoggerManager
 from amiyabot.network.httpRequests import http_requests
 
 from .payload import HttpAdapter
+
+log = LoggerManager('Mirai')
 
 
 class MiraiAPI:
@@ -16,7 +18,7 @@ class MiraiAPI:
         try:
             response = json.loads(res)
             if response['code'] != 0:
-                log.error(f'http <{interface}> response: {response}')
+                log.error(f'interface </{interface}> response: {response}')
                 return None
             return response
         except json.decoder.JSONDecodeError:

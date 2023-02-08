@@ -8,6 +8,7 @@ from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
+from amiyabot.adapters import BotAdapterProtocol, MessageCallback
 from contextlib import asynccontextmanager
 
 from .api import TencentAPI
@@ -15,8 +16,6 @@ from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
 from .package import package_tencent_message
 from .builder import build_message_send
-
-from .. import BotAdapterProtocol
 
 log = LoggerManager('Tencent')
 
@@ -33,6 +32,11 @@ async def ws(cls: BotAdapterProtocol, sign, url):
 
     cls.set_alive(False)
     log.info(f'connection({sign}) closed.')
+
+
+class TencentMessageCallback(MessageCallback):
+    async def recall(self):
+        await self.instance.recall_message(self.response['id'], self.response['channel_id'])
 
 
 class TencentBotInstance(TencentAPI):
@@ -168,14 +172,18 @@ class TencentBotInstance(TencentAPI):
                 sec = 0
                 await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_dict())
 
-    async def send_chain_message(self, chain: Chain):
+    async def send_chain_message(self, chain: Chain, use_http: bool = False):
         reqs = await build_message_send(chain)
+        res = []
+
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                await self.post_message(chain.data.guild_id,
-                                        chain.data.src_guild_id,
-                                        chain.data.channel_id,
-                                        req)
+                res.append(await self.post_message(chain.data.guild_id,
+                                                   chain.data.src_guild_id,
+                                                   chain.data.channel_id,
+                                                   req))
+
+        return [TencentMessageCallback(chain, self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,
@@ -202,7 +210,7 @@ class TencentBotInstance(TencentAPI):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        await self.send_chain_message(message)
+        return await self.send_chain_message(message)
 
     async def package_message(self, event: str, message: dict):
         return await package_tencent_message(self, event, message)
