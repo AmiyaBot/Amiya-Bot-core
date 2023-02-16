@@ -90,6 +90,8 @@ class TencentAPI(BotAdapterProtocol):
 
         while complete is None and retry_times < 3:
             retry_times += 1
+            if retry_times >= 2:
+                log.info(f'Bot:{self.appid} Channel:{channel_id} retrying post message...({retry_times})')
             complete = await self.post_request(api, req.data, req.upload_image)
             await asyncio.sleep(1)
 
