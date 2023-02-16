@@ -36,6 +36,9 @@ async def ws(cls: BotAdapterProtocol, sign, url):
 
 class TencentMessageCallback(MessageCallback):
     async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
         await self.instance.recall_message(self.response['id'], self.response['channel_id'])
 
 

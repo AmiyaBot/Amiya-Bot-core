@@ -22,6 +22,9 @@ def mirai_api_http(host: str, ws_port: int, http_port: int):
 
 class MiraiMessageCallback(MessageCallback):
     async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
         chain: Chain = self.chain
         await self.instance.recall_message(self.response['messageId'], chain.data.channel_id or chain.data.user_id)
 
