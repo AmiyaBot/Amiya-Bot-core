@@ -137,7 +137,7 @@ class BotHandlerFactory:
 
         return register
 
-    def on_event(self, events: Union[str, List[str]]):
+    def on_event(self, events: Union[str, List[str]] = '__all_event__'):
         """
         事件响应注册器
 

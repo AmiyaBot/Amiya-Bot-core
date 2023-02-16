@@ -18,10 +18,17 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event]):
 
     # 执行事件响应
     if type(data) is Event:
-        if data.event_name in bot.event_handlers:
+        methods = []
+
+        for item in [data.event_name, '__all_event__']:
+            if item in bot.event_handlers:
+                methods += bot.event_handlers[item]
+
+        if methods:
             _log.info(data.__str__())
-            for method in bot.event_handlers[data.event_name]:
+            for method in methods:
                 await method(data, bot.instance)
+
         return None
 
     _log.info(data.__str__())

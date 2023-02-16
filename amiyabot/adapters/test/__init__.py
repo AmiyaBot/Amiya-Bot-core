@@ -44,7 +44,7 @@ class TestInstance(BotAdapterProtocol):
     async def send_message(self, chain: Chain, **kwargs):
         await self.send_chain_message(chain)
 
-    async def send_chain_message(self, chain: Chain):
+    async def send_chain_message(self, chain: Chain, use_http: bool = False):
         reply, voice_list = await build_message_send(chain)
 
         if reply:
