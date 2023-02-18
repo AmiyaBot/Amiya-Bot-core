@@ -38,7 +38,7 @@ class MiraiAPI:
             return self.__json(interface, res)
 
     async def upload(self, interface, field_type, file, msg_type):
-        res = await http_requests.upload(self.__url(interface), file, file_field=field_type, payload={
+        res = await http_requests.post_upload(self.__url(interface), file, file_field=field_type, payload={
             'sessionKey': self.session,
             'type': msg_type
         })

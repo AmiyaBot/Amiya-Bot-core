@@ -60,7 +60,7 @@ class TencentAPI(BotAdapterProtocol):
     async def post_request(self, url: str, payload: dict = None, is_form_data: bool = False):
         if is_form_data:
             return self.__check_response(
-                await http_requests.post_form_data(get_url(url), payload, headers=self.headers)
+                await http_requests.post_form(get_url(url), payload, headers=self.headers)
             )
         return self.__check_response(
             await http_requests.post(get_url(url), payload, headers=self.headers)
@@ -85,7 +85,17 @@ class TencentAPI(BotAdapterProtocol):
         else:
             api = APIConstant.messagesURI.format(channel_id=channel_id)
 
-        return await self.post_request(api, req.data, req.upload_image)
+        complete = None
+        retry_times = 0
+
+        while complete is None and retry_times < 3:
+            retry_times += 1
+            if retry_times >= 2:
+                log.info(f'Bot:{self.appid} Channel:{channel_id} retrying post message...({retry_times})')
+            complete = await self.post_request(api, req.data, req.upload_image)
+            await asyncio.sleep(0)
+
+        return complete
 
     async def recall_message(self, message_id, target_id=None):
         await http_requests.request(

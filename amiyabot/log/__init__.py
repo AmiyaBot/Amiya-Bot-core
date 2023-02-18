@@ -1,7 +1,7 @@
 from .manager import LoggerManager, UserLogger
 from .progress import download_progress
 
-logger = LoggerManager('Bot')
+logger = LoggerManager('Main')
 
 info = logger.info
 error = logger.error

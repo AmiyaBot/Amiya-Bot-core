@@ -25,6 +25,9 @@ def cq_http(host: str, ws_port: int, http_port: int):
 
 class CQHttpMessageCallback(MessageCallback):
     async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
         await self.instance.recall_message(self.response['data']['message_id'])
 
 
@@ -147,6 +150,3 @@ class CQHttpBotInstance(BotAdapterProtocol):
 
     async def recall_message(self, message_id, target_id=None):
         await self.api.post('delete_msg', {'message_id': message_id})
-
-    async def recall_message_by_response(self, response, target_id=None):
-        await self.recall_message(response['data']['message_id'])
