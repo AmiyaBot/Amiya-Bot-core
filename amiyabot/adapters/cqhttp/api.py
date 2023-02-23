@@ -30,8 +30,19 @@ class CQHttpAPI:
         if res:
             return self.__json(res)
 
+    async def send_cq_code(self, user_id, group_id='', code=''):
+        await self.post('send_msg', {
+            'message_type': 'group' if group_id else 'private',
+            'user_id': user_id,
+            'group_id': group_id,
+            'message': code
+        })
+
     async def send_group_forward_msg(self, group_id: int, forward_node: list):
         await self.post('send_group_forward_msg', {
             'group_id': group_id,
             'messages': forward_node
         })
+
+    async def send_nudge(self, user_id, group_id):
+        await self.send_cq_code(user_id, group_id, f'[CQ:poke,qq={user_id}]')

@@ -12,6 +12,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
     chain_list = custom_chain or chain.chain
     chain_data = []
     voice_list = []
+    cq_codes = []
 
     if chain_list:
         for item in chain_list:
@@ -65,12 +66,16 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
 
             # Extend
             if type(item) is Extend:
-                chain_data.append(item.data)
+                data = item.get()
+                if type(data) is str:
+                    cq_codes.append(send_msg(chain, data))
+                else:
+                    chain_data.append(data)
 
     if chain_only:
-        return chain_data, voice_list
+        return chain_data, voice_list, cq_codes
 
-    return send_msg(chain, chain_data), voice_list
+    return send_msg(chain, chain_data), voice_list, cq_codes
 
 
 async def append_image(img: Union[bytes, str]):
@@ -105,7 +110,7 @@ async def append_voice(file: str):
     }
 
 
-def send_msg(chain: Chain, chain_data: list):
+def send_msg(chain: Chain, chain_data: Union[str, list]):
     return {
         'message_type': chain.data.message_type,
         'user_id': chain.data.user_id,

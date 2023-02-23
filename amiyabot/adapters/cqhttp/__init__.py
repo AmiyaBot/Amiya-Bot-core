@@ -95,27 +95,18 @@ class CQHttpBotInstance(BotAdapterProtocol):
             log.error(f'cannot connect to cq-http {mark} server.')
 
     async def send_chain_message(self, chain: Chain, use_http: bool = False):
-        reply, voice_list = await build_message_send(chain)
+        reply, voice_list, cq_codes = await build_message_send(chain)
 
         res = []
 
-        if reply:
-            if use_http:
-                res.append(await self.api.post('send_msg', reply))
-            else:
-                await self.connection.send(json.dumps({
-                    'action': 'send_msg',
-                    'params': reply
-                }))
-
-        if voice_list:
-            for voice in voice_list:
+        for reply_list in [[reply], cq_codes, voice_list]:
+            for item in reply_list:
                 if use_http:
-                    res.append(await self.api.post('send_msg', reply))
+                    res.append(await self.api.post('send_msg', item))
                 else:
                     await self.connection.send(json.dumps({
                         'action': 'send_msg',
-                        'params': voice
+                        'params': item
                     }))
 
         return [CQHttpMessageCallback(chain, self, item) for item in res]

@@ -135,6 +135,8 @@ class BotHandlerFactory:
             self._handlers_id_map[id(func)] = self.factory_name
             self._message_handlers.append(handler)
 
+            return func
+
         return register
 
     def on_event(self, events: Union[str, List[str]] = '__all_event__'):
@@ -155,6 +157,8 @@ class BotHandlerFactory:
                     self._event_handlers[item] = []
 
                 self._event_handlers[item].append(func)
+
+            return func
 
         return register
 
@@ -177,6 +181,8 @@ class BotHandlerFactory:
 
                 self._exception_handlers[item].append(func)
 
+            return func
+
         return handler
 
     def before_bot_reply(self, handler: BeforeReplyHandlerType):
@@ -188,6 +194,8 @@ class BotHandlerFactory:
         """
         self._before_reply_handlers.append(handler)
 
+        return handler
+
     def after_bot_reply(self, handler: AfterReplyHandlerType):
         """
         Bot 回复后处理，用于定义当 Bot 回复消息后的操作，该操作会在发送消息后执行
@@ -196,6 +204,8 @@ class BotHandlerFactory:
         :return:
         """
         self._after_reply_handlers.append(handler)
+
+        return handler
 
     def handler_middleware(self, handler: MessageHandlerMiddlewareType):
         """
@@ -206,11 +216,15 @@ class BotHandlerFactory:
         """
         self._message_handler_middleware.append(handler)
 
+        return handler
+
     def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None, sub_tag: str = 'default_tag'):
         def register(task: Callable[[BotHandlerFactory], Coroutine[Any, Any, None]]):
             @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)
             async def _():
                 await task(self)
+
+            return task
 
         return register
 

@@ -82,7 +82,7 @@ async def build_message_send(api: MiraiAPI,
 
             # Extend
             if type(item) is Extend:
-                chain_data.append(item.data)
+                chain_data.append(item.get())
 
     if chain_only:
         return chain_data, voice_list
