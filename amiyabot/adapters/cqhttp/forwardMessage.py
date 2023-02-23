@@ -35,7 +35,7 @@ class CQHTTPForwardMessage:
 
                 chain.data = source
 
-            chain_data, voice_list = await build_message_send(chain, chain_only=True)
+            chain_data, voice_list, cq_codes = await build_message_send(chain, chain_only=True)
 
             node['data']['content'] = chain_data
 
@@ -47,6 +47,17 @@ class CQHTTPForwardMessage:
                         'type': 'text',
                         'data': {
                             'text': '[语音]'
+                        }
+                    }
+                ]
+                self.node.append(copy.deepcopy(node))
+
+            for item in cq_codes:
+                node['data']['content'] = [
+                    {
+                        'type': 'text',
+                        'data': {
+                            'text': item['message']
                         }
                     }
                 ]

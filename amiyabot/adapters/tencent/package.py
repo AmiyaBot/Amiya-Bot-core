@@ -4,7 +4,7 @@ import jieba
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters.tencent.api import TencentAPI
 
-from ..convert import text_convert
+from ..common import text_convert
 
 ADMIN = ['2', '4', '5']
 

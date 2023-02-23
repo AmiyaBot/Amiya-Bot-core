@@ -1,7 +1,7 @@
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters import BotAdapterProtocol
 
-from ..convert import text_convert
+from ..common import text_convert
 
 
 def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dict):

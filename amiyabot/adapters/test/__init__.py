@@ -4,7 +4,7 @@ from amiyabot.builtin.message import Message, Event
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
-from ..convert import text_convert
+from ..common import text_convert
 from .builder import build_message_send
 from .ws import TestServer
 

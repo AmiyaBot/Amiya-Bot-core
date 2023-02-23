@@ -1,7 +1,13 @@
 import jieba
 
+from dataclasses import dataclass
 from amiyabot.util import remove_punctuation, chinese_to_digits
 from amiyabot.builtin.message import Message
+
+
+@dataclass
+class CQCode:
+    code: str
 
 
 def text_convert(message: Message, text, original):

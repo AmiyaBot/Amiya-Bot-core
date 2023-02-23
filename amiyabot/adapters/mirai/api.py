@@ -84,4 +84,7 @@ class MiraiAPI:
         })
 
     async def send_nudge(self, user_id, group_id):
-        await self.post('sendNudge', HttpAdapter.nudge(self.session, user_id, group_id))
+        await self.post(*HttpAdapter.nudge(self.session, user_id, group_id))
+
+    async def mute(self, user_id, group_id, time: int):
+        await self.post(*HttpAdapter.mute(self.session, group_id, user_id, time))

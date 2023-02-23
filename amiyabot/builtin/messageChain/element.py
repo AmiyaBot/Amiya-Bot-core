@@ -3,6 +3,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import Optional, Callable, Coroutine, Union, List, Any
 from amiyabot.builtin.lib.browserService import basic_browser_service
+from amiyabot.adapters.common import CQCode
 from amiyabot.util import argv
 from amiyabot import log
 
@@ -89,6 +90,11 @@ class Html:
 @dataclass
 class Extend:
     data: Any
+
+    def get(self):
+        if type(self.data) is CQCode:
+            return self.data.code
+        return self.data
 
 
 CHAIN_LIST = List[

@@ -107,22 +107,14 @@ class MiraiBotInstance(BotAdapterProtocol):
 
         res = []
 
-        if reply:
-            if use_http:
-                res.append({
-                    **await self.api.post(reply[0], reply[1])
-                })
-            else:
-                await self.connection.send(reply[1])
-
-        if voice_list:
-            for voice in voice_list:
+        for reply_list in [[reply], voice_list]:
+            for item in reply_list:
                 if use_http:
                     res.append({
-                        **await self.api.post(voice[0], voice[1])
+                        **await self.api.post(item[0], item[1])
                     })
                 else:
-                    await self.connection.send(voice[1])
+                    await self.connection.send(item[1])
 
         return [MiraiMessageCallback(chain, self, item) for item in res]
 
