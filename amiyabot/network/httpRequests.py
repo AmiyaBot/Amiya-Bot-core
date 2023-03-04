@@ -53,6 +53,20 @@ class HttpRequests:
         return await cls.request(interface, 'post', data=json.dumps(_payload), headers=_headers, **kwargs)
 
     @classmethod
+    async def post_form(cls,
+                        interface: str,
+                        payload: dict = None,
+                        headers: dict = None,
+                        **kwargs):
+        _headers = {
+            **(headers or {})
+        }
+
+        data = cls.__build_form_data(payload)
+
+        return await cls.request(interface, 'post', 'post-form', data=data, headers=_headers, **kwargs)
+
+    @classmethod
     async def post_upload(cls,
                           interface: str,
                           file: bytes,
@@ -64,27 +78,17 @@ class HttpRequests:
             **(headers or {})
         }
 
-        data = aiohttp.FormData()
+        data = cls.__build_form_data(payload)
         data.add_field(file_field,
                        file,
                        content_type='application/octet-stream')
 
-        for field, value in (payload or {}).items():
-            data.add_field(field, value)
-
-        return await cls.request(interface, 'post', 'post-upload', data=data, **kwargs)
+        return await cls.request(interface, 'post', 'post-upload', data=data, headers=_headers, **kwargs)
 
     @classmethod
-    async def post_form(cls,
-                        interface: str,
-                        payload: dict = None,
-                        headers: dict = None,
-                        **kwargs):
-        _headers = {
-            **(headers or {})
-        }
-
+    def __build_form_data(cls, payload: dict):
         data = aiohttp.FormData()
+
         for field, value in (payload or {}).items():
             if value is None:
                 continue
@@ -92,7 +96,7 @@ class HttpRequests:
                 value = json.dumps(value, ensure_ascii=False)
             data.add_field(field, value)
 
-        return await cls.request(interface, 'post', 'post-form', data=data, headers=_headers, **kwargs)
+        return data
 
 
 http_requests = HttpRequests
