@@ -10,9 +10,9 @@ default_headers = {
 }
 
 
-def download_sync(url: str, headers=None, stringify=False, progress=False):
+def download_sync(url: str, headers=None, stringify=False, progress=False, **kwargs):
     try:
-        stream = requests.get(url, headers=headers or default_headers, stream=True)
+        stream = requests.get(url, headers={**default_headers, **(headers or {})}, stream=True, **kwargs)
         container = BytesIO()
 
         if stream.status_code == 200:
@@ -38,10 +38,10 @@ def download_sync(url: str, headers=None, stringify=False, progress=False):
         log.error(e, desc='download error:')
 
 
-async def download_async(url, headers=None, stringify=False):
+async def download_async(url, headers=None, stringify=False, **kwargs):
     async with log.catch('download error:', ignore=[requests.exceptions.SSLError]):
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers or default_headers) as res:
+            async with session.get(url, headers={**default_headers, **(headers or {})}, **kwargs) as res:
                 if res.status == 200:
                     if stringify:
                         return await res.text()

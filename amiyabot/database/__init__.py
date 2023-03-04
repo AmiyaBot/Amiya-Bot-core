@@ -1,4 +1,5 @@
 import peewee
+import pymysql
 
 from abc import ABC
 from typing import List, Any
@@ -14,6 +15,14 @@ class MysqlConfig:
     port: int = 3306
     user: str = 'root'
     password: str = ''
+
+    def dict(self):
+        return {
+            'host': self.host,
+            'port': self.port,
+            'user': self.user,
+            'password': self.password
+        }
 
 
 class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase, ABC):
@@ -75,16 +84,18 @@ def table(cls: ModelClass) -> Any:
     return cls
 
 
-def connect_database(database, mysql: bool = False, config: MysqlConfig = None):
+def connect_database(database: str, mysql: bool = False, config: MysqlConfig = None):
     if mysql:
         if not config:
             raise Exception('DatabaseConfig not found.')
-        return ReconnectMySQLDatabase(database, **{
-            'host': config.host,
-            'port': config.port,
-            'user': config.user,
-            'password': config.password
-        })
+
+        conn = pymysql.connect(**config.dict(), charset='utf8')
+        cursor = conn.cursor()
+        cursor.execute(f'CREATE DATABASE IF NOT EXISTS {database} CHARACTER SET utf8;')
+        cursor.close()
+        conn.close()
+
+        return ReconnectMySQLDatabase(database, **config.dict())
     else:
         create_dir(database, is_file=True)
         return SqliteDatabase(database, pragmas={

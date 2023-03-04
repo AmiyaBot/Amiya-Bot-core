@@ -17,7 +17,7 @@ MAX_SEAT = IMAGE_WIDTH - PADDING * 2
 
 
 class ConvertSetting:
-    max_length = 100
+    max_length = argv('text-max-length', int) or 100
 
 
 class ChainBuilder:

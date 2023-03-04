@@ -6,7 +6,7 @@ import string
 import zipfile
 import asyncio
 
-from typing import List
+from typing import List, Callable
 from string import punctuation
 from functools import partial
 from contextlib import contextmanager
@@ -26,7 +26,7 @@ class Singleton(type):
         return cls.instances[cls]
 
 
-async def run_in_thread_pool(block_func, *args, **kwargs):
+async def run_in_thread_pool(block_func: Callable, *args, **kwargs):
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(executor, partial(block_func, *args, **kwargs))
 

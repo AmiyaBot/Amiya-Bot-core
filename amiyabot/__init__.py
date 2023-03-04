@@ -76,7 +76,8 @@ class AmiyaBot(BotInstance):
                     subclass = Exception
 
                 for func in self.exception_handlers[subclass]:
-                    await func(err, self.instance, data)
+                    async with log.catch('exception handler error:'):
+                        await func(err, self.instance, data)
 
         return handler
 

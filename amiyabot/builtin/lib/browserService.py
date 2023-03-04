@@ -11,7 +11,7 @@ class BrowserLaunchConfig:
         self.browser_type: str = 'chromium'
         self.debug: bool = False
 
-    async def launch_browser(self, playwright: Playwright):
+    async def launch_browser(self, playwright: Playwright) -> Browser:
         browser: BrowserType = getattr(playwright, self.browser_type)
 
         return await browser.launch(headless=not self.debug)

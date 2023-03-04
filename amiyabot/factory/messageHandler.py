@@ -27,7 +27,8 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event]):
         if methods:
             _log.info(data.__str__())
             for method in methods:
-                await method(data, bot.instance)
+                async with _log.catch('event handler error:'):
+                    await method(data, bot.instance)
 
         return None
 
