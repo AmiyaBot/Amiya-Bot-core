@@ -94,6 +94,10 @@ class BotHandlerFactory:
                         value[k] = plugin_value[k]
                     else:
                         value[k] += plugin_value[k]
+
+                    if type(value[k]) is list:
+                        value[k] = list(set(value[k]))
+
             return value
 
     def __get_prefix_keywords(self):
