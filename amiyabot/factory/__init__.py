@@ -4,7 +4,6 @@ import zipimport
 import importlib
 
 from itertools import chain
-from collections import ChainMap
 
 from amiyabot import log
 from amiyabot.util import temp_sys_path, extract_zip
@@ -78,20 +77,27 @@ class BotHandlerFactory:
 
     def __get_with_plugins(self, attr: str):
         self_attr = getattr(self, attr)
-        plugin_attr = (getattr(n, attr.strip('_')) for _, n in self.plugins.items())
-
         attr_type = type(self_attr)
 
         if attr_type is list:
-            return self_attr + list(chain(*plugin_attr))
+            return self_attr + list(
+                chain(
+                    *(getattr(plugin, attr.strip('_')) for _, plugin in self.plugins.items())
+                )
+            )
         elif attr_type is dict:
             value = {**self_attr}
-            plugin_value = dict(ChainMap(*plugin_attr))
-            for k in plugin_value:
-                if k not in value:
-                    value[k] = plugin_value[k]
-                else:
-                    value[k] += plugin_value[k]
+            for _, plugin in self.plugins.items():
+                plugin_value = getattr(plugin, attr.strip('_'))
+                for k in plugin_value:
+                    if k not in value:
+                        value[k] = plugin_value[k]
+                    else:
+                        value[k] += plugin_value[k]
+
+                    if type(value[k]) is list:
+                        value[k] = list(set(value[k]))
+
             return value
 
     def __get_prefix_keywords(self):
