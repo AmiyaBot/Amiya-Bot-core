@@ -27,6 +27,19 @@ class Event(EventStructure):
     ...
 
 
+class EventList:
+    def __init__(self, events: list = None):
+        self.events: List[Event] = events or list()
+
+    def __iter__(self):
+        return iter(self.events)
+
+    def append(self, instance, event_name, data):
+        self.events.append(
+            Event(instance, event_name, data)
+        )
+
+
 class Message(MessageStructure):
     async def send(self, reply):
         callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, use_http=True)

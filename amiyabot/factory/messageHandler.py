@@ -1,7 +1,7 @@
-from typing import List, Dict, Union, Optional
+from typing import Dict, Union, Optional
 
 from amiyabot.builtin.message import *
-from amiyabot.factory import MessageHandlerItem, BotHandlerFactory
+from amiyabot.factory import MessageHandlerItem, BotHandlerFactory, EventHandlerType
 from amiyabot.log import LoggerManager
 
 CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
@@ -9,7 +9,7 @@ CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
 adapter_log: Dict[str, LoggerManager] = {}
 
 
-async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event]):
+async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, EventList]):
     instance_name = str(bot.instance)
     if instance_name not in adapter_log:
         adapter_log[instance_name] = LoggerManager(name=instance_name)
@@ -17,19 +17,8 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event]):
     _log = adapter_log[instance_name]
 
     # 执行事件响应
-    if type(data) is Event:
-        methods = []
-
-        for item in [data.event_name, '__all_event__']:
-            if item in bot.event_handlers:
-                methods += bot.event_handlers[item]
-
-        if methods:
-            _log.info(data.__str__())
-            for method in methods:
-                async with _log.catch('event handler error:'):
-                    await method(data, bot.instance)
-
+    if type(data) is not Message:
+        await event_handler(bot, data, _log)
         return None
 
     _log.info(data.__str__())
@@ -80,6 +69,28 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event]):
     # 未选中任何功能或功能无法返回时，进入等待事件（若存在）
     if waiter:
         waiter.set(data)
+
+
+async def event_handler(bot: BotHandlerFactory, data: Union[Event, EventList], _log: LoggerManager):
+    methods = []
+    if '__all_event__' in bot.event_handlers:
+        methods += bot.event_handlers['__all_event__']
+
+    if type(data) is Event:
+        data = EventList([data])
+
+    for item in data:
+        sub_methods: List[EventHandlerType] = [*methods]
+
+        if item.event_name in bot.event_handlers:
+            sub_methods += bot.event_handlers[item.event_name]
+
+        if sub_methods:
+            _log.info(f'{item.__str__()} Handlers: {len(sub_methods)}')
+
+            for method in sub_methods:
+                async with _log.catch('event handler error:'):
+                    await method(item, bot.instance)
 
 
 async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> CHOICE:

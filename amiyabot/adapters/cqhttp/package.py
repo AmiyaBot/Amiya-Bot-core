@@ -1,4 +1,4 @@
-from amiyabot.builtin.message import Event, Message
+from amiyabot.builtin.message import Event, EventList, Message
 from amiyabot.adapters import BotAdapterProtocol
 
 from ..common import text_convert
@@ -8,7 +8,9 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
     if 'post_type' not in data:
         return None
 
-    if data['post_type'] == 'message':
+    post_type = data['post_type']
+
+    if post_type == 'message':
         if data['message_type'] == 'private':
             msg = Message(instance, data)
             msg.message_type = 'private'
@@ -25,7 +27,27 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
         else:
             return None
     else:
-        return Event(instance, data['post_type'], data)
+        event_list = EventList([Event(instance, post_type, data)])
+
+        if post_type == 'meta_event':
+            second_type = data['meta_event_type']
+            event_list.append(instance, f'meta_event.{second_type}', data)
+
+            if second_type == 'lifecycle':
+                event_list.append(instance, f'meta_event.{second_type}.' + data['sub_type'], data)
+
+        elif post_type == 'request':
+            second_type = data['request_type']
+            event_list.append(instance, f'request.{second_type}', data)
+
+        elif post_type == 'notice':
+            second_type = data['notice_type']
+            event_list.append(instance, f'notice.{second_type}', data)
+
+            if second_type == 'notify':
+                event_list.append(instance, f'notice.{second_type}.' + data['sub_type'], data)
+
+        return event_list
 
     msg.message_id = data['message_id']
     msg.user_id = data['sender']['user_id']

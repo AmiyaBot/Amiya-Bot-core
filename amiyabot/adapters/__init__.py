@@ -1,7 +1,7 @@
 import abc
 
 from typing import Any, List, Union, Callable, Coroutine
-from amiyabot.builtin.message import Event, Message, MessageCallback
+from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 
 handler_type = Callable[[str, dict], Coroutine[Any, Any, None]]
@@ -50,7 +50,7 @@ class BotAdapterProtocol(object):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def package_message(self, event: str, message: dict) -> Union[Message, Event]:
+    async def package_message(self, event: str, message: dict) -> Union[Message, Event, EventList]:
         """
         预处理并封装消息对象
 
