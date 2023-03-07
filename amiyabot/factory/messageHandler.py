@@ -55,6 +55,12 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
         # 执行功能，若存在等待事件，则取消
         reply = await handler.action(data)
         if reply:
+            
+            # 执行消息拦截
+            if bot.before_send_handlers:
+                for action in bot.before_send_handlers:
+                    await action(reply, factory_name)
+
             if waiter and waiter.type == 'user':
                 waiter.cancel()
             await data.send(reply)

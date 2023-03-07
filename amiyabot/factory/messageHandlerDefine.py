@@ -14,6 +14,7 @@ EventHandlerType = Callable[[Event, BotAdapterProtocol], Coroutine[Any, Any, Non
 ExceptionHandlerType = Callable[[Exception, BotAdapterProtocol, Union[Message, Event]], Coroutine[Any, Any, None]]
 AfterReplyHandlerType = Callable[[Optional[Chain], str], Coroutine[Any, Any, None]]
 BeforeReplyHandlerType = Callable[[Message, str], Coroutine[Any, Any, bool]]
+BeforeSendHandlerType = Callable[[Optional[Chain], str], Coroutine[Any, Any, None]]
 MessageHandlerMiddlewareType = Callable[[Message], Coroutine[Any, Any, Optional[Message]]]
 
 
@@ -144,5 +145,6 @@ MessageHandlers = List[MessageHandlerItem]
 ExceptionHandlers = Dict[Type[Exception], List[ExceptionHandlerType]]
 AfterReplyHandlers = List[AfterReplyHandlerType]
 BeforeReplyHandlers = List[BeforeReplyHandlerType]
+BeforeSendHandlers = List[BeforeSendHandlerType]
 MessageHandlerMiddleware = List[MessageHandlerMiddlewareType]
 HandlersIDMap = Dict[int, str]

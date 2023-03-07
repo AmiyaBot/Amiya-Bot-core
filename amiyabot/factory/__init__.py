@@ -30,6 +30,7 @@ class BotHandlerFactory:
         self._exception_handlers: ExceptionHandlers = dict()
         self._after_reply_handlers: AfterReplyHandlers = list()
         self._before_reply_handlers: BeforeReplyHandlers = list()
+        self._before_send_handlers: BeforeSendHandlers = list()
         self._message_handler_middleware: MessageHandlerMiddleware = list()
         self._handlers_id_map: HandlersIDMap = dict()
 
@@ -62,6 +63,10 @@ class BotHandlerFactory:
     @property
     def before_reply_handlers(self) -> BeforeReplyHandlers:
         return self.__get_with_plugins('_before_reply_handlers')
+    
+    @property
+    def before_send_handlers(self) -> BeforeSendHandlers:
+        return self.__get_with_plugins('_before_send_handlers')
 
     @property
     def message_handler_middleware(self) -> MessageHandlerMiddleware:
@@ -199,6 +204,17 @@ class BotHandlerFactory:
         :return:
         """
         self._before_reply_handlers.append(handler)
+
+        return handler
+    
+    def before_send(self, handler: BeforeReplyHandlerType):
+        """
+        Bot 发送消息前处理，此时所有消息处理已经结束，即将发送。可以用来拦截消息。
+
+        :param handler: 处理函数
+        :return:
+        """
+        self._before_send_handlers.append(handler)
 
         return handler
 
