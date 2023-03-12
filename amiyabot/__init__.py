@@ -17,7 +17,9 @@ from amiyabot.network.httpServer import HttpServer, ServerEventHandler
 
 # factory
 from amiyabot.factory import BotInstance, PluginInstance, GroupConfig
-from amiyabot.factory.messageHandler import message_handler
+
+# handler
+from amiyabot.handler.messageHandler import message_handler
 
 # lib
 from amiyabot.builtin.lib.timedTask import tasks_control

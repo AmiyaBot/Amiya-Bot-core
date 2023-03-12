@@ -40,7 +40,7 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
     choice = await choice_handlers(data, bot.message_handlers)
     if choice:
         handler = choice[1]
-        factory_name = bot.handlers_id_map[id(handler.function)]
+        factory_name = bot.message_handler_id_map[id(handler.function)]
 
         # 执行前置处理函数
         flag = True
