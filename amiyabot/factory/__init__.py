@@ -9,7 +9,7 @@ from amiyabot.builtin.lib.timedTask import tasks_control, CUSTOM_CHECK
 
 from .factoryTyping import *
 from .implemented import MessageHandlerItemImpl
-from .core import ProcessControl
+from .factoryCore import ProcessControl
 
 
 class BotHandlerFactory(ProcessControl):
@@ -19,6 +19,7 @@ class BotHandlerFactory(ProcessControl):
                  adapter: Type[BotAdapterProtocol] = None):
         super().__init__()
 
+        # override FactoryCore.plugins
         self.plugins: Dict[str, Union[BotHandlerFactory, PluginInstance]] = dict()
 
         self.appid = appid
@@ -26,31 +27,29 @@ class BotHandlerFactory(ProcessControl):
         if adapter:
             self.instance = adapter(appid, token)
 
-        self.factory_name = 'default_factory'
-
     @property
     def prefix_keywords(self) -> PrefixKeywords:
-        return list(set(self.get_with_plugins('prefix_keywords')))
+        return list(set(self.get_with_plugins()))
 
     @property
     def event_handlers(self) -> EventHandlers:
-        return self.get_with_plugins('event_handlers')
+        return self.get_with_plugins()
 
     @property
     def message_handlers(self) -> MessageHandlers:
-        return self.get_with_plugins('message_handlers')
+        return self.get_with_plugins()
 
     @property
     def exception_handlers(self) -> ExceptionHandlers:
-        return self.get_with_plugins('exception_handlers')
+        return self.get_with_plugins()
 
     @property
     def message_handler_id_map(self) -> MessageHandlersIDMap:
-        return self.get_with_plugins('message_handler_id_map')
+        return self.get_with_plugins()
 
     @property
     def group_config(self) -> Dict[str, GroupConfig]:
-        return self.get_with_plugins('group_config')
+        return self.get_with_plugins()
 
     def on_message(self,
                    group_id: Union[GroupConfig, str] = None,

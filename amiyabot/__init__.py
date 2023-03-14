@@ -26,7 +26,7 @@ from amiyabot.builtin.lib.timedTask import tasks_control
 from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
 
 # message
-from amiyabot.builtin.message import Event, Message, WaitEventCancel, WaitEventOutOfFocus, Equal
+from amiyabot.builtin.message import Event, Message, Waiter, WaitEventCancel, WaitEventOutOfFocus, Equal
 from amiyabot.builtin.messageChain import Chain, ChainBuilder
 
 
