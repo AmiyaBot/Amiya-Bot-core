@@ -48,13 +48,13 @@ class FactoryCore:
         if attr_type is list:
             return self_attr + list(
                 chain(
-                    *(plugin.get_container(attr_name) for _, plugin in self.plugins.items())
+                    *(getattr(plugin, attr_name) for _, plugin in self.plugins.items())
                 )
             )
         elif attr_type is dict:
             value = {**self_attr}
             for _, plugin in self.plugins.items():
-                plugin_value: Union[dict, list] = plugin.get_container(attr_name)
+                plugin_value: Union[dict, list] = getattr(plugin, attr_name)
                 for k in plugin_value:
                     if k not in value:
                         value[k] = plugin_value[k]

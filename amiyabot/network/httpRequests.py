@@ -14,6 +14,7 @@ class HttpRequests:
                       url: str,
                       method: str = 'post',
                       request_name: str = None,
+                      ignore_error: bool = False,
                       **kwargs):
         try:
             request_name = (request_name or method).upper()
@@ -25,11 +26,14 @@ class HttpRequests:
                     elif res.status in cls.async_success:
                         return ''
                     else:
-                        log.error(f'bad to request <{url}>[{request_name}]. Got code {res.status}')
+                        if not ignore_error:
+                            log.error(f'bad to request <{url}>[{request_name}]. Got code {res.status}')
         except aiohttp.ClientConnectorError:
-            log.error(f'fail to request <{url}>[{request_name}]')
+            if not ignore_error:
+                log.error(f'fail to request <{url}>[{request_name}]')
         except Exception as e:
-            log.error(e)
+            if not ignore_error:
+                log.error(e)
 
     @classmethod
     async def get(cls,
