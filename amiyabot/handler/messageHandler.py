@@ -1,6 +1,7 @@
-from typing import Dict, Union, Optional
+from typing import Dict, Optional
 
 from amiyabot.builtin.message import *
+from amiyabot.builtin.messageChain import Chain
 from amiyabot.factory import MessageHandlerItem, BotHandlerFactory, EventHandlerType
 from amiyabot.log import LoggerManager
 
@@ -10,7 +11,8 @@ adapter_log: Dict[str, LoggerManager] = {}
 
 
 async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, EventList]):
-    instance_name = str(bot.instance)
+    instance = bot.instance
+    instance_name = str(instance)
     if instance_name not in adapter_log:
         adapter_log[instance_name] = LoggerManager(name=instance_name)
 
@@ -18,21 +20,28 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
 
     # 执行事件响应
     if type(data) is not Message:
+        # todo 生命周期 - event_created
+        for method in bot.process_event_created:
+            data = await method(data, instance) or data
+
         await event_handler(bot, data, _log)
         return None
 
     _log.info(data.__str__())
 
-    # 执行中间处理函数
-    if bot.message_handler_middleware:
-        for middleware in bot.message_handler_middleware:
-            data = await middleware(data) or data
+    # todo 生命周期 - message_created
+    for method in bot.process_message_created:
+        data = await method(data, instance) or data
 
     # 检查是否存在等待事件
     waiter = await find_wait_event(data)
 
     # 若存在等待事件并且等待事件设置了强制等待，则直接进入事件
     if waiter and waiter.force:
+        # todo 生命周期 - message_before_waiter_set(1)
+        for method in bot.process_message_before_waiter_set:
+            data = await method(data, waiter, instance) or data
+
         waiter.set(data)
         return None
 
@@ -40,34 +49,48 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
     choice = await choice_handlers(data, bot.message_handlers)
     if choice:
         handler = choice[1]
-        factory_name = bot.handlers_id_map[id(handler.function)]
+        factory_name = bot.message_handler_id_map[id(handler.function)]
 
-        # 执行前置处理函数
+        # todo 生命周期 - message_before_handle
         flag = True
-        if bot.before_reply_handlers:
-            for action in bot.before_reply_handlers:
-                res = await action(data, factory_name)
-                if res is False:
-                    flag = False
+        for method in bot.process_message_before_handle:
+            res = await method(data, factory_name, instance)
+            if res is False:
+                flag = False
         if not flag:
             return None
 
-        # 执行功能，若存在等待事件，则取消
+        # 执行功能，并取消存在的等待事件
         reply = await handler.action(data)
         if reply:
             if waiter and waiter.type == 'user':
                 waiter.cancel()
+
+            if type(reply) is str:
+                reply = Chain(data, at=False).text(reply)
+
+            # todo 生命周期 - message_before_send
+            for method in bot.process_message_before_send:
+                reply = await method(reply, factory_name, instance) or reply
+
             await data.send(reply)
 
-            # 执行后置处理函数
-            if bot.after_reply_handlers:
-                for action in bot.after_reply_handlers:
-                    await action(reply, factory_name)
+            # todo 生命周期 - message_after_send
+            for method in bot.process_message_after_send:
+                await method(reply, factory_name, instance)
 
-            return None
+        # todo 生命周期 - message_after_handle
+        for method in bot.process_message_after_handle:
+            await method(reply, factory_name, instance)
+
+        return None
 
     # 未选中任何功能或功能无法返回时，进入等待事件（若存在）
     if waiter:
+        # todo 生命周期 - message_before_waiter_set(2)
+        for method in bot.process_message_before_waiter_set:
+            data = await method(data, waiter, instance) or data
+
         waiter.set(data)
 
 
@@ -86,7 +109,7 @@ async def event_handler(bot: BotHandlerFactory, data: Union[Event, EventList], _
             sub_methods += bot.event_handlers[item.event_name]
 
         if sub_methods:
-            _log.info(f'{item.__str__()} Handlers: {len(sub_methods)}')
+            _log.info(f'{item.__str__()} Handlers Counts: {len(sub_methods)}')
 
             for method in sub_methods:
                 async with _log.catch('event handler error:'):
@@ -105,7 +128,7 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> 
         return None
 
     # 选择排序第一的结果
-    selected = sorted(candidate, key=lambda n: len(n[0]), reverse=True)[0]
+    selected = sorted(candidate, key=lambda n: n[0].weight, reverse=True)[0]
 
     # 将 Verify 结果赋值给 Message
     data.verify = selected[0]
@@ -113,7 +136,7 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> 
     return selected
 
 
-async def find_wait_event(data: Message) -> Union[WaitEvent, ChannelWaitEvent, None]:
+async def find_wait_event(data: Message) -> Waiter:
     waiter = None
 
     if data.is_direct:

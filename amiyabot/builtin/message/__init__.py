@@ -1,7 +1,7 @@
 import re
 import asyncio
 
-from typing import Callable, List, Tuple, Any
+from typing import Callable, Union, List, Tuple, Any
 from dataclasses import dataclass
 
 from .callback import MessageCallback
@@ -151,3 +151,7 @@ class MessageMatch:
         if r:
             return True, level or (r.re.groups or 1), [item for item in r.groups()]
         return False, 0, None
+
+
+Waiter = Union[WaitEvent, ChannelWaitEvent, None]
+EventType = Union[Event, EventList]
