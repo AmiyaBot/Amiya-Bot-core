@@ -22,7 +22,8 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
     if type(data) is not Message:
         # todo 生命周期 - event_created
         for method in bot.process_event_created:
-            data = await method(data, instance)
+            data = await method(data, instance) or data
+
         await event_handler(bot, data, _log)
         return None
 
@@ -127,7 +128,7 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> 
         return None
 
     # 选择排序第一的结果
-    selected = sorted(candidate, key=lambda n: len(n[0]), reverse=True)[0]
+    selected = sorted(candidate, key=lambda n: n[0].weight, reverse=True)[0]
 
     # 将 Verify 结果赋值给 Message
     data.verify = selected[0]

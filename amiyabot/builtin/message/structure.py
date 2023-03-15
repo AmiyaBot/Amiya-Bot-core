@@ -101,6 +101,3 @@ class Verify:
 
     def __repr__(self):
         return f'<Verify, {self.result}, {self.weight}>'
-
-    def __len__(self):
-        return self.weight
