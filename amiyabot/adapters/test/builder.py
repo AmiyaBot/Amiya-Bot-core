@@ -14,28 +14,28 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
     if chain_list:
         for item in chain_list:
             # At
-            if type(item) is At:
+            if isinstance(item, At):
                 chain_data.append({
                     'type': 'text',
                     'data': f'@{chain.data.nickname}'
                 })
 
             # Face
-            if type(item) is Face:
+            if isinstance(item, Face):
                 chain_data.append({
                     'type': 'text',
                     'data': f'[{item.face_id}]'
                 })
 
             # Text
-            if type(item) is Text:
+            if isinstance(item, Text):
                 chain_data.append({
                     'type': 'text',
                     'data': item.content
                 })
 
             # Image
-            if type(item) is Image:
+            if isinstance(item, Image):
                 img = await item.get()
                 chain_data.append({
                     'type': 'image',
@@ -43,7 +43,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
                 })
 
             # Voice
-            if type(item) is Voice:
+            if isinstance(item, Voice):
                 voice_list.append(send_msg(
                     [
                         {
@@ -54,7 +54,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
                 ))
 
             # Html
-            if type(item) is Html:
+            if isinstance(item, Html):
                 result = await item.create_html_image()
                 if result:
                     chain_data.append({
@@ -68,7 +68,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
 
 
 async def append_image(img: Union[bytes, str]):
-    if type(img) is bytes:
+    if isinstance(img, bytes):
         img = 'data:image/png;base64,' + base64.b64encode(img).decode()
     return img
 

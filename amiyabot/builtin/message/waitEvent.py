@@ -39,8 +39,8 @@ class WaitEvent:
         if self.event_id != wait_events_bucket[self.target_id].event_id:
             raise WaitEventCancel(self, 'Event id not equal.', del_event=False)
 
-        if not self.alive:
-            WaitEventCancel(self, 'Timeout.')
+        # if not self.alive:
+        #     WaitEventCancel(self, 'Timeout.')
 
         return self.alive
 

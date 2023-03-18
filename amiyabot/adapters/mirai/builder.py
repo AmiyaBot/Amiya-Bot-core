@@ -24,28 +24,28 @@ async def build_message_send(api: MiraiAPI,
     if chain_list:
         for item in chain_list:
             # At
-            if type(item) is At:
+            if isinstance(item, At):
                 chain_data.append({
                     'type': 'At',
                     'target': item.target or chain.data.user_id
                 })
 
             # Face
-            if type(item) is Face:
+            if isinstance(item, Face):
                 chain_data.append({
                     'type': 'Face',
                     'faceId': item.face_id
                 })
 
             # Text
-            if type(item) is Text:
+            if isinstance(item, Text):
                 chain_data.append({
                     'type': 'Plain',
                     'text': item.content
                 })
 
             # Image
-            if type(item) is Image:
+            if isinstance(item, Image):
                 target = await item.get()
                 if is_valid_url(target):
                     chain_data.append({
@@ -59,7 +59,7 @@ async def build_message_send(api: MiraiAPI,
                     })
 
             # Voice
-            if type(item) is Voice:
+            if isinstance(item, Voice):
                 voice_item = {
                     'type': 'Voice',
                     'voiceId': await get_voice_id(api, item.file, chain.data.message_type)
@@ -70,7 +70,7 @@ async def build_message_send(api: MiraiAPI,
                     voice_list.append(select_type(chain, api.session, [voice_item], payload_builder))
 
             # Html
-            if type(item) is Html:
+            if isinstance(item, Html):
                 result = await item.create_html_image()
                 if result:
                     chain_data.append({
@@ -81,7 +81,7 @@ async def build_message_send(api: MiraiAPI,
                     log.warning('html convert fail.')
 
             # Extend
-            if type(item) is Extend:
+            if isinstance(item, Extend):
                 chain_data.append(item.get())
 
     if chain_only:
@@ -91,7 +91,7 @@ async def build_message_send(api: MiraiAPI,
 
 
 async def get_image_id(http: MiraiAPI, target: Union[str, bytes], msg_type: str):
-    if type(target) is str:
+    if isinstance(target, str):
         with open(target, mode='rb') as file:
             target = file.read()
 

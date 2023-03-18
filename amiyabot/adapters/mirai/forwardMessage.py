@@ -26,7 +26,7 @@ class MiraiForwardMessage:
             'senderName': nickname
         }
 
-        if type(chain) is Chain:
+        if isinstance(chain, Chain):
             if not chain.data:
                 source = Message(self.data.instance)
                 source.user_id = user_id

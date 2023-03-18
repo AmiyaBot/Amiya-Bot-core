@@ -111,11 +111,11 @@ class Chain:
         if url:
             self.chain.append(Image(url=url, getter_hook=self.builder.image_getter_hook))
         else:
-            if type(target) is not list:
+            if not isinstance(target, list):
                 target = [target]
 
             for item in target:
-                if type(item) is str:
+                if isinstance(item, str):
                     if os.path.exists(item):
                         with open(item, mode='rb') as f:
                             self.chain.append(Image(content=f.read(), getter_hook=self.builder.image_getter_hook))

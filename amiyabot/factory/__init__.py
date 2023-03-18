@@ -104,7 +104,7 @@ class BotHandlerFactory(ProcessControl):
         def register(func: EventHandlerType):
             nonlocal events
 
-            if type(events) is not list:
+            if not isinstance(events, list):
                 events = [events]
 
             event_handlers = self.get_container('event_handlers')
@@ -130,7 +130,7 @@ class BotHandlerFactory(ProcessControl):
         def handler(func: ExceptionHandlerType):
             nonlocal exceptions
 
-            if type(exceptions) is not list:
+            if isinstance(exceptions, list):
                 exceptions = [exceptions]
 
             exception_handlers = self.get_container('exception_handlers')
@@ -163,7 +163,7 @@ class BotHandlerFactory(ProcessControl):
 
     def set_prefix_keywords(self, keyword: Union[str, List[str]]):
         prefix_keywords = self.get_container('prefix_keywords')
-        prefix_keywords += [keyword] if type(keyword) != list else keyword
+        prefix_keywords += [keyword] if not isinstance(keyword, list) else keyword
 
     def __get_prefix_keywords(self):
         return list(set(self.prefix_keywords))
@@ -196,23 +196,13 @@ class PluginInstance(BotHandlerFactory):
 
 
 class BotInstance(BotHandlerFactory):
-    def __init__(self,
-                 appid: str = None,
-                 token: str = None,
-                 adapter: Type[BotAdapterProtocol] = None):
-        super().__init__(
-            appid,
-            token,
-            adapter
-        )
-
     @classmethod
     def load_plugin(cls,
                     plugin: Union[str, PluginInstance],
                     extract_plugin: bool = False,
                     extract_plugin_dest: str = None):
         with log.sync_catch('plugin install error:'):
-            if type(plugin) is str:
+            if isinstance(plugin, str):
                 if os.path.isdir(plugin):
                     # 以 Python Package 的形式加载
                     with temp_sys_path(os.path.dirname(plugin)):

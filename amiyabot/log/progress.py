@@ -18,9 +18,9 @@ def download_progress(title: str, max_size: int, chunk_size: int, iter_content: 
             average_text = f'{int(average * 1024)}kb/s'
 
         block = int(curr / 4)
-        bar = '=' * block + ' ' * (25 - block)
+        progress_line = '=' * block + ' ' * (25 - block)
 
-        msg = f'{title} [{bar}] {c_size} / {size}mb ({curr}%) {average_text}'
+        msg = f'{title} [{progress_line}] {c_size} / {size}mb ({curr}%) {average_text}'
 
         print('\r', end='')
         print(msg, end='')

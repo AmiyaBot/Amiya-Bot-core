@@ -22,11 +22,11 @@ class CQHTTPForwardMessage:
             'data': {
                 'uin': user_id,
                 'name': nickname,
-                'content': chain if type(chain) is list else []
+                'content': chain if isinstance(chain, list) else []
             }
         }
 
-        if type(chain) is Chain:
+        if isinstance(chain, Chain):
             if not chain.data:
                 source = Message(self.data.instance)
                 source.user_id = user_id

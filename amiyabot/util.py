@@ -53,8 +53,8 @@ def argv(name, formatter=str):
 
         if sys.argv[index].startswith('--'):
             return True
-        else:
-            return formatter(sys.argv[index])
+
+        return formatter(sys.argv[index])
 
 
 def create_dir(path: str, is_file: bool = False):
@@ -70,7 +70,7 @@ def create_dir(path: str, is_file: bool = False):
 def random_code(length):
     pool = string.digits + string.ascii_letters
     code = ''
-    for i in range(length):
+    for _ in range(length):
         code += random.choice(pool)
     return code
 
@@ -138,11 +138,11 @@ def chinese_to_digits(text: str):
                 if item in more_symbol:
                     symbol_str += item
                     continue
-                else:
-                    digits = str(_digits(symbol_str))
-                    text = text.replace(symbol_str, digits, 1)
-                    symbol_str = ''
-                    found = False
+
+                digits = str(_digits(symbol_str))
+                text = text.replace(symbol_str, digits, 1)
+                symbol_str = ''
+                found = False
 
     if symbol_str:
         digits = str(_digits(symbol_str))
@@ -175,17 +175,17 @@ def support_gbk_zip(zip_file: zipfile.ZipFile):
 
 def extract_zip(file: str, dest: str, overwrite: bool = False, ignore: List[re.Pattern] = None):
     create_dir(dest)
-    pack = zipfile.ZipFile(file)
-    for pack_file in support_gbk_zip(pack).namelist():
-        dest_file = os.path.join(dest, pack_file)
-        if ignore:
-            for reg in ignore:
-                if re.search(reg, dest_file):
-                    continue
+    with zipfile.ZipFile(file) as pack:
+        for pack_file in support_gbk_zip(pack).namelist():
+            dest_file = os.path.join(dest, pack_file)
+            if ignore:
+                for reg in ignore:
+                    if re.search(reg, dest_file):
+                        continue
 
-        if os.path.exists(dest_file) and not overwrite:
-            continue
-        pack.extract(pack_file, dest)
+            if os.path.exists(dest_file) and not overwrite:
+                continue
+            pack.extract(pack_file, dest)
 
 
 def is_valid_url(url: str):

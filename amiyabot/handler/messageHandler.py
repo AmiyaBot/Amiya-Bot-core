@@ -19,7 +19,7 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
     _log = adapter_log[instance_name]
 
     # 执行事件响应
-    if type(data) is not Message:
+    if not isinstance(data, Message):
         # todo 生命周期 - event_created
         for method in bot.process_event_created:
             data = await method(data, instance) or data
@@ -66,7 +66,7 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
             if waiter and waiter.type == 'user':
                 waiter.cancel()
 
-            if type(reply) is str:
+            if isinstance(reply, str):
                 reply = Chain(data, at=False).text(reply)
 
             # todo 生命周期 - message_before_send
@@ -99,7 +99,7 @@ async def event_handler(bot: BotHandlerFactory, data: Union[Event, EventList], _
     if '__all_event__' in bot.event_handlers:
         methods += bot.event_handlers['__all_event__']
 
-    if type(data) is Event:
+    if isinstance(data, Event):
         data = EventList([data])
 
     for item in data:

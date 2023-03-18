@@ -17,7 +17,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
     if chain_list:
         for item in chain_list:
             # At
-            if type(item) is At:
+            if isinstance(item, At):
                 chain_data.append({
                     'type': 'at',
                     'data': {
@@ -26,7 +26,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
                 })
 
             # Face
-            if type(item) is Face:
+            if isinstance(item, Face):
                 chain_data.append({
                     'type': 'face',
                     'data': {
@@ -35,7 +35,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
                 })
 
             # Text
-            if type(item) is Text:
+            if isinstance(item, Text):
                 chain_data.append({
                     'type': 'text',
                     'data': {
@@ -44,12 +44,12 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
                 })
 
             # Image
-            if type(item) is Image:
+            if isinstance(item, Image):
                 img = await item.get()
                 chain_data.append(await append_image(img))
 
             # Voice
-            if type(item) is Voice:
+            if isinstance(item, Voice):
                 voice_item = await append_voice(item.file)
                 if chain_only:
                     voice_list.append(voice_item)
@@ -57,7 +57,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
                     voice_list.append(send_msg(chain, [voice_item]))
 
             # Html
-            if type(item) is Html:
+            if isinstance(item, Html):
                 result = await item.create_html_image()
                 if result:
                     chain_data.append(await append_image(result))
@@ -65,9 +65,9 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
                     log.warning('html convert fail.')
 
             # Extend
-            if type(item) is Extend:
+            if isinstance(item, Extend):
                 data = item.get()
-                if type(data) is str:
+                if isinstance(data, str):
                     cq_codes.append(send_msg(chain, data))
                 else:
                     chain_data.append(data)
@@ -79,7 +79,7 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chai
 
 
 async def append_image(img: Union[bytes, str]):
-    if type(img) is bytes:
+    if isinstance(img, bytes):
         data = {
             'file': 'base64://' + base64.b64encode(img).decode()
         }

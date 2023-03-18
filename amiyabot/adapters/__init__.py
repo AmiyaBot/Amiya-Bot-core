@@ -7,7 +7,7 @@ from amiyabot.builtin.messageChain import Chain
 handler_type = Callable[[str, dict], Coroutine[Any, Any, None]]
 
 
-class BotAdapterProtocol(object):
+class BotAdapterProtocol:
     def __init__(self, appid: str, token: str):
         self.appid = appid
         self.token = token

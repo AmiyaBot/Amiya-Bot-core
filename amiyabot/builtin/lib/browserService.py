@@ -29,7 +29,7 @@ class BrowserService:
             return None
         self.launched = True
 
-        log.info(f'launching browser...')
+        log.info('launching browser...')
 
         self.playwright = await async_playwright().start()
         self.browser = await config.launch_browser(self.playwright)

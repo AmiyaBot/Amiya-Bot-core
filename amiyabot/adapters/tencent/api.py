@@ -105,7 +105,7 @@ class TencentAPI(BotAdapterProtocol):
         )
 
     @abc.abstractmethod
-    async def create_connection(self, gateway: ConnectionHandler, shards_index: int = 0):
+    async def create_connection(self, handler: ConnectionHandler, shards_index: int = 0):
         raise NotImplementedError
 
     @staticmethod
@@ -116,7 +116,7 @@ class TencentAPI(BotAdapterProtocol):
         try:
             data = json.loads(response_text)
         except json.JSONDecodeError as e:
-            raise ResponseException(0, repr(e))
+            raise ResponseException(0, repr(e)) from e
 
         if 'code' in data and data['code'] != 200:
             raise ResponseException(**data)

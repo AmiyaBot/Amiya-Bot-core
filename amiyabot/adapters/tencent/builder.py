@@ -33,10 +33,10 @@ class MessageSendRequestGroup:
         if content:
             req.data['content'] = content
 
-        if type(image) is str:
+        if isinstance(image, str):
             req.data['image'] = image
 
-        if type(image) is bytes:
+        if isinstance(image, bytes):
             req.data['file_image'] = image
             req.upload_image = True
 
@@ -79,27 +79,27 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
 
     for item in chain_list:
         # At
-        if type(item) is At:
+        if isinstance(item, At):
             messages.add_text(f'<@{item.target}>')
 
         # Face
-        if type(item) is Face:
+        if isinstance(item, Face):
             messages.add_text(f'<emoji:{item.face_id}>')
 
         # Text
-        if type(item) is Text:
+        if isinstance(item, Text):
             messages.add_text(item.content)
 
         # Image
-        if type(item) is Image:
+        if isinstance(item, Image):
             messages.add_image(await item.get())
 
         # Voice
-        if type(item) is Voice:
+        if isinstance(item, Voice):
             pass
 
         # Html
-        if type(item) is Html:
+        if isinstance(item, Html):
             result = await item.create_html_image()
             if result:
                 messages.add_image(result)

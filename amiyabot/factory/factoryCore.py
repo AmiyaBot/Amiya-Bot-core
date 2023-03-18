@@ -51,7 +51,8 @@ class FactoryCore:
                     *(getattr(plugin, attr_name) for _, plugin in self.plugins.items())
                 )
             )
-        elif attr_type is dict:
+
+        if attr_type is dict:
             value = {**self_attr}
             for _, plugin in self.plugins.items():
                 plugin_value: Union[dict, list] = getattr(plugin, attr_name)
@@ -61,16 +62,13 @@ class FactoryCore:
                     else:
                         value[k] += plugin_value[k]
 
-                    if type(value[k]) is list:
+                    if isinstance(value[k], list):
                         value[k] = list(set(value[k]))
 
             return value
 
 
 class ProcessControl(FactoryCore):
-    def __init__(self):
-        super().__init__()
-
     @property
     def process_event_created(self) -> EventCreatedHandlers:
         return self.get_with_plugins()

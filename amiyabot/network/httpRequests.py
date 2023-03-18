@@ -23,11 +23,10 @@ class HttpRequests:
                 async with session.request(method, url, **kwargs) as res:
                     if res.status in cls.success:
                         return await res.text()
-                    elif res.status in cls.async_success:
+                    if res.status in cls.async_success:
                         return ''
-                    else:
-                        if not ignore_error:
-                            log.error(f'bad to request <{url}>[{request_name}]. Got code {res.status}')
+                    if not ignore_error:
+                        log.error(f'bad to request <{url}>[{request_name}]. Got code {res.status}')
         except aiohttp.ClientConnectorError:
             if not ignore_error:
                 log.error(f'fail to request <{url}>[{request_name}]')

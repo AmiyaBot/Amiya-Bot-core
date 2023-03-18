@@ -150,7 +150,7 @@ def create_image(text: str = '',
 
     row = 0
     col = padding
-    for line, item in enumerate(text_obj.char_list):
+    for _, item in enumerate(text_obj.char_list):
         draw.text((col, padding + row * line_height), item.text, font=text_obj.font, fill=item.color)
         col += item.width
         if item.enter:
@@ -159,7 +159,7 @@ def create_image(text: str = '',
 
     if images:
         for item in images:
-            if type(item) is dict:
+            if isinstance(item, dict):
                 item = ImageElem(**item)
             if os.path.exists(item.path) is False:
                 continue

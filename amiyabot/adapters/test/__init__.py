@@ -41,7 +41,11 @@ class TestInstance(BotAdapterProtocol):
     async def connect(self, private: bool, handler: Callable):
         await self.server.run(handler)
 
-    async def send_message(self, chain: Chain, **kwargs):
+    async def send_message(self,
+                           chain: Chain,
+                           user_id: str = '',
+                           channel_id: str = '',
+                           direct_src_guild_id: str = ''):
         await self.send_chain_message(chain)
 
     async def send_chain_message(self, chain: Chain, use_http: bool = False):
@@ -54,18 +58,18 @@ class TestInstance(BotAdapterProtocol):
             for voice in voice_list:
                 await self.server.send(voice)
 
-    async def package_message(self, event: str, data: dict):
+    async def package_message(self, event: str, message: dict):
         if event != 'message':
-            return Event(self, event, data)
+            return Event(self, event, message)
 
-        text = data['message']
-        msg = Message(self, data)
+        text = message['message']
+        msg = Message(self, message)
 
-        msg.user_id = data['user_id']
-        msg.channel_id = data['channel_id']
-        msg.message_type = data['message_type']
-        msg.nickname = data['nickname']
-        msg.is_admin = data['is_admin']
+        msg.user_id = message['user_id']
+        msg.channel_id = message['channel_id']
+        msg.message_type = message['message_type']
+        msg.nickname = message['nickname']
+        msg.is_admin = message['is_admin']
 
         return text_convert(msg, text, text)
 

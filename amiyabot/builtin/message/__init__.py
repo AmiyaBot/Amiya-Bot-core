@@ -149,7 +149,7 @@ class MessageMatch:
     def check_reg(data: Message, reg: re.Pattern, level: int) -> Tuple[bool, int, Any]:
         r = re.search(reg, data.text)
         if r:
-            return True, level or (r.re.groups or 1), [item for item in r.groups()]
+            return True, level or (r.re.groups or 1), list(r.groups())
         return False, 0, None
 
 

@@ -16,7 +16,7 @@ class MessageHandlerItemImpl(MessageHandlerItem):
         }
         t = type(obj)
 
-        if t in methods.keys():
+        if t in methods:
             method = methods[t]
             check = Verify(*method(data, obj, self.level))
             if check:
@@ -62,7 +62,7 @@ class MessageHandlerItemImpl(MessageHandlerItem):
             if data.is_at:
                 flag = True
             else:
-                prefix_keywords = need_check_prefix if type(need_check_prefix) is list else self.prefix_keywords()
+                prefix_keywords = need_check_prefix if isinstance(need_check_prefix, list) else self.prefix_keywords()
 
                 # 未设置前缀触发词允许直接通过
                 if not prefix_keywords:
@@ -75,8 +75,8 @@ class MessageHandlerItemImpl(MessageHandlerItem):
 
         # 若不通过以上检查，且关键字不为全等句式（Equal）
         # 则允许当关键字为列表时，筛选列表内的全等句式继续执行校验，否则校验不通过
-        if need_check_prefix and not flag and not type(self.keywords) is Equal:
-            equal_filter = [n for n in self.keywords if type(n) is Equal] if type(self.keywords) is list else []
+        if need_check_prefix and not flag and not isinstance(self.keywords, Equal):
+            equal_filter = [n for n in self.keywords if isinstance(n, Equal)] if isinstance(self.keywords, list) else []
             if equal_filter:
                 self.keywords = equal_filter
             else:
@@ -86,10 +86,10 @@ class MessageHandlerItemImpl(MessageHandlerItem):
         if self.custom_verify:
             result = await self.custom_verify(data)
 
-            if type(result) is bool or result is None:
+            if isinstance(result, bool) or result is None:
                 result = result, int(bool(result)), None
 
-            elif type(result) is tuple:
+            elif isinstance(result, tuple):
                 contrast = bool(result[0]), int(bool(result[0])), None
                 result = (result + contrast[len(result):])[:3]
 

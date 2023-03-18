@@ -92,7 +92,7 @@ class Extend:
     data: Any
 
     def get(self):
-        if type(self.data) is CQCode:
+        if isinstance(self.data, CQCode):
             return self.data.code
         return self.data
 

@@ -53,8 +53,8 @@ class TasksControl(metaclass=Singleton):
                     continue
 
                 ready = []
-                for tag, group in self._timed_tasks.items():
-                    for sub_tag, tasks in group.items():
+                for _, group in self._timed_tasks.items():
+                    for _, tasks in group.items():
                         for task in tasks:
                             if await task.check(t):
                                 ready.append(task)

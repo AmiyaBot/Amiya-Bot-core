@@ -12,7 +12,7 @@ default_headers = {
 
 def download_sync(url: str, headers=None, stringify=False, progress=False, **kwargs):
     try:
-        stream = requests.get(url, headers={**default_headers, **(headers or {})}, stream=True, **kwargs)
+        stream = requests.get(url, headers={**default_headers, **(headers or {})}, stream=True, timeout=30, **kwargs)
         container = BytesIO()
 
         if stream.status_code == 200:
@@ -30,8 +30,7 @@ def download_sync(url: str, headers=None, stringify=False, progress=False, **kwa
 
             if stringify:
                 return str(content, encoding='utf-8')
-            else:
-                return content
+            return content
     except requests.exceptions.ConnectionError:
         pass
     except Exception as e:
@@ -45,5 +44,4 @@ async def download_async(url, headers=None, stringify=False, **kwargs):
                 if res.status == 200:
                     if stringify:
                         return await res.text()
-                    else:
-                        return await res.read()
+                    return await res.read()

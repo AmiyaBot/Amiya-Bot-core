@@ -44,10 +44,18 @@ class ModelClass(Model):
             'update': update,
             'preserve': preserve
         }
-        if type(cls._meta.database) is ReconnectMySQLDatabase:
+        if isinstance(cls._meta.database, ReconnectMySQLDatabase):
             conflict['conflict_target'] = conflict_target
 
         cls.insert(**insert).on_conflict(**conflict).execute()
+
+
+class DatabaseConfigError(Exception):
+    def __init__(self, value: Any):
+        self.value = value
+
+    def __str__(self):
+        return f'Expected MysqlConfig instance, got {self.value} instead'
 
 
 def table(cls: ModelClass) -> Any:
@@ -84,10 +92,10 @@ def table(cls: ModelClass) -> Any:
     return cls
 
 
-def connect_database(database: str, mysql: bool = False, config: MysqlConfig = None):
-    if mysql:
-        if not config:
-            raise Exception('DatabaseConfig not found.')
+def connect_database(database: str, is_mysql: bool = False, config: MysqlConfig = None):
+    if is_mysql:
+        if not isinstance(config, MysqlConfig):
+            raise DatabaseConfigError(config)
 
         conn = pymysql.connect(**config.dict(), charset='utf8')
         cursor = conn.cursor()
@@ -96,11 +104,11 @@ def connect_database(database: str, mysql: bool = False, config: MysqlConfig = N
         conn.close()
 
         return ReconnectMySQLDatabase(database, **config.dict())
-    else:
-        create_dir(database, is_file=True)
-        return SqliteDatabase(database, pragmas={
-            'timeout': 30
-        })
+
+    create_dir(database, is_file=True)
+    return SqliteDatabase(database, pragmas={
+        'timeout': 30
+    })
 
 
 def convert_model(model, select_model: peewee.Select = None) -> dict:
