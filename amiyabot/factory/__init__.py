@@ -130,7 +130,7 @@ class BotHandlerFactory(ProcessControl):
         def handler(func: ExceptionHandlerType):
             nonlocal exceptions
 
-            if isinstance(exceptions, list):
+            if not isinstance(exceptions, list):
                 exceptions = [exceptions]
 
             exception_handlers = self.get_container('exception_handlers')
