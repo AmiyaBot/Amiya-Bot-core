@@ -22,6 +22,7 @@ from amiyabot.factory import BotInstance, PluginInstance, GroupConfig
 from amiyabot.handler.messageHandler import message_handler
 
 # lib
+from amiyabot.builtin.lib.eventBus import event_bus
 from amiyabot.builtin.lib.timedTask import tasks_control
 from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
 
