@@ -1,8 +1,9 @@
 import asyncio
+import inspect
 
-from typing import Any, Dict, Optional, Callable, Coroutine
+from typing import Any, Dict, Union, Optional, Callable, Coroutine
 
-Subscriber = Callable[[Optional[Any]], Coroutine[Any, Any, None]]
+Subscriber = Callable[[Optional[Any]], Union[Coroutine[Any, Any, None], None]]
 SubscriberID = int
 EventName = str
 
@@ -20,9 +21,12 @@ class EventBus:
     def publish(self, event_name: EventName, data: Optional[Any] = None):
         if event_name in self.__subscriber:
             for _, method in self.__subscriber[event_name].items():
-                asyncio.create_task(
+                if inspect.iscoroutinefunction(method):
+                    asyncio.create_task(
+                        method(data)
+                    )
+                else:
                     method(data)
-                )
 
     def subscribe(self, event_name: EventName, method: Optional[Subscriber] = None):
         if event_name not in self.__subscriber:
