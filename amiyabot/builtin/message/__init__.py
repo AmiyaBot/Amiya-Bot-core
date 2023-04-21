@@ -69,14 +69,14 @@ class Message(MessageStructure):
             await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
 
     async def wait(self, *args, **kwargs) -> WaitReturn:
-        data, callbacks = await self.__wait_context(*args, **kwargs)
+        data, _ = await self.__wait_context(*args, **kwargs)
         return data
 
     async def wait_callback(self, *args, **kwargs) -> WaitCallbackReturn:
         return await self.__wait_context(*args, **kwargs)
 
     async def wait_channel(self, *args, **kwargs) -> WaitChannelReturn:
-        data, callbacks = await self.__wait_channel_context(*args, **kwargs)
+        data, _ = await self.__wait_channel_context(*args, **kwargs)
         return data
 
     async def wait_channel_callback(self, *args, **kwargs) -> WaitChannelCallbackReturn:
