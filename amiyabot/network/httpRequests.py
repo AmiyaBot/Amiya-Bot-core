@@ -19,7 +19,7 @@ class HttpRequests:
         try:
             request_name = (request_name or method).upper()
 
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(trust_env=True) as session:
                 async with session.request(method, url, **kwargs) as res:
                     if res.status in cls.success:
                         return await res.text()
