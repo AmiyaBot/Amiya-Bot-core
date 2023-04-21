@@ -16,6 +16,9 @@ class EventStructure:
 
 class MessageStructure:
     def __init__(self, instance, message: dict = None):
+        self.bot = None
+        self.factory_name = ''
+
         self.instance = instance
         self.message = message
         self.message_id = None
@@ -69,11 +72,23 @@ class MessageStructure:
         raise NotImplementedError
 
     @abc.abstractmethod
+    async def recall(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
     async def wait(self,
                    reply=None,
                    force: bool = False,
                    max_time: int = 30,
                    data_filter: Callable = None):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def wait_callback(self,
+                            reply=None,
+                            force: bool = False,
+                            max_time: int = 30,
+                            data_filter: Callable = None):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -86,7 +101,12 @@ class MessageStructure:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def recall(self):
+    async def wait_channel_callback(self,
+                                    reply=None,
+                                    force: bool = False,
+                                    clean: bool = True,
+                                    max_time: int = 30,
+                                    data_filter: Callable = None):
         raise NotImplementedError
 
 
