@@ -1,5 +1,7 @@
 import abc
 
+from typing import Union, List
+
 
 class MessageCallback:
     def __init__(self, chain, instance, response):
@@ -15,3 +17,6 @@ class MessageCallback:
         :return:
         """
         raise NotImplementedError
+
+
+MessageCallbackType = Union[MessageCallback, List[MessageCallback]]

@@ -1,10 +1,10 @@
 import re
 import asyncio
 
-from typing import Callable, Union, List, Tuple, Any
+from typing import Callable, Optional, Union, List, Tuple, Any
 from dataclasses import dataclass
 
-from .callback import MessageCallback
+from .callback import MessageCallback, MessageCallbackType
 from .structure import EventStructure, MessageStructure, Verify
 from .waitEvent import (
     WaitEvent,
@@ -16,6 +16,12 @@ from .waitEvent import (
     WaitEventOutOfFocus,
     wait_events_bucket
 )
+
+SendReturn = Optional[MessageCallbackType]
+WaitReturn = Optional[MessageStructure]
+WaitCallbackReturn = Tuple[Optional[MessageStructure], SendReturn]
+WaitChannelReturn = Optional[ChannelMessagesItem]
+WaitChannelCallbackReturn = Tuple[Optional[ChannelMessagesItem], SendReturn]
 
 
 @dataclass
@@ -41,58 +47,55 @@ class EventList:
 
 
 class Message(MessageStructure):
-    async def send(self, reply):
+    async def send(self, reply) -> SendReturn:
+
+        # todo 生命周期 - message_before_send
+        for method in self.bot.process_message_before_send:
+            reply = await method(reply, self.factory_name, self.instance) or reply
+
         callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, use_http=True)
+
+        # todo 生命周期 - message_after_send
+        for method in self.bot.process_message_after_send:
+            await method(reply, self.factory_name, self.instance)
 
         if not callbacks:
             return None
 
         return callbacks if len(callbacks) > 1 else callbacks[0]
 
-    async def wait(self,
-                   reply=None,
-                   force: bool = False,
-                   max_time: int = 30,
-                   data_filter: Callable = None):
-        if self.is_direct:
-            target_id = f'{self.instance.appid}_{self.guild_id}_{self.user_id}'
-        else:
-            target_id = f'{self.instance.appid}_{self.channel_id}_{self.user_id}'
+    async def recall(self):
+        if self.message_id:
+            await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
 
-        if reply:
-            await self.instance.send_chain_message(reply)
+    async def wait(self, *args, **kwargs) -> WaitReturn:
+        data, _ = await self.__wait_context(*args, **kwargs)
+        return data
 
-        event: WaitEvent = await wait_events_bucket.set_event(target_id, force)
-        asyncio.create_task(event.timer(max_time))
+    async def wait_callback(self, *args, **kwargs) -> WaitCallbackReturn:
+        return await self.__wait_context(*args, **kwargs)
 
-        while event.check_alive():
-            await asyncio.sleep(0)
-            data = event.get()
-            if data:
-                if data_filter:
-                    res = await data_filter(data)
-                    if not res:
-                        event.set(None)
-                        continue
+    async def wait_channel(self, *args, **kwargs) -> WaitChannelReturn:
+        data, _ = await self.__wait_channel_context(*args, **kwargs)
+        return data
 
-                event.cancel()
-                return data
+    async def wait_channel_callback(self, *args, **kwargs) -> WaitChannelCallbackReturn:
+        return await self.__wait_channel_context(*args, **kwargs)
 
-        event.cancel()
-
-    async def wait_channel(self,
-                           reply=None,
-                           force: bool = False,
-                           clean: bool = True,
-                           max_time: int = 30,
-                           data_filter: Callable = None):
+    async def __wait_channel_context(self,
+                                     reply=None,
+                                     force: bool = False,
+                                     clean: bool = True,
+                                     max_time: int = 30,
+                                     data_filter: Callable = None):
         if self.is_direct:
             raise WaitEventException('direct message not support "wait_channel"')
 
         target_id = f'{self.instance.appid}_{self.channel_id}'
 
+        callbacks: SendReturn = None
         if reply:
-            await self.instance.send_chain_message(reply)
+            callbacks = await self.send(reply)
 
         if target_id not in wait_events_bucket:
             event: ChannelWaitEvent = await wait_events_bucket.set_event(target_id, force, for_channel=True)
@@ -123,13 +126,47 @@ class Message(MessageStructure):
                         continue
 
                 event.reset()
-                return ChannelMessagesItem(event, data)
+
+                return ChannelMessagesItem(event, data), callbacks
 
         event.cancel()
 
-    async def recall(self):
-        if self.message_id:
-            await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
+        return None, callbacks
+
+    async def __wait_context(self,
+                             reply=None,
+                             force: bool = False,
+                             max_time: int = 30,
+                             data_filter: Callable = None):
+        if self.is_direct:
+            target_id = f'{self.instance.appid}_{self.guild_id}_{self.user_id}'
+        else:
+            target_id = f'{self.instance.appid}_{self.channel_id}_{self.user_id}'
+
+        callbacks: SendReturn = None
+        if reply:
+            callbacks = await self.send(reply)
+
+        event: WaitEvent = await wait_events_bucket.set_event(target_id, force)
+        asyncio.create_task(event.timer(max_time))
+
+        while event.check_alive():
+            await asyncio.sleep(0)
+            data = event.get()
+            if data:
+                if data_filter:
+                    res = await data_filter(data)
+                    if not res:
+                        event.set(None)
+                        continue
+
+                event.cancel()
+
+                return data, callbacks
+
+        event.cancel()
+
+        return None, callbacks
 
 
 class MessageMatch:

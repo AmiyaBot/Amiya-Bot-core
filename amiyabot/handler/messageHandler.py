@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict
 
 from amiyabot.builtin.message import *
 from amiyabot.builtin.messageChain import Chain
@@ -29,6 +29,8 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
 
     _log.info(data.__str__())
 
+    data.bot = bot
+
     # todo 生命周期 - message_created
     for method in bot.process_message_created:
         data = await method(data, instance) or data
@@ -51,6 +53,8 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
         handler = choice[1]
         factory_name = bot.message_handler_id_map[id(handler.function)]
 
+        data.factory_name = factory_name
+
         # todo 生命周期 - message_before_handle
         flag = True
         for method in bot.process_message_before_handle:
@@ -69,15 +73,7 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
             if isinstance(reply, str):
                 reply = Chain(data, at=False).text(reply)
 
-            # todo 生命周期 - message_before_send
-            for method in bot.process_message_before_send:
-                reply = await method(reply, factory_name, instance) or reply
-
             await data.send(reply)
-
-            # todo 生命周期 - message_after_send
-            for method in bot.process_message_after_send:
-                await method(reply, factory_name, instance)
 
         # todo 生命周期 - message_after_handle
         for method in bot.process_message_after_handle:
