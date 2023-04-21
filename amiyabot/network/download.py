@@ -39,7 +39,7 @@ def download_sync(url: str, headers=None, stringify=False, progress=False, **kwa
 
 async def download_async(url, headers=None, stringify=False, **kwargs):
     async with log.catch('download error:', ignore=[requests.exceptions.SSLError]):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.get(url, headers={**default_headers, **(headers or {})}, **kwargs) as res:
                 if res.status == 200:
                     if stringify:
