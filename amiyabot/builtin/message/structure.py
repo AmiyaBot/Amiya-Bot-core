@@ -80,15 +80,8 @@ class MessageStructure:
                    reply=None,
                    force: bool = False,
                    max_time: int = 30,
-                   data_filter: Callable = None):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def wait_callback(self,
-                            reply=None,
-                            force: bool = False,
-                            max_time: int = 30,
-                            data_filter: Callable = None):
+                   data_filter: Callable = None,
+                   level: int = 0):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -97,16 +90,8 @@ class MessageStructure:
                            force: bool = False,
                            clean: bool = True,
                            max_time: int = 30,
-                           data_filter: Callable = None):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def wait_channel_callback(self,
-                                    reply=None,
-                                    force: bool = False,
-                                    clean: bool = True,
-                                    max_time: int = 30,
-                                    data_filter: Callable = None):
+                           data_filter: Callable = None,
+                           level: int = 0):
         raise NotImplementedError
 
 

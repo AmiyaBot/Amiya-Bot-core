@@ -54,7 +54,7 @@ class MessageHandlerItem:
     direct_only: bool = False
     check_prefix: CheckPrefixType = None
     custom_verify: VerifyMethodType = None
-    level: int = 0
+    level: int = None
 
     def __repr__(self):
         return f'<MessageHandlerItem, {self.custom_verify or self.keywords}>'

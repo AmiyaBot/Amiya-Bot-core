@@ -5,7 +5,7 @@ from amiyabot.builtin.messageChain import Chain
 from amiyabot.factory import MessageHandlerItem, BotHandlerFactory, EventHandlerType
 from amiyabot.log import LoggerManager
 
-CHOICE = Optional[Tuple[Verify, MessageHandlerItem]]
+ChoiceRes = Union[MessageHandlerItem, Waiter]
 
 adapter_log: Dict[str, LoggerManager] = {}
 
@@ -47,10 +47,12 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
         waiter.set(data)
         return None
 
-    # 选择功能
-    choice = await choice_handlers(data, bot.message_handlers)
-    if choice:
-        handler = choice[1]
+    # 选择功能或等待事件
+    handler = await choice_handlers(data, bot.message_handlers, waiter)
+    if not handler:
+        return
+
+    if isinstance(handler, MessageHandlerItem):
         factory_name = bot.message_handler_id_map[id(handler.function)]
 
         data.factory_name = factory_name
@@ -81,13 +83,12 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
 
         return None
 
-    # 未选中任何功能或功能无法返回时，进入等待事件（若存在）
-    if waiter:
+    if isinstance(handler, WaitEvent):
         # todo 生命周期 - message_before_waiter_set(2)
         for method in bot.process_message_before_waiter_set:
-            data = await method(data, waiter, instance) or data
+            data = await method(data, handler, instance) or data
 
-        waiter.set(data)
+        handler.set(data)
 
 
 async def event_handler(bot: BotHandlerFactory, data: Union[Event, EventList], _log: LoggerManager):
@@ -112,8 +113,16 @@ async def event_handler(bot: BotHandlerFactory, data: Union[Event, EventList], _
                     await method(item, bot.instance)
 
 
-async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> CHOICE:
-    candidate: List[Tuple[Verify, MessageHandlerItem]] = []
+async def choice_handlers(data: Message, handlers: List[MessageHandlerItem], waiter: Waiter) -> Optional[ChoiceRes]:
+    candidate: List[Tuple[Verify, ChoiceRes]] = []
+
+    if waiter:
+        candidate.append(
+            (
+                Verify(True, waiter.level),
+                waiter
+            )
+        )
 
     for item in handlers:
         check = await item.verify(data)
@@ -124,12 +133,13 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem]) -> 
         return None
 
     # 选择排序第一的结果
-    selected = sorted(candidate, key=lambda n: n[0].weight, reverse=True)[0]
+    _sorted = sorted(candidate, key=lambda n: n[0].weight, reverse=True)
+    selected = _sorted[0]
 
     # 将 Verify 结果赋值给 Message
     data.verify = selected[0]
 
-    return selected
+    return selected[1]
 
 
 async def find_wait_event(data: Message) -> Waiter:
