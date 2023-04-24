@@ -7,7 +7,6 @@ from amiyabot.factory.factoryTyping import MessageHandlerItem, KeywordsType
 
 @dataclass
 class MessageHandlerItemImpl(MessageHandlerItem):
-
     def __check(self, data: Message, obj: KeywordsType) -> Verify:
         methods = {
             str: MessageMatch.check_str,

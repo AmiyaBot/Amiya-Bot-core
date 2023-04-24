@@ -19,9 +19,8 @@ from .waitEvent import (
 
 SendReturn = Optional[MessageCallbackType]
 WaitReturn = Optional[MessageStructure]
-WaitCallbackReturn = Tuple[Optional[MessageStructure], SendReturn]
 WaitChannelReturn = Optional[ChannelMessagesItem]
-WaitChannelCallbackReturn = Tuple[Optional[ChannelMessagesItem], SendReturn]
+MatchReturn = Tuple[bool, int, Any]
 
 
 @dataclass
@@ -68,37 +67,63 @@ class Message(MessageStructure):
         if self.message_id:
             await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
 
-    async def wait(self, *args, **kwargs) -> WaitReturn:
-        data, _ = await self.__wait_context(*args, **kwargs)
-        return data
+    async def wait(self, reply=None,
+                   force: bool = False,
+                   max_time: int = 30,
+                   data_filter: Callable = None,
+                   level: int = 0) -> WaitReturn:
+        if self.is_direct:
+            target_id = f'{self.instance.appid}_{self.guild_id}_{self.user_id}'
+        else:
+            target_id = f'{self.instance.appid}_{self.channel_id}_{self.user_id}'
 
-    async def wait_callback(self, *args, **kwargs) -> WaitCallbackReturn:
-        return await self.__wait_context(*args, **kwargs)
+        # callbacks: SendReturn = None
+        # if reply:
+        #     callbacks = await self.send(reply)
+        if reply:
+            await self.send(reply)
 
-    async def wait_channel(self, *args, **kwargs) -> WaitChannelReturn:
-        data, _ = await self.__wait_channel_context(*args, **kwargs)
-        return data
+        event: WaitEvent = await wait_events_bucket.set_event(target_id, force, False, level)
+        asyncio.create_task(event.timer(max_time))
 
-    async def wait_channel_callback(self, *args, **kwargs) -> WaitChannelCallbackReturn:
-        return await self.__wait_channel_context(*args, **kwargs)
+        while event.check_alive():
+            await asyncio.sleep(0)
+            data = event.get()
+            if data:
+                if data_filter:
+                    res = await data_filter(data)
+                    if not res:
+                        event.set(None)
+                        continue
 
-    async def __wait_channel_context(self,
-                                     reply=None,
-                                     force: bool = False,
-                                     clean: bool = True,
-                                     max_time: int = 30,
-                                     data_filter: Callable = None):
+                event.cancel()
+
+                return data
+
+        event.cancel()
+
+        return None
+
+    async def wait_channel(self,
+                           reply=None,
+                           force: bool = False,
+                           clean: bool = True,
+                           max_time: int = 30,
+                           data_filter: Callable = None,
+                           level: int = 0) -> WaitChannelReturn:
         if self.is_direct:
             raise WaitEventException('direct message not support "wait_channel"')
 
         target_id = f'{self.instance.appid}_{self.channel_id}'
 
-        callbacks: SendReturn = None
+        # callbacks: SendReturn = None
+        # if reply:
+        #     callbacks = await self.send(reply)
         if reply:
-            callbacks = await self.send(reply)
+            await self.send(reply)
 
         if target_id not in wait_events_bucket:
-            event: ChannelWaitEvent = await wait_events_bucket.set_event(target_id, force, for_channel=True)
+            event: ChannelWaitEvent = await wait_events_bucket.set_event(target_id, force, True, level)
             asyncio.create_task(event.timer(max_time))
         else:
             event: ChannelWaitEvent = wait_events_bucket[target_id]
@@ -108,7 +133,7 @@ class Message(MessageStructure):
                     event.clean()
             else:
                 event.cancel()
-                event: ChannelWaitEvent = await wait_events_bucket.set_event(target_id, force, for_channel=True)
+                event: ChannelWaitEvent = await wait_events_bucket.set_event(target_id, force, True, level)
                 asyncio.create_task(event.timer(max_time))
 
         event.focus(self.message_id)
@@ -127,66 +152,31 @@ class Message(MessageStructure):
 
                 event.reset()
 
-                return ChannelMessagesItem(event, data), callbacks
+                return ChannelMessagesItem(event, data)
 
         event.cancel()
 
-        return None, callbacks
-
-    async def __wait_context(self,
-                             reply=None,
-                             force: bool = False,
-                             max_time: int = 30,
-                             data_filter: Callable = None):
-        if self.is_direct:
-            target_id = f'{self.instance.appid}_{self.guild_id}_{self.user_id}'
-        else:
-            target_id = f'{self.instance.appid}_{self.channel_id}_{self.user_id}'
-
-        callbacks: SendReturn = None
-        if reply:
-            callbacks = await self.send(reply)
-
-        event: WaitEvent = await wait_events_bucket.set_event(target_id, force)
-        asyncio.create_task(event.timer(max_time))
-
-        while event.check_alive():
-            await asyncio.sleep(0)
-            data = event.get()
-            if data:
-                if data_filter:
-                    res = await data_filter(data)
-                    if not res:
-                        event.set(None)
-                        continue
-
-                event.cancel()
-
-                return data, callbacks
-
-        event.cancel()
-
-        return None, callbacks
+        return None
 
 
 class MessageMatch:
     @staticmethod
-    def check_str(data: Message, text: str, level: int) -> Tuple[bool, int, Any]:
+    def check_str(data: Message, text: str, level: int = None) -> MatchReturn:
         if text.lower() in data.text.lower():
-            return True, level or 1, text
+            return True, level if level is not None else 1, text
         return False, 0, None
 
     @staticmethod
-    def check_equal(data: Message, text: Equal, level: int) -> Tuple[bool, int, Any]:
+    def check_equal(data: Message, text: Equal, level: int = None) -> MatchReturn:
         if text.content == data.text:
-            return True, level or 10000, text
+            return True, level if level is not None else float('inf'), text
         return False, 0, None
 
     @staticmethod
-    def check_reg(data: Message, reg: re.Pattern, level: int) -> Tuple[bool, int, Any]:
+    def check_reg(data: Message, reg: re.Pattern, level: int = None) -> MatchReturn:
         r = re.search(reg, data.text)
         if r:
-            return True, level or (r.re.groups or 1), list(r.groups())
+            return True, level if level is not None else (r.re.groups or 1), list(r.groups())
         return False, 0, None
 
 

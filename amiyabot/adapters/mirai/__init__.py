@@ -3,13 +3,13 @@ import asyncio
 import websockets
 
 from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol, MessageCallback
+from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
 from .forwardMessage import MiraiForwardMessage
 from .package import package_mirai_message
-from .builder import build_message_send
+from .builder import build_message_send, MiraiMessageCallback
 from .api import MiraiAPI, log
 
 
@@ -18,15 +18,6 @@ def mirai_api_http(host: str, ws_port: int, http_port: int):
         return MiraiBotInstance(appid, token, host, ws_port, http_port)
 
     return adapter
-
-
-class MiraiMessageCallback(MessageCallback):
-    async def recall(self):
-        if not self.response:
-            log.warning('can not recall message because the response is None.')
-            return False
-        chain: Chain = self.chain
-        await self.instance.recall_message(self.response['messageId'], chain.data.channel_id or chain.data.user_id)
 
 
 class MiraiBotInstance(BotAdapterProtocol):
@@ -116,7 +107,7 @@ class MiraiBotInstance(BotAdapterProtocol):
                 else:
                     await self.connection.send(item[1])
 
-        return [MiraiMessageCallback(chain, self, item) for item in res]
+        return [MiraiMessageCallback(chain.data.channel_id or chain.data.user_id, self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,
@@ -147,8 +138,4 @@ class MiraiBotInstance(BotAdapterProtocol):
         return package_mirai_message(self, self.appid, message)
 
     async def recall_message(self, message_id, target_id=None):
-        await self.api.post('recall', {
-            'sessionKey': self.api.session,
-            'messageId': message_id,
-            'target': target_id
-        })
+        await self.api.recall_message(message_id, target_id)

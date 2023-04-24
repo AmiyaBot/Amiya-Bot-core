@@ -3,7 +3,7 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
 from .api import MiraiAPI
-from .builder import build_message_send
+from .builder import build_message_send, MiraiMessageCallback
 
 
 class MiraiForwardMessage:
@@ -65,4 +65,8 @@ class MiraiForwardMessage:
         })
 
     async def send(self):
-        await self.api.send_group_message(self.data.channel_id, [self.node])
+        return MiraiMessageCallback(
+            self.data.channel_id,
+            self.data.instance,
+            await self.api.send_group_message(self.data.channel_id, [self.node])
+        )

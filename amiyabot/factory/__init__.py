@@ -58,7 +58,7 @@ class BotHandlerFactory(ProcessControl):
                    check_prefix: CheckPrefixType = None,
                    allow_direct: Optional[bool] = None,
                    direct_only: bool = False,
-                   level: int = 0):
+                   level: int = None):
         """
         注册消息处理器
 

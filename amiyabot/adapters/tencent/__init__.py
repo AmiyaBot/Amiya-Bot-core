@@ -8,14 +8,14 @@ from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.adapters import BotAdapterProtocol, MessageCallback
+from amiyabot.adapters import BotAdapterProtocol
 from contextlib import asynccontextmanager
 
 from .api import TencentAPI
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
 from .package import package_tencent_message
-from .builder import build_message_send
+from .builder import build_message_send, TencentMessageCallback
 
 log = LoggerManager('Tencent')
 
@@ -32,14 +32,6 @@ async def ws(cls: BotAdapterProtocol, sign, url):
 
     cls.set_alive(False)
     log.info(f'connection({sign}) closed.')
-
-
-class TencentMessageCallback(MessageCallback):
-    async def recall(self):
-        if not self.response:
-            log.warning('can not recall message because the response is None.')
-            return False
-        await self.instance.recall_message(self.response['id'], self.response['channel_id'])
 
 
 class TencentBotInstance(TencentAPI):
@@ -186,7 +178,7 @@ class TencentBotInstance(TencentAPI):
                                                    chain.data.channel_id,
                                                    req))
 
-        return [TencentMessageCallback(chain, self, item) for item in res]
+        return [TencentMessageCallback(self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,

@@ -2,10 +2,19 @@ import os
 import base64
 
 from graiax import silkcoder
+from amiyabot.adapters import MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 from amiyabot.util import is_valid_url
 from amiyabot import log
+
+
+class CQHttpMessageCallback(MessageCallback):
+    async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
+        await self.instance.recall_message(self.response['data']['message_id'])
 
 
 async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chain_only: bool = False):

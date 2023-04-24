@@ -3,14 +3,14 @@ import asyncio
 import websockets
 
 from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol, MessageCallback
+from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
 from .forwardMessage import CQHTTPForwardMessage
 from .package import package_cqhttp_message
-from .builder import build_message_send
+from .builder import build_message_send, CQHttpMessageCallback
 from .api import CQHttpAPI
 
 log = LoggerManager('CQHttp')
@@ -21,14 +21,6 @@ def cq_http(host: str, ws_port: int, http_port: int):
         return CQHttpBotInstance(appid, token, host, ws_port, http_port)
 
     return adapter
-
-
-class CQHttpMessageCallback(MessageCallback):
-    async def recall(self):
-        if not self.response:
-            log.warning('can not recall message because the response is None.')
-            return False
-        await self.instance.recall_message(self.response['data']['message_id'])
 
 
 class CQHttpBotInstance(BotAdapterProtocol):
@@ -109,7 +101,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
                         'params': item
                     }))
 
-        return [CQHttpMessageCallback(chain, self, item) for item in res]
+        return [CQHttpMessageCallback(self, item) for item in res]
 
     async def send_message(self,
                            chain: Chain,

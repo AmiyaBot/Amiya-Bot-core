@@ -7,10 +7,11 @@ from .structure import MessageStructure
 
 
 class WaitEvent:
-    def __init__(self, event_id: int, target_id: int, force: bool):
+    def __init__(self, event_id: int, target_id: int, force: bool, level: int):
         self.event_id = event_id
         self.target_id = target_id
         self.force = force
+        self.level = level
 
         self.curr_time = 0
 
@@ -58,8 +59,8 @@ class WaitEvent:
 
 
 class ChannelWaitEvent(WaitEvent):
-    def __init__(self, event_id: int, target_id: int, force: bool):
-        super().__init__(event_id, target_id, force)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.data: List[MessageStructure] = list()
         self.type = 'channel'
@@ -121,13 +122,13 @@ class WaitEventsBucket:
             self.id += 1
             return self.id
 
-    async def set_event(self, target_id: Union[int, str], force: bool, for_channel: bool = False):
+    async def set_event(self, target_id: Union[int, str], force: bool, for_channel: bool, level: int):
         event_id = await self.__get_id()
 
         if for_channel:
-            event = ChannelWaitEvent(event_id, target_id, force)
+            event = ChannelWaitEvent(event_id, target_id, force, level)
         else:
-            event = WaitEvent(event_id, target_id, force)
+            event = WaitEvent(event_id, target_id, force, level)
 
         self.bucket[target_id] = event
 
