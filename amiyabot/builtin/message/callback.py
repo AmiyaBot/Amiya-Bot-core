@@ -4,8 +4,7 @@ from typing import Union, List
 
 
 class MessageCallback:
-    def __init__(self, chain, instance, response):
-        self.chain = chain
+    def __init__(self, instance, response):
         self.instance = instance
         self.response = response
 

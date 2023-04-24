@@ -5,12 +5,13 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
 from .api import CQHttpAPI
-from .builder import build_message_send
+from .builder import build_message_send, CQHttpMessageCallback
 
 
 class CQHTTPForwardMessage:
     def __init__(self, data: Message):
         self.data = data
+        self.api: CQHttpAPI = data.instance.api
         self.node = []
 
     async def add_message(self,
@@ -74,5 +75,7 @@ class CQHTTPForwardMessage:
         })
 
     async def send(self):
-        api: CQHttpAPI = self.data.instance.api
-        await api.send_group_forward_msg(self.data.channel_id, self.node)
+        return CQHttpMessageCallback(
+            self.data.instance,
+            await self.api.send_group_forward_msg(self.data.channel_id, self.node)
+        )

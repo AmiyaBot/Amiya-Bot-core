@@ -2,12 +2,27 @@ import time
 
 from typing import Type
 from graiax import silkcoder
+from amiyabot.adapters import MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 from amiyabot.util import is_valid_url
 
 from .payload import WebsocketAdapter, HttpAdapter, MiraiPostPayload
 from .api import MiraiAPI
+
+
+class MiraiMessageCallback(MessageCallback):
+    def __init__(self, target_id, instance, response):
+        super().__init__(instance, response)
+
+        self.target_id = target_id
+
+    async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
+        await self.instance.recall_message(self.response['messageId'],
+                                           self.target_id)
 
 
 async def build_message_send(api: MiraiAPI,

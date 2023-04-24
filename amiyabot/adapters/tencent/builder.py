@@ -1,5 +1,14 @@
+from amiyabot.adapters import MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
+
+
+class TencentMessageCallback(MessageCallback):
+    async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
+        await self.instance.recall_message(self.response['id'], self.response['channel_id'])
 
 
 @dataclass

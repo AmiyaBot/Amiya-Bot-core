@@ -39,7 +39,7 @@ class CQHttpAPI:
         })
 
     async def send_group_forward_msg(self, group_id: int, forward_node: list):
-        await self.post('send_group_forward_msg', {
+        return await self.post('send_group_forward_msg', {
             'group_id': group_id,
             'messages': forward_node
         })
