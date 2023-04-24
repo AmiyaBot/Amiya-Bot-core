@@ -77,9 +77,11 @@ class Message(MessageStructure):
         else:
             target_id = f'{self.instance.appid}_{self.channel_id}_{self.user_id}'
 
-        callbacks: SendReturn = None
+        # callbacks: SendReturn = None
+        # if reply:
+        #     callbacks = await self.send(reply)
         if reply:
-            callbacks = await self.send(reply)
+            await self.send(reply)
 
         event: WaitEvent = await wait_events_bucket.set_event(target_id, force, False, level)
         asyncio.create_task(event.timer(max_time))
@@ -114,9 +116,11 @@ class Message(MessageStructure):
 
         target_id = f'{self.instance.appid}_{self.channel_id}'
 
-        callbacks: SendReturn = None
+        # callbacks: SendReturn = None
+        # if reply:
+        #     callbacks = await self.send(reply)
         if reply:
-            callbacks = await self.send(reply)
+            await self.send(reply)
 
         if target_id not in wait_events_bucket:
             event: ChannelWaitEvent = await wait_events_bucket.set_event(target_id, force, True, level)
