@@ -47,12 +47,12 @@ class MiraiAPI:
 
     async def upload_image(self, file, msg_type):
         res = await self.upload('uploadImage', 'img', file, msg_type)
-        if 'imageId' in res:
+        if res and 'imageId' in res:
             return res['imageId']
 
     async def upload_voice(self, file, msg_type):
         res = await self.upload('uploadVoice', 'voice', file, msg_type)
-        if 'voiceId' in res:
+        if res and 'voiceId' in res:
             return res['voiceId']
 
     async def get_group_list(self):
