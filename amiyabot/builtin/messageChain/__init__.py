@@ -1,7 +1,7 @@
 import re
 import os
 
-from amiyabot.builtin.message import Message
+from amiyabot.builtin.message import MessageStructure
 from amiyabot.builtin.lib.imageCreator import create_image, IMAGES_TYPE
 
 from .element import *
@@ -28,7 +28,7 @@ class ChainBuilder:
 
 class Chain:
     def __init__(self,
-                 data: Message = None,
+                 data: MessageStructure = None,
                  at: bool = True,
                  reference: bool = False,
                  builder: ChainBuilder = ChainBuilder()):
