@@ -17,14 +17,14 @@ def package_mirai_message(instance: BotAdapterProtocol, account: str, data: dict
     elif data['type'] in ['GroupMessage', 'TempMessage']:
         msg = Message(instance, data)
         msg.message_type = 'group' if data['type'] == 'GroupMessage' else 'temp'
-        msg.channel_id = data['sender']['group']['id']
+        msg.channel_id = str(data['sender']['group']['id'])
         msg.nickname = data['sender']['memberName']
         msg.is_admin = data['sender']['permission'] in ['OWNER', 'ADMINISTRATOR']
 
     else:
         return Event(instance, data['type'], data)
 
-    msg.user_id = data['sender']['id']
+    msg.user_id = str(data['sender']['id'])
     msg.avatar = f'https://q.qlogo.cn/headimg_dl?dst_uin={msg.user_id}&spec=100'
 
     message_chain = data['messageChain']

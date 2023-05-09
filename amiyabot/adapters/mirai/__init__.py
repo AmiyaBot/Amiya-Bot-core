@@ -93,14 +93,14 @@ class MiraiBotInstance(BotAdapterProtocol):
 
             asyncio.create_task(handler('', data))
 
-    async def send_chain_message(self, chain: Chain, use_http: bool = False):
-        reply, voice_list = await build_message_send(self.api, chain, use_http=use_http)
+    async def send_chain_message(self, chain: Chain, is_sync: bool = False):
+        reply, voice_list = await build_message_send(self.api, chain, use_http=is_sync)
 
         res = []
 
         for reply_list in [[reply], voice_list]:
             for item in reply_list:
-                if use_http:
+                if is_sync:
                     res.append({
                         **await self.api.post(item[0], item[1])
                     })

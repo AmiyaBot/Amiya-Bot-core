@@ -48,7 +48,7 @@ class TestInstance(BotAdapterProtocol):
                            direct_src_guild_id: str = ''):
         await self.send_chain_message(chain)
 
-    async def send_chain_message(self, chain: Chain, use_http: bool = False):
+    async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reply, voice_list = await build_message_send(chain)
 
         if reply:

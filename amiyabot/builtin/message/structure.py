@@ -16,13 +16,14 @@ class EventStructure:
 
 class MessageStructure:
     def __init__(self, instance, message: dict = None):
-        self.bot = None
+        self._bot = None
+        self.instance = instance
+
         self.factory_name = ''
 
-        self.instance = instance
-        self.message = message
-        self.message_id = None
-        self.message_type = None
+        self.message_id = ''
+        self.message_raw = message
+        self.message_type = ''
 
         self.face = []
         self.image = []
@@ -39,14 +40,14 @@ class MessageStructure:
         self.is_admin = False
         self.is_direct = False
 
-        self.user_id = None
-        self.guild_id = None
-        self.src_guild_id = None
-        self.channel_id = None
-        self.nickname = None
-        self.avatar = None
+        self.user_id = ''
+        self.channel_id = ''
+        self.guild_id = ''
+        self.src_guild_id = ''
+        self.nickname = ''
+        self.avatar = ''
 
-        self.joined_at = None
+        self.joined_at = ''
 
         self.verify: Optional[Verify] = None
         self.time = int(time.time())

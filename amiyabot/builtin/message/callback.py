@@ -1,10 +1,10 @@
 import abc
 
-from typing import Union, List
+from typing import Union, List, Any
 
 
 class MessageCallback:
-    def __init__(self, instance, response):
+    def __init__(self, instance, response: Any):
         self.instance = instance
         self.response = response
 
