@@ -2,10 +2,11 @@ import abc
 import time
 
 from typing import Any, Union, Optional, Callable
+from amiyabot.typeIndexes import *
 
 
 class EventStructure:
-    def __init__(self, instance, event_name, data):
+    def __init__(self, instance: T_BotAdapterProtocol, event_name: str, data: dict):
         self.instance = instance
         self.event_name = event_name
         self.data = data
@@ -15,8 +16,8 @@ class EventStructure:
 
 
 class MessageStructure:
-    def __init__(self, instance, message: dict = None):
-        self._bot = None
+    def __init__(self, instance: T_BotAdapterProtocol, message: dict = None):
+        self._bot: Optional[T_BotHandlerFactory] = None
         self.instance = instance
 
         self.factory_name = ''
@@ -69,7 +70,7 @@ class MessageStructure:
         )
 
     @abc.abstractmethod
-    async def send(self, reply):
+    async def send(self, reply: T_Chain):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -78,7 +79,7 @@ class MessageStructure:
 
     @abc.abstractmethod
     async def wait(self,
-                   reply=None,
+                   reply: T_Chain = None,
                    force: bool = False,
                    max_time: int = 30,
                    data_filter: Callable = None,
@@ -87,7 +88,7 @@ class MessageStructure:
 
     @abc.abstractmethod
     async def wait_channel(self,
-                           reply=None,
+                           reply: T_Chain = None,
                            force: bool = False,
                            clean: bool = True,
                            max_time: int = 30,

@@ -15,7 +15,7 @@ class MiraiPostPayload:
         raise NotImplementedError('builder must be implemented when inheriting class GeneralDefinition.')
 
     @classmethod
-    def friend_message(cls, session: str, target_id: int, chains: List[dict]):
+    def friend_message(cls, session: str, target_id: str, chains: List[dict]):
         return cls.builder('sendFriendMessage', content={
             'sessionKey': session,
             'target': target_id,
@@ -23,7 +23,7 @@ class MiraiPostPayload:
         })
 
     @classmethod
-    def group_message(cls, session: str, target_id: int, chains: List[dict], quote: int = None):
+    def group_message(cls, session: str, target_id: str, chains: List[dict], quote: int = None):
         return cls.builder('sendGroupMessage', options={'quote': quote}, content={
             'sessionKey': session,
             'target': target_id,
@@ -32,7 +32,7 @@ class MiraiPostPayload:
         })
 
     @classmethod
-    def temp_message(cls, session: str, target_id: int, group_id: int, chains: List[dict]):
+    def temp_message(cls, session: str, target_id: str, group_id: str, chains: List[dict]):
         return cls.builder('sendTempMessage', content={
             'sessionKey': session,
             'qq': target_id,
@@ -41,7 +41,7 @@ class MiraiPostPayload:
         })
 
     @classmethod
-    def mute(cls, session: str, target_id: int, member_id: int, time: int):
+    def mute(cls, session: str, target_id: str, member_id: str, time: int):
         return cls.builder('mute', content={
             'sessionKey': session,
             'target': target_id,
@@ -50,7 +50,7 @@ class MiraiPostPayload:
         })
 
     @classmethod
-    def nudge(cls, session: str, target_id: int, group_id: int):
+    def nudge(cls, session: str, target_id: str, group_id: str):
         return cls.builder('sendNudge', content={
             'sessionKey': session,
             'target': target_id,

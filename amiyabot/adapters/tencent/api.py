@@ -108,7 +108,7 @@ class TencentAPI(BotAdapterProtocol):
 
         return complete
 
-    async def recall_message(self, message_id, target_id=None):
+    async def recall_message(self, message_id: str, target_id: str = None):
         await http_requests.request(
             get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
             method='delete',

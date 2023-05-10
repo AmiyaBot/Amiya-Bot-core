@@ -55,7 +55,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
             await self.keep_connect(handler)
             await asyncio.sleep(10)
 
-    async def keep_connect(self, handler):
+    async def keep_connect(self, handler: Callable):
         mark = f'websocket({self.appid})'
 
         log.info(f'connecting {mark}...')
@@ -131,5 +131,5 @@ class CQHttpBotInstance(BotAdapterProtocol):
     async def package_message(self, event: str, message: dict):
         return package_cqhttp_message(self, self.appid, message)
 
-    async def recall_message(self, message_id, target_id=None):
+    async def recall_message(self, message_id: str, target_id: str = None):
         await self.api.post('delete_msg', {'message_id': message_id})

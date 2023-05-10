@@ -51,7 +51,7 @@ class MiraiBotInstance(BotAdapterProtocol):
             await self.keep_connect(handler)
             await asyncio.sleep(10)
 
-    async def keep_connect(self, handler):
+    async def keep_connect(self, handler: Callable):
         mark = f'websocket({self.appid})'
 
         log.info(f'connecting {mark}...')
@@ -137,5 +137,5 @@ class MiraiBotInstance(BotAdapterProtocol):
     async def package_message(self, event: str, message: dict):
         return package_mirai_message(self, self.appid, message)
 
-    async def recall_message(self, message_id, target_id=None):
+    async def recall_message(self, message_id: str, target_id: str = None):
         await self.api.recall_message(message_id, target_id)

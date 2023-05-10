@@ -10,7 +10,7 @@ class CQCode:
     code: str
 
 
-def text_convert(message: Message, text, original):
+def text_convert(message: Message, text: str, original: str):
     """
     消息文本的最终处理
 
@@ -41,7 +41,7 @@ def text_convert(message: Message, text, original):
     return message
 
 
-def cut_by_jieba(text):
+def cut_by_jieba(text: str):
     return jieba.lcut(
         text.lower().replace(' ', '')
     )
