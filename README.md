@@ -2,11 +2,15 @@
 
 ![PyPI](https://img.shields.io/pypi/v/amiyabot)
 
-简洁高效的异步 Python QQ 机器人框架
+Python 异步渐进式 QQ 机器人框架
 
 官方文档：[www.amiyabot.com](https://www.amiyabot.com/)
 
+## Install
+
     pip install amiyabot
+
+## Get started
 
 ```python
 import asyncio
