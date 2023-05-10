@@ -5,7 +5,9 @@ import random
 import string
 import zipfile
 import asyncio
+import dhash
 
+from io import BytesIO
 from typing import List, Callable
 from string import punctuation
 from functools import partial
@@ -13,6 +15,7 @@ from contextlib import contextmanager
 from zhon.hanzi import punctuation as punctuation_cn
 from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor
+from PIL import Image
 
 executor = ThreadPoolExecutor(min(32, (os.cpu_count() or 1) + 4))
 
@@ -194,3 +197,7 @@ def is_valid_url(url: str):
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
+
+
+def dhash_image(image: bytes, size: int = 8):
+    return dhash.dhash_int(image=Image.open(BytesIO(image)), size=size)

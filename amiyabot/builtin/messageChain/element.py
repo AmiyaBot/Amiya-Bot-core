@@ -34,6 +34,7 @@ class Image:
     url: Optional[str] = None
     content: Optional[bytes] = None
     getter_hook: IMAGE_GETTER_HOOK = None
+    dhash: int = None
 
     async def get(self):
         if self.getter_hook:
