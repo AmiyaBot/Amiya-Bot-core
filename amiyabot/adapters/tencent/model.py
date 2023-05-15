@@ -1,5 +1,6 @@
 import json
 import websockets
+import dataclasses
 
 from typing import Any, Callable
 from dataclasses import dataclass
@@ -37,13 +38,5 @@ class Payload:
     s: int = None
     t: str = None
 
-    def to_dict(self):
-        return json.dumps(
-            {
-                'op': self.op,
-                'd': self.d,
-                's': self.s,
-                't': self.t
-            },
-            ensure_ascii=False
-        )
+    def to_json(self):
+        return json.dumps(dataclasses.asdict(self), ensure_ascii=False)

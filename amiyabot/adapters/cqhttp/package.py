@@ -20,7 +20,7 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
         elif data['message_type'] == 'group':
             msg = Message(instance, data)
             msg.message_type = 'group'
-            msg.channel_id = data['group_id']
+            msg.channel_id = str(data['group_id'])
             msg.nickname = data['sender']['nickname']
             msg.is_admin = data['sender']['role'] in ['owner', 'admin']
 
@@ -49,8 +49,8 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
 
         return event_list
 
-    msg.message_id = data['message_id']
-    msg.user_id = data['sender']['user_id']
+    msg.message_id = str(data['message_id'])
+    msg.user_id = str(data['sender']['user_id'])
     msg.avatar = f'https://q.qlogo.cn/headimg_dl?dst_uin={msg.user_id}&spec=100'
 
     message_chain = data['message']

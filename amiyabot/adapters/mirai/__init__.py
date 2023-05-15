@@ -51,7 +51,7 @@ class MiraiBotInstance(BotAdapterProtocol):
             await self.keep_connect(handler)
             await asyncio.sleep(10)
 
-    async def keep_connect(self, handler):
+    async def keep_connect(self, handler: Callable):
         mark = f'websocket({self.appid})'
 
         log.info(f'connecting {mark}...')
@@ -93,14 +93,14 @@ class MiraiBotInstance(BotAdapterProtocol):
 
             asyncio.create_task(handler('', data))
 
-    async def send_chain_message(self, chain: Chain, use_http: bool = False):
-        reply, voice_list = await build_message_send(self.api, chain, use_http=use_http)
+    async def send_chain_message(self, chain: Chain, is_sync: bool = False):
+        reply, voice_list = await build_message_send(self.api, chain, use_http=is_sync)
 
         res = []
 
         for reply_list in [[reply], voice_list]:
             for item in reply_list:
-                if use_http:
+                if is_sync:
                     res.append({
                         **await self.api.post(item[0], item[1])
                     })
@@ -137,5 +137,5 @@ class MiraiBotInstance(BotAdapterProtocol):
     async def package_message(self, event: str, message: dict):
         return package_mirai_message(self, self.appid, message)
 
-    async def recall_message(self, message_id, target_id=None):
+    async def recall_message(self, message_id: str, target_id: str = None):
         await self.api.recall_message(message_id, target_id)

@@ -27,6 +27,12 @@ async def package_tencent_message(instance: TencentAPI,
         data = get_info(Message(instance, message), message)
         data.is_direct = 'direct_message' in message and message['direct_message']
 
+        bot = await instance.get_me()
+        channel = await instance.get_channel(data.channel_id)
+
+        if not channel:
+            return None
+
         if 'member' in message:
             if 'roles' in message['member'] and [n for n in message['member']['roles'] if n in ADMIN]:
                 data.is_admin = True
@@ -40,14 +46,17 @@ async def package_tencent_message(instance: TencentAPI,
             text = message['content']
 
             if 'mentions' in message and message['mentions']:
-                me = await instance.get_me()
                 for user in message['mentions']:
+
                     text = text.replace('<@!{id}>'.format(**user), '')
-                    if me and user['id'] == me['id']:
+
+                    if bot and user['id'] == bot['id']:
                         data.is_at = True
                         continue
+
                     if user['bot']:
                         continue
+
                     data.at_target.append(user['id'])
 
             face_list = re.findall(r'<emoji:(\d+)>', text)

@@ -69,6 +69,12 @@ class TencentAPI(BotAdapterProtocol):
     async def get_me(self):
         return await self.get_request(APIConstant.userMeURI)
 
+    async def get_channel(self, channel_id: str):
+        return await self.get_request(APIConstant.channelURI.format(channel_id=channel_id))
+
+    async def get_channel_permissions(self, channel_id: str, user_id: str):
+        return await self.get_request(APIConstant.channelPermissionsURI.format(channel_id=channel_id, user_id=user_id))
+
     async def get_message(self, channel_id: str, message_id: str):
         return await self.get_request(APIConstant.messageURI.format(channel_id=channel_id, message_id=message_id))
 
@@ -102,7 +108,7 @@ class TencentAPI(BotAdapterProtocol):
 
         return complete
 
-    async def recall_message(self, message_id, target_id=None):
+    async def recall_message(self, message_id: str, target_id: str = None):
         await http_requests.request(
             get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
             method='delete',

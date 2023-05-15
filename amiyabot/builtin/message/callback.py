@@ -1,10 +1,11 @@
 import abc
 
-from typing import Union, List
+from typing import Union, List, Any
+from amiyabot.typeIndexes import T_BotAdapterProtocol
 
 
 class MessageCallback:
-    def __init__(self, instance, response):
+    def __init__(self, instance: T_BotAdapterProtocol, response: Any):
         self.instance = instance
         self.response = response
 

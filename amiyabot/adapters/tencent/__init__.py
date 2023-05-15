@@ -105,7 +105,7 @@ class TencentBotInstance(TencentAPI):
                             '$device': ''
                         }
                     }
-                    await websocket.send(Payload(op=2, d=create_token).to_dict())
+                    await websocket.send(Payload(op=2, d=create_token).to_json())
 
                     self.__create_heartbeat(websocket,
                                             payload.d['heartbeat_interval'],
@@ -141,7 +141,7 @@ class TencentBotInstance(TencentAPI):
                         'session_id': record.session_id,
                         'seq': record.last_s
                     }
-                    await websocket.send(Payload(op=6, d=reconnect_token).to_dict())
+                    await websocket.send(Payload(op=6, d=reconnect_token).to_json())
 
                     self.__create_heartbeat(websocket,
                                             payload.d['heartbeat_interval'],
@@ -165,9 +165,9 @@ class TencentBotInstance(TencentAPI):
             sec += 1
             if sec >= interval / 1000:
                 sec = 0
-                await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_dict())
+                await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_json())
 
-    async def send_chain_message(self, chain: Chain, use_http: bool = False):
+    async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reqs = await build_message_send(chain)
         res = []
 

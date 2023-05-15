@@ -49,13 +49,13 @@ class Message(MessageStructure):
     async def send(self, reply) -> SendReturn:
 
         # todo 生命周期 - message_before_send
-        for method in self.bot.process_message_before_send:
+        for method in self._bot.process_message_before_send:
             reply = await method(reply, self.factory_name, self.instance) or reply
 
-        callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, use_http=True)
+        callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, is_sync=True)
 
         # todo 生命周期 - message_after_send
-        for method in self.bot.process_message_after_send:
+        for method in self._bot.process_message_after_send:
             await method(reply, self.factory_name, self.instance)
 
         if not callbacks:

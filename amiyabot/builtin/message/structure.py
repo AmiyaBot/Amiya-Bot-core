@@ -2,10 +2,11 @@ import abc
 import time
 
 from typing import Any, Union, Optional, Callable
+from amiyabot.typeIndexes import *
 
 
 class EventStructure:
-    def __init__(self, instance, event_name, data):
+    def __init__(self, instance: T_BotAdapterProtocol, event_name: str, data: dict):
         self.instance = instance
         self.event_name = event_name
         self.data = data
@@ -15,14 +16,15 @@ class EventStructure:
 
 
 class MessageStructure:
-    def __init__(self, instance, message: dict = None):
-        self.bot = None
+    def __init__(self, instance: T_BotAdapterProtocol, message: dict = None):
+        self._bot: Optional[T_BotHandlerFactory] = None
+        self.instance = instance
+
         self.factory_name = ''
 
-        self.instance = instance
         self.message = message
-        self.message_id = None
-        self.message_type = None
+        self.message_id = ''
+        self.message_type = ''
 
         self.face = []
         self.image = []
@@ -39,14 +41,14 @@ class MessageStructure:
         self.is_admin = False
         self.is_direct = False
 
-        self.user_id = None
-        self.guild_id = None
-        self.src_guild_id = None
-        self.channel_id = None
-        self.nickname = None
-        self.avatar = None
+        self.user_id = ''
+        self.channel_id = ''
+        self.guild_id = ''
+        self.src_guild_id = ''
+        self.nickname = ''
+        self.avatar = ''
 
-        self.joined_at = None
+        self.joined_at = ''
 
         self.verify: Optional[Verify] = None
         self.time = int(time.time())
@@ -68,7 +70,7 @@ class MessageStructure:
         )
 
     @abc.abstractmethod
-    async def send(self, reply):
+    async def send(self, reply: T_Chain):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -77,7 +79,7 @@ class MessageStructure:
 
     @abc.abstractmethod
     async def wait(self,
-                   reply=None,
+                   reply: T_Chain = None,
                    force: bool = False,
                    max_time: int = 30,
                    data_filter: Callable = None,
@@ -86,7 +88,7 @@ class MessageStructure:
 
     @abc.abstractmethod
     async def wait_channel(self,
-                           reply=None,
+                           reply: T_Chain = None,
                            force: bool = False,
                            clean: bool = True,
                            max_time: int = 30,

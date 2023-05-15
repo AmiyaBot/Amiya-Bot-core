@@ -29,7 +29,7 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def send_chain_message(self, chain: Chain, use_http: bool = False) -> List[MessageCallback]:
+    async def send_chain_message(self, chain: Chain, is_sync: bool = False) -> List[MessageCallback]:
         raise NotImplementedError
 
     @abc.abstractmethod
