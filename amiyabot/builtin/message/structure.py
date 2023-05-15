@@ -22,8 +22,8 @@ class MessageStructure:
 
         self.factory_name = ''
 
+        self.message = message
         self.message_id = ''
-        self.message_raw = message
         self.message_type = ''
 
         self.face = []
