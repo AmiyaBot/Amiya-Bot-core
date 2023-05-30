@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
+from starlette.staticfiles import StaticFiles
 
 from amiyabot.util import snake_case_to_pascal_case
 
@@ -34,12 +35,28 @@ class HttpServer(metaclass=ServerMeta):
 
         self.__routes = []
         self.__allow_path = []
+        self.__static_folders = []
 
         @self.app.middleware('http')
         async def interceptor(request: Request, call_next: Callable):
-            if not request.scope['path'] in self.__allow_path + ['/docs', '/favicon.ico', '/openapi.json']:
-                if auth_key and request.headers.get('authKey') != auth_key:
-                    return Response('Invalid authKey', status_code=401)
+            results = []
+
+            for allow_path in [
+                '/docs',
+                '/favicon.ico',
+                '/openapi.json',
+                *self.__allow_path,
+                *self.__static_folders
+            ]:
+                if not request.scope['path'].startswith(allow_path):
+                    if auth_key and request.headers.get('authKey') != auth_key:
+                        results.append(False)
+                        continue
+                results.append(True)
+
+            if not any(results):
+                return Response('Invalid authKey', status_code=401)
+
             return await call_next(request)
 
         @self.app.on_event('shutdown')
@@ -84,6 +101,10 @@ class HttpServer(metaclass=ServerMeta):
             return router(fn)
 
         return decorator
+
+    def add_static_folder(self, path: str, directory: str):
+        self.app.mount(path, StaticFiles(directory=directory), name=directory)
+        self.__static_folders.append('/' + directory)
 
     @staticmethod
     def response(data: Any = None, code: int = 200, message: str = ''):

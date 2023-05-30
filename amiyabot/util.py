@@ -46,7 +46,7 @@ def append_sys_path(path: str):
         sys.path.append(path)
 
 
-def argv(name, formatter=str):
+def argv(name: str, formatter: Callable = str):
     key = f'--{name}'
     if key in sys.argv:
         index = sys.argv.index(key) + 1

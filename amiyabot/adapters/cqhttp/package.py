@@ -21,7 +21,7 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
             msg = Message(instance, data)
             msg.message_type = 'group'
             msg.channel_id = str(data['group_id'])
-            msg.nickname = data['sender']['nickname']
+            msg.nickname = data['sender']['card'] or data['sender']['nickname']
             msg.is_admin = data['sender']['role'] in ['owner', 'admin']
 
         else:

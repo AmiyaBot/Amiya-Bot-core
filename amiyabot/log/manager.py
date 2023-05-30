@@ -6,6 +6,7 @@ import traceback
 from typing import Union, Dict, List, Type, Any, Callable, Coroutine
 from contextlib import asynccontextmanager, contextmanager
 from concurrent_log_handler import ConcurrentRotatingFileHandler
+from amiyabot.util import argv
 
 
 class UserLogger:
@@ -15,7 +16,7 @@ class UserLogger:
 class LoggerManager:
     def __init__(self,
                  name: str,
-                 level: int = logging.DEBUG,
+                 level: int = None,
                  formatter: str = '%(asctime)s [%(name)8s][%(levelname)8s] %(message)s',
                  save_path: str = 'log',
                  default_file: str = 'running'):
@@ -23,7 +24,7 @@ class LoggerManager:
         self.handlers: Dict[str, logging.Logger] = {}
 
         self.name = name
-        self.level = level
+        self.level = level or (logging.DEBUG if argv('debug') else logging.INFO)
         self.formatter = formatter
         self.save_path = save_path
         self.default_file = default_file
