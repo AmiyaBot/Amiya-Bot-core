@@ -11,18 +11,20 @@ def package_cqhttp_message(instance: BotAdapterProtocol, account: str, data: dic
     post_type = data['post_type']
 
     if post_type == 'message':
+        sender: dict = data['sender']
+
         if data['message_type'] == 'private':
             msg = Message(instance, data)
             msg.message_type = 'private'
             msg.is_direct = True
-            msg.nickname = data['sender']['nickname']
+            msg.nickname = sender.get('nickname')
 
         elif data['message_type'] == 'group':
             msg = Message(instance, data)
             msg.message_type = 'group'
             msg.channel_id = str(data['group_id'])
-            msg.nickname = data['sender']['card'] or data['sender']['nickname']
-            msg.is_admin = data['sender']['role'] in ['owner', 'admin']
+            msg.nickname = sender.get('card') or sender.get('nickname')
+            msg.is_admin = sender.get('role') in ['owner', 'admin']
 
         else:
             return None
