@@ -6,6 +6,7 @@ import random
 import string
 import zipfile
 import asyncio
+import inspect
 import importlib
 
 from io import BytesIO
@@ -44,7 +45,15 @@ def temp_sys_path(path: str):
 
 def import_module(path: str):
     if path in sys.modules:
-        return importlib.reload(sys.modules[path])
+        module = sys.modules[path]
+
+        if module.__package__:
+            for submodule in [getattr(module, attr) for attr in dir(module) if not attr.startswith('__')]:
+                if inspect.ismodule(submodule):
+                    return importlib.reload(submodule)
+
+        return importlib.reload(module)
+
     return importlib.import_module(path)
 
 

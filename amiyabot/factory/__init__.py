@@ -247,6 +247,14 @@ class BotInstance(BotHandlerFactory):
 
         log.info(f'plugin uninstalled: {plugin_id}')
 
+    def reload_plugin(self, plugin_id: str):
+        assert plugin_id != '__factory__' and plugin_id in self.plugins
+
+        plugin_path = self.plugins[plugin_id].path[-1]
+
+        self.uninstall_plugin(plugin_id)
+        self.install_plugin(plugin_path)
+
     def combine_factory(self, factory: BotHandlerFactory):
         self.plugins['__factory__'] = factory
 
