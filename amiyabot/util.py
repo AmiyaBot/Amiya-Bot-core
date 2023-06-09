@@ -1,11 +1,12 @@
 import os
 import re
 import sys
+import dhash
 import random
 import string
 import zipfile
 import asyncio
-import dhash
+import importlib
 
 from io import BytesIO
 from typing import List, Callable
@@ -39,6 +40,12 @@ def temp_sys_path(path: str):
     sys.path.insert(0, path)
     yield
     sys.path.remove(path)
+
+
+def import_module(path: str):
+    if path in sys.modules:
+        return importlib.reload(sys.modules[path])
+    return importlib.import_module(path)
 
 
 def append_sys_path(path: str):
