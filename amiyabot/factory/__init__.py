@@ -1,4 +1,5 @@
 import os
+import copy
 import shutil
 import zipimport
 
@@ -247,13 +248,17 @@ class BotInstance(BotHandlerFactory):
 
         log.info(f'plugin uninstalled: {plugin_id}')
 
-    def reload_plugin(self, plugin_id: str):
+    def reload_plugin(self, plugin_id: str, force: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
 
-        plugin_path = self.plugins[plugin_id].path[-1]
+        paths = copy.deepcopy(self.plugins[plugin_id].path)
+        dest = paths[-1]
+
+        if force and len(paths) >= 2 and os.path.exists(dest):
+            shutil.rmtree(dest)
 
         self.uninstall_plugin(plugin_id)
-        self.install_plugin(plugin_path)
+        self.install_plugin(paths[0], len(paths) >= 2, dest)
 
     def combine_factory(self, factory: BotHandlerFactory):
         self.plugins['__factory__'] = factory
