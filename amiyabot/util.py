@@ -43,14 +43,22 @@ def temp_sys_path(path: str):
     sys.path.remove(path)
 
 
-def import_module(path: str):
+def import_module(path: str, self_only: bool = True):
     if path in sys.modules:
         module = sys.modules[path]
 
-        if module.__package__:
-            for submodule in [getattr(module, attr) for attr in dir(module) if not attr.startswith('__')]:
+        def reload_submodules(parent):
+            for attr in [n for n in dir(parent) if not n.startswith('__')]:
+                submodule = getattr(parent, attr)
+
                 if inspect.ismodule(submodule):
-                    return importlib.reload(submodule)
+                    if self_only and path not in submodule.__name__:
+                        continue
+
+                    reload_submodules(submodule)
+                    importlib.reload(submodule)
+
+        reload_submodules(module)
 
         return importlib.reload(module)
 
