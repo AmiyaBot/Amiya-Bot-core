@@ -9,10 +9,10 @@ from amiyabot.builtin.lib.timedTask import tasks_control, CUSTOM_CHECK
 
 from .factoryTyping import *
 from .implemented import MessageHandlerItemImpl
-from .factoryCore import ProcessControl
+from .factoryCore import FactoryCore
 
 
-class BotHandlerFactory(ProcessControl):
+class BotHandlerFactory(FactoryCore):
     def __init__(self,
                  appid: str = None,
                  token: str = None,
@@ -175,60 +175,61 @@ class BotInstance(BotHandlerFactory):
                     plugin: Union[str, os.PathLike, "PluginInstance"],
                     extract_plugin: bool = False,
                     extract_plugin_dest: str = None):
-        with log.sync_catch('plugin install error:'):
-            if isinstance(plugin, str):
-                if os.path.isdir(plugin):
-                    # 以 Python Package 的形式加载
-                    with temp_sys_path(os.path.dirname(plugin)):
-                        module = import_module(os.path.basename(plugin))
-                elif plugin.endswith('.py'):
-                    # 以 py 文件的形式加载
-                    with temp_sys_path(os.path.abspath(os.path.dirname(plugin))):
-                        module = import_module(os.path.basename(plugin).strip('.py'))
-                else:
-                    # 以包的形式加载，方式同 Python Package
-                    if not extract_plugin:
-                        with temp_sys_path(os.path.abspath(plugin)):
-                            module = zipimport.zipimporter(plugin).load_module('__init__')
-                    else:
-                        dest = os.path.abspath(extract_plugin_dest or os.path.splitext(plugin)[0].replace('.', '_'))
+        if isinstance(plugin, str):
+            dest = ''
 
-                        extract_zip(plugin, dest)
-
-                        with temp_sys_path(os.path.dirname(dest)):
-                            module = import_module(os.path.basename(dest))
-
-                instance: PluginInstance = getattr(module, 'bot')
-                instance.path.append(plugin)
-                if extract_plugin:
-                    instance.path.append(dest)
+            if os.path.isdir(plugin):
+                # 以 Python Package 的形式加载
+                with temp_sys_path(os.path.dirname(plugin)):
+                    module = import_module(os.path.basename(plugin))
+            elif plugin.endswith('.py'):
+                # 以 py 文件的形式加载
+                with temp_sys_path(os.path.abspath(os.path.dirname(plugin))):
+                    module = import_module(os.path.basename(plugin).strip('.py'))
             else:
-                instance = plugin
+                # 以包的形式加载，方式同 Python Package
+                if not extract_plugin:
+                    with temp_sys_path(os.path.abspath(plugin)):
+                        module = zipimport.zipimporter(plugin).load_module('__init__')
+                else:
+                    dest = os.path.abspath(extract_plugin_dest or os.path.splitext(plugin)[0].replace('.', '_'))
 
-            return instance
+                    extract_zip(plugin, dest)
+
+                    with temp_sys_path(os.path.dirname(dest)):
+                        module = import_module(os.path.basename(dest))
+
+            instance: PluginInstance = getattr(module, 'bot')
+            instance.path.append(plugin)
+            if extract_plugin:
+                instance.path.append(dest)
+        else:
+            instance = plugin
+
+        return instance
 
     def install_plugin(self,
                        plugin: Union[str, os.PathLike, "PluginInstance"],
                        extract_plugin: bool = False,
                        extract_plugin_dest: str = None):
+        with log.sync_catch('plugin install error:'):
+            instance = self.load_plugin(plugin, extract_plugin, extract_plugin_dest)
+            if not instance:
+                return None
 
-        instance = self.load_plugin(plugin, extract_plugin, extract_plugin_dest)
-        if not instance:
-            return None
+            plugin_id = instance.plugin_id
 
-        plugin_id = instance.plugin_id
+            assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
 
-        assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
+            # 安装插件
+            instance.set_prefix_keywords(self.prefix_keywords)
+            instance.install()
 
-        # 安装插件
-        instance.set_prefix_keywords(self.prefix_keywords)
-        instance.install()
+            self.plugins[plugin_id] = instance
 
-        self.plugins[plugin_id] = instance
+            log.info(f'plugin installed: {plugin_id}')
 
-        log.info(f'plugin installed: {plugin_id}')
-
-        return instance
+            return instance
 
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins

@@ -67,8 +67,6 @@ class FactoryCore:
 
             return value
 
-
-class ProcessControl(FactoryCore):
     @property
     def process_event_created(self) -> EventCreatedHandlers:
         return self.get_with_plugins()
