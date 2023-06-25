@@ -24,12 +24,11 @@ class UserPermision(Enum):
         string = string.lower()
         if string == "owner":
             return UserPermision.OWNER
-        elif string == "admin":
+        if string == "admin":
             return UserPermision.ADMIN
-        elif string == "member":
+        if string == "member":
             return UserPermision.MEMBER
-        else:
-            return UserPermision.UNKNOWN
+        return UserPermision.UNKNOWN
 
 
 class UserGender(Enum):
@@ -42,10 +41,9 @@ class UserGender(Enum):
         string = string.lower()
         if string == "male":
             return UserGender.MALE
-        elif string == "female":
+        if string == "female":
             return UserGender.FEMALE
-        else:
-            return UserGender.UNKNOWN
+        return UserGender.UNKNOWN
 
 
 class RelationType(Enum):
@@ -356,7 +354,8 @@ class BotAdapterHelper:
 
         Args:
             user_id (Union[str, int]): QQ号 - all: required
-            type (RelationType, optional): 与用户的关系 [1:FRIEND, 2:GROUP, 3:STRANGER]. 默认为 RelationType.STRANGER. - all: optional
+            type (RelationType, optional): 与用户的关系 [1:FRIEND, 2:GROUP, 3:STRANGER].
+                                           默认为 RelationType.STRANGER. - all: optional
             group_id (Optional[Union[str, int]], optional): 群号[type为2时需要指定] - all: optional
             no_cache (bool, optional): 是否不使用缓存. 默认为 False. - all: optional
 
@@ -378,8 +377,7 @@ class BotAdapterHelper:
         """
         if not user_id:
             return None
-        else:
-            user_id = int(user_id)
+        user_id = int(user_id)
         if self.adapter_type == BotAdapterType.CQHTTP:
             result = None
             if relation_type == RelationType.GROUP:
@@ -390,10 +388,7 @@ class BotAdapterHelper:
                     for i in res:
                         if i["user_id"] == user_id:
                             result = i
-            elif (
-                relation_type == RelationType.FRIEND
-                or relation_type == RelationType.STRANGER
-            ):
+            elif relation_type in [RelationType.FRIEND, RelationType.STRANGER]:
                 res = await self.post(
                     "/get_stranger_info", {"user_id": user_id, "no_cache": no_cache}
                 )
@@ -404,7 +399,7 @@ class BotAdapterHelper:
                 else:
                     result = None
             return result
-        elif self.adapter_type == BotAdapterType.MIRAI:
+        if self.adapter_type == BotAdapterType.MIRAI:
             result = None
             if relation_type == RelationType.GROUP:
                 if not group_id:
@@ -443,7 +438,7 @@ class BotAdapterHelper:
             res = await self.post("/delete_friend", {"user_id": user_id})
             result = json.loads(res)
             return result["status"] == "ok"
-        elif self.adapter_type == BotAdapterType.MIRAI:
+        if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.post("/deleteFriend", {"target": user_id})
             result = json.loads(res)
             return result["code"] == 0
@@ -475,7 +470,7 @@ class BotAdapterHelper:
             )
             result = json.loads(res)
             return result["status"] == "ok"
-        elif self.adapter_type == BotAdapterType.MIRAI:
+        if self.adapter_type == BotAdapterType.MIRAI:
             if time == 0:
                 res = await self.post(
                     "/unmute", {"target": group_id, "memberId": user_id}
@@ -521,7 +516,7 @@ class BotAdapterHelper:
             )
             result = json.loads(res)
             return result["status"] == "ok"
-        elif self.adapter_type == BotAdapterType.MIRAI:
+        if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.post(
                 "/kick",
                 {"target": group_id, "memberId": user_id, "block": reject, "msg": msg},
@@ -551,7 +546,7 @@ class BotAdapterHelper:
             )
             result = json.loads(res)
             return result["status"] == "ok"
-        elif self.adapter_type == BotAdapterType.MIRAI:
+        if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.get("/quit", {"target": group_id})
             result = json.loads(res)
             return result["code"] == 0
@@ -576,7 +571,7 @@ class BotAdapterHelper:
             )
             result = json.loads(res)
             return result["status"] == "ok"
-        elif self.adapter_type == BotAdapterType.MIRAI:
+        if self.adapter_type == BotAdapterType.MIRAI:
             if enable:
                 res = await self.post("/muteAll", {"target": group_id})
             else:
@@ -604,7 +599,7 @@ class BotAdapterHelper:
             res = await self.post("/set_essence_msg", {"message_id": message_id})
             result = json.loads(res)
             return result["status"] == "ok"
-        elif self.adapter_type == BotAdapterType.MIRAI:
+        if self.adapter_type == BotAdapterType.MIRAI:
             if not group_id:
                 return False
             group_id = int(group_id)
