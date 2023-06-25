@@ -4,6 +4,7 @@ import websockets
 
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters.helper import BotAdapterHelper, BotAdapterType
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
@@ -35,6 +36,7 @@ class MiraiBotInstance(BotAdapterProtocol):
         self.session = None
 
         self.api = MiraiAPI(f'{host}:{http_port}')
+        self.helper = BotAdapterHelper(self, BotAdapterType.MIRAI)
 
     def __str__(self):
         return 'Mirai'

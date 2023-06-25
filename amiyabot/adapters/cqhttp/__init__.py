@@ -4,6 +4,7 @@ import websockets
 
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters.helper import BotAdapterHelper, BotAdapterType
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
@@ -39,6 +40,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         self.http_port = http_port
 
         self.api = CQHttpAPI(f'{host}:{http_port}', token)
+        self.helper = BotAdapterHelper(self, BotAdapterType.CQHTTP)
 
     def __str__(self):
         return 'CQHttp'
