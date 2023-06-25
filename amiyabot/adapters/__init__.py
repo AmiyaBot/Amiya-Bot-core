@@ -1,6 +1,6 @@
 import abc
 
-from typing import Any, List, Union, Callable, Coroutine
+from typing import Any, List, Union, Callable, Coroutine, Optional
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 
@@ -13,6 +13,12 @@ class BotAdapterProtocol:
         self.token = token
         self.alive = False
         self.keep_run = True
+
+        # 适配器实例连接信息
+        self.host: Optional[str] = None
+        self.ws_port: Optional[int] = None
+        self.http_port: Optional[int] = None
+        self.session: Optional[str] = None
 
     def __str__(self):
         return 'Adapter'

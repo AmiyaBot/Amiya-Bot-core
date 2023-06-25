@@ -4,11 +4,10 @@ import websockets
 
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.adapters.helper.helper import BotAdapterHelper
+from amiyabot.adapters.helper import BotAdapterHelper, BotAdapterType
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
-from amiyabot.adapters.helper import BotAdapterType
 
 from .forwardMessage import CQHTTPForwardMessage
 from .package import package_cqhttp_message

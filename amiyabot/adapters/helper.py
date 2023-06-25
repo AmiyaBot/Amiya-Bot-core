@@ -1,11 +1,19 @@
 import json
+
+from enum import Enum
 from typing import Optional, Union
-from amiyabot import Message
-from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.adapters.helper import BotAdapterType
-from amiyabot.adapters.cqhttp.package import package_cqhttp_message
-from amiyabot.adapters.mirai.package import package_mirai_message
+
+from amiyabot.builtin.message.structure import MessageStructure
 from amiyabot.network.httpRequests import http_requests
+
+from . import BotAdapterProtocol
+from .mirai.package import package_mirai_message
+from .cqhttp.package import package_cqhttp_message
+
+
+class BotAdapterType(Enum):
+    CQHTTP = 1
+    MIRAI = 2
 
 
 class BotAdapterHelper:
@@ -13,12 +21,10 @@ class BotAdapterHelper:
         self.instance = instance
         self.adapter_type = adapter_type
         self.token = instance.token
-        host = instance.host
-        port = instance.http_port
-        self.url = f'http://{host}:{port}'
+        self.url = f'http://{instance.host}:{instance.http_port}'
 
     def __str__(self):
-        return str(self.adapter) + 'Helper'
+        return str(self.adapter_type) + 'Helper'
 
     @property
     def session(self) -> str:
@@ -38,9 +44,11 @@ class BotAdapterHelper:
         """
         if self.adapter_type == BotAdapterType.CQHTTP:
             return await http_requests.get(self.url + path, params=params, headers={'Authorization': self.token})
-        elif self.adapter_type == BotAdapterType.MIRAI:
+
+        if self.adapter_type == BotAdapterType.MIRAI:
             params['sessionKey'] = self.session
             return await http_requests.get(self.url + path, params=params)
+
         return None
 
     async def post(self, path: str, params: dict = None):
@@ -55,12 +63,16 @@ class BotAdapterHelper:
         """
         if self.adapter_type == BotAdapterType.CQHTTP:
             return await http_requests.post(self.url + path, params, {'Authorization': self.token})
-        elif self.adapter_type == BotAdapterType.MIRAI:
+
+        if self.adapter_type == BotAdapterType.MIRAI:
             params['sessionKey'] = self.session
             return await http_requests.post(self.url + path, params)
+
         return None
 
-    async def get_message(self, message_id: Union[str, int], target: Optional[Union[str,int]] = None) -> Optional[Message]:
+    async def get_message(self,
+                          message_id: Union[str, int],
+                          target: Optional[Union[str, int]] = None) -> Optional[MessageStructure]:
         """通过消息 ID 获取消息
 
         Args:
@@ -71,27 +83,24 @@ class BotAdapterHelper:
         """
         if not message_id:
             return None
-        else:
-            message_id = int(message_id)
+
+        message_id = int(message_id)
+
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/get_msg', {'message_id': message_id})
             result = json.loads(res)
             if result['status'] == 'ok':
                 return package_cqhttp_message(self.instance, self.instance.appid, result['data'])
-            else:
-                return None
-        elif self.adapter_type == BotAdapterType.MIRAI:
+
+        if self.adapter_type == BotAdapterType.MIRAI:
             if not target:
-                return
-            else:
-                target = int(target)
+                return None
+
+            target = int(target)
             res = await self.get('/messageFromId', {'messageId': message_id, 'target': target})
             result = json.loads(res)
             if result['code'] == 0:
                 return package_mirai_message(self.instance, self.instance.appid, result['data'])
-            else:
-                return None
-        return None
 
     async def get_friend_list(self) -> Optional[list]:
         """获取好友列表
@@ -110,15 +119,15 @@ class BotAdapterHelper:
                 for i in res['data']:
                     i['id'] = i.pop('user_id')
                 return result['data']
-            else:
-                return None
-        elif self.adapter_type == BotAdapterType.MIRAI:
+            return None
+
+        if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.get('/friendList')
             result = json.loads(res)
             if result['code'] == 0:
                 return result['data']
-            else:
-                return None
+            return None
+
         return None
 
     async def get_group_list(self, nocache: bool = False) -> Optional[list]:
@@ -154,15 +163,17 @@ class BotAdapterHelper:
                     i['count'] = i.pop('member_count')
                     i['max_count'] = i.pop('max_member_count')
                 return result['data']
-            else:
-                return None
-        elif self.adapter_type == BotAdapterType.MIRAI:
+
+            return None
+
+        if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.get('/groupList')
             result = json.loads(res)
             if result['code'] == 0:
                 return result['data']
-            else:
-                return None
+
+            return None
+
         return None
 
     async def get_group_member_list(self, group_id: Union[str, int], nocache: bool = False) -> Optional[list]:
@@ -199,15 +210,17 @@ class BotAdapterHelper:
         """
         if not group_id:
             return None
-        else:
-            group_id = int(group_id)
+
+        group_id = int(group_id)
+
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/get_group_member_list', {'group_id': group_id, 'no_cache': nocache})
             result = json.loads(res)
             result_list = []
             if result['status'] == 'ok':
                 for i in res['data']:
-                    ires = await self.post('/get_group_member_info', {'group_id': group_id, 'user_id': i['user_id'], 'no_cache': nocache})
+                    ires = await self.post('/get_group_member_info',
+                                           {'group_id': group_id, 'user_id': i['user_id'], 'no_cache': nocache})
                     iresult = json.loads(ires)
                     if iresult['status'] == 'ok':
                         data = iresult['data']
@@ -230,9 +243,10 @@ class BotAdapterHelper:
                             'mute_expire_time': data['shut_up_timestamp']
                         })
                 return result_list
-            else:
-                return None
-        elif self.adapter_type == BotAdapterType.MIRAI:
+
+            return None
+
+        if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.get('/latestMemberList' if nocache else '/memberList', {'target': group_id})
             result = json.loads(res)
             result_list = []
@@ -258,6 +272,7 @@ class BotAdapterHelper:
                             'mute_time_remaining': data['muteTimeRemaining']
                         })
                 return result_list
-            else:
-                return None
+
+            return None
+
         return None

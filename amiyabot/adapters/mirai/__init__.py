@@ -4,8 +4,7 @@ import websockets
 
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.adapters.helper import BotAdapterType
-from amiyabot.adapters.helper.helper import BotAdapterHelper
+from amiyabot.adapters.helper import BotAdapterHelper, BotAdapterType
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
