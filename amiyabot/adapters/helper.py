@@ -3,12 +3,9 @@ import json
 from enum import Enum
 from typing import Optional, Union
 
-from amiyabot.builtin.message.structure import MessageStructure
 from amiyabot.network.httpRequests import http_requests
 
-from . import BotAdapterProtocol
-from .mirai.package import package_mirai_message
-from .cqhttp.package import package_cqhttp_message
+from . import BotAdapterProtocol, PACKAGE_RESULT
 
 
 class BotAdapterType(Enum):
@@ -72,7 +69,7 @@ class BotAdapterHelper:
 
     async def get_message(self,
                           message_id: Union[str, int],
-                          target: Optional[Union[str, int]] = None) -> Optional[MessageStructure]:
+                          target: Optional[Union[str, int]] = None) -> Optional[PACKAGE_RESULT]:
         """通过消息 ID 获取消息
 
         Args:
@@ -90,7 +87,7 @@ class BotAdapterHelper:
             res = await self.post('/get_msg', {'message_id': message_id})
             result = json.loads(res)
             if result['status'] == 'ok':
-                return package_cqhttp_message(self.instance, self.instance.appid, result['data'])
+                return await self.instance.package_message('', result['data'])
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not target:
@@ -100,7 +97,7 @@ class BotAdapterHelper:
             res = await self.get('/messageFromId', {'messageId': message_id, 'target': target})
             result = json.loads(res)
             if result['code'] == 0:
-                return package_mirai_message(self.instance, self.instance.appid, result['data'])
+                return await self.instance.package_message('', result['data'])
 
     async def get_friend_list(self) -> Optional[list]:
         """获取好友列表

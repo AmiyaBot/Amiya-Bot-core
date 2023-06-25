@@ -4,7 +4,8 @@ from typing import Any, List, Union, Callable, Coroutine, Optional
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 
-handler_type = Callable[[str, dict], Coroutine[Any, Any, None]]
+HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
+PACKAGE_RESULT = Union[Message, Event, EventList]
 
 
 class BotAdapterProtocol:
@@ -31,7 +32,7 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def connect(self, private: bool, handler: handler_type):
+    async def connect(self, private: bool, handler: HANDLER_TYPE):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -56,7 +57,7 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def package_message(self, event: str, message: dict) -> Union[Message, Event, EventList]:
+    async def package_message(self, event: str, message: dict) -> PACKAGE_RESULT:
         """
         预处理并封装消息对象
 
