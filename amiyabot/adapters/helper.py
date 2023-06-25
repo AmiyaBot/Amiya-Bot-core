@@ -13,6 +13,47 @@ class BotAdapterType(Enum):
     MIRAI = 2
 
 
+class UserPermision(Enum):
+    OWNER = 1
+    ADMIN = 2
+    MEMBER = 3
+    UNKNOWN = 4
+
+    @staticmethod
+    def from_str(string: str):
+        string = string.lower()
+        if string == 'owner':
+            return UserPermision.OWNER
+        elif string == 'admin':
+            return UserPermision.ADMIN
+        elif string == 'member':
+            return UserPermision.MEMBER
+        else:
+            return UserPermision.UNKNOWN
+
+
+class UserGender(Enum):
+    UNKNOWN = 0
+    MALE = 1
+    FEMALE = 2
+
+    @staticmethod
+    def from_str(string: str):
+        string = string.lower()
+        if string == 'male':
+            return UserGender.MALE
+        elif string == 'female':
+            return UserGender.FEMALE
+        else:
+            return UserGender.UNKNOWN
+
+
+class RelationType(Enum):
+    FRIEND = 1
+    GROUP = 2
+    STRANGER = 3
+
+
 class BotAdapterHelper:
     def __init__(self, instance: BotAdapterProtocol, adapter_type: BotAdapterType):
         self.instance = instance
@@ -76,7 +117,7 @@ class BotAdapterHelper:
             message_id (int): 消息 ID - all: required
             target: 好友id或群id - mirai: required
         Returns:
-            Optional[Message]: 消息 - all: have
+            Optional[PACKAGE_RESULT]: 消息 - all: have
         """
         if not message_id:
             return None
@@ -139,7 +180,7 @@ class BotAdapterHelper:
                     id(int): 群号 - all: have
                     name(str): 群名 - all: have
 
-                    permission(str): Bot权限 - mirai: have
+                    permission(UserPermision): Bot权限 - mirai: have
 
                     remark(str): 群备注 - cqhttp: have
                     create_time(int): 创建时间 - cqhttp: have
@@ -167,6 +208,8 @@ class BotAdapterHelper:
             res = await self.get('/groupList')
             result = json.loads(res)
             if result['code'] == 0:
+                for i in res['data']:
+                    i['permission'] = UserPermision.from_str(i.pop('permission'))
                 return result['data']
 
             return None
@@ -188,8 +231,8 @@ class BotAdapterHelper:
                     nickname(str): 群昵称 - all: have
                     age(int): 年龄 - all: have
                     level(str): 等级 - all: have
-                    sex(str): 性别 - all: have
-                    permission(str): 权限["OWNER", "ADMIN", "MEMBER"] - all: have
+                    gender(UserGender): 性别 - all: have
+                    permission(UserPermision): 权限 - all: have
                     title(str): 群头衔 - all: have
                     join_time(int): 加入时间 - all: have
                     last_sent_time(int): 最后发言时间 - all: have
@@ -227,8 +270,8 @@ class BotAdapterHelper:
                             'nickname': data['card'],
                             'age': data['age'],
                             'level': data['level'],
-                            'sex': data['sex'],
-                            'permission': data['role'].upper(),
+                            'gender': UserGender.from_str(data['sex']),
+                            'permission': UserPermision.from_str(data['role']),
                             'title': data['title'],
                             'join_time': data['join_time'],
                             'last_sent_time': data['last_sent_time'],
@@ -259,8 +302,8 @@ class BotAdapterHelper:
                             'nickname': i['memberName'],
                             'age': data['age'],
                             'level': data['level'],
-                            'sex': data['sex'],
-                            'permission': i['permission'],
+                            'gender': UserGender.from_str(data['sex']),
+                            'permission': UserPermision.from_str(i['permission']),
                             'title': i['specialTitle'],
                             'join_time': i['joinTimestamp'],
                             'last_sent_time': i['lastSpeakTimestamp'],
@@ -272,4 +315,73 @@ class BotAdapterHelper:
 
             return None
 
+        return None
+
+    async def get_user_info(self, user_id: Union[str, int], relation_type: RelationType = RelationType.STRANGER, group_id: Optional[Union[str, int]] = None, no_cache: bool = False) -> Optional[dict]:
+        """获取用户信息
+
+        Args:
+            user_id (Union[str, int]): QQ号 - all: required
+            type (RelationType, optional): 与用户的关系 [1:FRIEND, 2:GROUP, 3:STRANGER]. 默认为 RelationType.STRANGER. - all: optional
+            group_id (Optional[Union[str, int]], optional): 群号[type为2时需要指定] - all: optional
+            no_cache (bool, optional): 是否不使用缓存. 默认为 False. - all: optional
+
+        Returns:
+            Optional[dict]: 用户信息=
+            GROUP -
+                同 get_group_member_list 信息
+            FRIEND, STRANGER -
+                user_id(int): QQ号 - all: have
+                nickname(str): 昵称 - all: have
+                age(int): 年龄 - all: have
+                level(str): 等级 - all: have
+                gender(UserGender): 性别 - all: have
+
+                sign(str): 登录设备 - mirai: have
+
+                qid(str): qid ID身份卡 - cqhttp: have
+                login_days(int): 登录天数 - cqhttp: have
+        """
+        if not user_id:
+            return None
+        else:
+            user_id = int(user_id)
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            result = None
+            if relation_type == RelationType.GROUP:
+                if not group_id:
+                    return None
+                res = await self.get_group_member_list(group_id, no_cache)
+                if res:
+                    for i in res:
+                        if i['user_id'] == user_id:
+                            result = i
+            elif relation_type == RelationType.FRIEND or relation_type == RelationType.STRANGER:
+                res = await self.post('/get_stranger_info', {'user_id': user_id, 'no_cache': no_cache})
+                result = json.loads(res)
+                if result['status'] == 'ok':
+                    result = result['data']
+                    result['gender'] = UserGender.from_str(result.pop('sex'))
+                else:
+                    result = None
+            return result
+        elif self.adapter_type == BotAdapterType.MIRAI:
+            result = None
+            if relation_type == RelationType.GROUP:
+                if not group_id:
+                    return None
+                res = await self.get_group_member_list(group_id, no_cache)
+                if res:
+                    for i in res:
+                        if i['user_id'] == user_id:
+                            result = i
+            elif relation_type == RelationType.FRIEND:
+                res = await self.get('/friendProfile', {'target': user_id})
+                result = json.loads(res)
+                result['gender'] = UserGender.from_str(result.pop('sex'))
+            elif relation_type == RelationType.STRANGER:
+                res = await self.get('/userProfile', {'target': user_id})
+                result = json.loads(res)
+                result['gender'] = UserGender.from_str(result.pop('sex'))
+            return result
         return None
