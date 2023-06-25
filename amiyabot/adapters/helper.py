@@ -108,6 +108,8 @@ class BotAdapterHelper:
 
         return None
 
+# 缓存操作
+
     async def get_message(self,
                           message_id: Union[str, int],
                           target: Optional[Union[str, int]] = None) -> Optional[PACKAGE_RESULT]:
@@ -139,6 +141,8 @@ class BotAdapterHelper:
             result = json.loads(res)
             if result['code'] == 0:
                 return await self.instance.package_message('', result['data'])
+
+# 获取账号信息
 
     async def get_friend_list(self) -> Optional[list]:
         """获取好友列表
@@ -385,3 +389,175 @@ class BotAdapterHelper:
                 result['gender'] = UserGender.from_str(result.pop('sex'))
             return result
         return None
+
+# 账号管理
+
+    async def delete_friend(self, user_id: Union[str, int]) -> bool:
+        """删除好友
+
+        Args:
+            user_id (Union[str, int]): QQ号 - all: required
+
+        Returns:
+            bool: 是否成功
+        """
+        if not user_id:
+            return False
+        user_id = int(user_id)
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            res = await self.post('/delete_friend', {'user_id': user_id})
+            result = json.loads(res)
+            return result['status'] == 'ok'
+        elif self.adapter_type == BotAdapterType.MIRAI:
+            res = await self.post('/deleteFriend', {'target': user_id})
+            result = json.loads(res)
+            return result['code'] == 0
+        return False
+
+# 群管理
+
+    async def mute(self, group_id: Union[str, int],  user_id: Union[str, int], time: int) -> bool:
+        """禁言
+
+        Args:
+            group_id (Union[str, int]): 群号 - all: required
+            user_id (Union[str, int]): QQ号 - all: required
+            time (int): 禁言时间(秒) [0为解除] - all: required
+
+        Returns:
+            bool: 是否成功
+        """
+        if not group_id or not user_id or not time or time < 0:
+            return False
+        group_id = int(group_id)
+        user_id = int(user_id)
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            res = await self.post('/set_group_ban', {'group_id': group_id, 'user_id': user_id, 'duration': time})
+            result = json.loads(res)
+            return result['status'] == 'ok'
+        elif self.adapter_type == BotAdapterType.MIRAI:
+            if time == 0:
+                res = await self.post('/unmute', {'target': group_id, 'memberId': user_id})
+            else:
+                res = await self.post('/mute', {'target': group_id, 'memberId': user_id, 'time': time})
+            result = json.loads(res)
+            return result['code'] == 0
+        return False
+
+    async def remove_group_member(self, group_id: Union[str, int], user_id: Union[str, int], reject: bool = False, msg: Optional[str] = None) -> bool:
+        """移除群成员
+
+        Args:
+            group_id (Union[str, int]): 群号 - all: required
+            user_id (Union[str, int]): QQ号 - all: required
+            reject (bool, optional): 拒绝再加群 - all: optional, 默认False
+            msg (Optional[str], optional): 退群信息 - mirai: optional, 默认None
+
+        Returns:
+            bool: 是否成功
+        """
+        if not group_id or not user_id:
+            return False
+        group_id = int(group_id)
+        user_id = int(user_id)
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            res = await self.post('/set_group_kick', {'group_id': group_id, 'user_id': user_id, 'reject_add_request': reject})
+            result = json.loads(res)
+            return result['status'] == 'ok'
+        elif self.adapter_type == BotAdapterType.MIRAI:
+            res = await self.post('/kick', {'target': group_id, 'memberId': user_id, 'block': reject, 'msg': msg})
+            result = json.loads(res)
+            return result['code'] == 0
+        return False
+
+    async def exit_group(self, group_id: Union[str, int], is_dismiss: bool = False) -> bool:
+        """退出群
+
+        Args:
+            group_id (Union[str, int]): 群号 - all: required
+            is_dismiss (bool, optional): 是否解散 - cqhttp: optional, 默认False (经过测试, cqhttp, mirai均不支持解散群)
+
+        Returns:
+            bool: 是否成功
+        """
+        if not group_id:
+            return False
+        group_id = int(group_id)
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            res = await self.post('/set_group_leave', {'group_id': group_id, 'is_dismiss': is_dismiss})
+            result = json.loads(res)
+            return result['status'] == 'ok'
+        elif self.adapter_type == BotAdapterType.MIRAI:
+            res = await self.get('/quit', {'target': group_id})
+            result = json.loads(res)
+            return result['code'] == 0
+        return False
+
+    async def mute_all(self, group_id: Union[str, int], enable: bool = True) -> bool:
+        """全员禁言
+
+        Args:
+            group_id (Union[str, int]): 群号 - all: required
+            enable (bool, optional): 禁言(True)/解除禁言(False) - all: optional, 默认True
+
+        Returns:
+            bool: 是否成功
+        """
+        if not group_id:
+            return False
+        group_id = int(group_id)
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            res = await self.post('/set_group_whole_ban', {'group_id': group_id, 'enable': enable})
+            result = json.loads(res)
+            return result['status'] == 'ok'
+        elif self.adapter_type == BotAdapterType.MIRAI:
+            if enable:
+                res = await self.post('/muteAll', {'target': group_id})
+            else:
+                res = await self.post('/unmuteAll', {'target': group_id})
+            result = json.loads(res)
+            return result['code'] == 0
+        return False
+
+    async def set_essence_msg(self, message_id: Union[str, int], group_id: Optional[Union[str, int]] = None) -> bool:
+        """设置精华消息
+
+        Args:
+            message_id (Union[str, int]): 消息ID - all: required
+            group_id (Optional[Union[str, int]], optional): - mirai required.
+
+        Returns:
+            bool: 是否成功
+        """
+        if not message_id:
+            return False
+        message_id = int(message_id)
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            res = await self.post('/set_essence_msg', {'message_id': message_id})
+            result = json.loads(res)
+            return result['status'] == 'ok'
+        elif self.adapter_type == BotAdapterType.MIRAI:
+            if not group_id:
+                return False
+            group_id = int(group_id)
+            res = await self.post('/recall', {'target': group_id, 'messageId': message_id})
+            result = json.loads(res)
+            return result['code'] == 0
+        return False
+
+    async def delete_essence_msg(self, message_id: Union[str, int]) -> bool:
+        """移除精华消息(仅cqhttp支持)
+
+        Args:
+            message_id (Union[str, int]): 消息ID - cqhttp: required
+
+        Returns:
+            bool: 是否成功
+        """
+        if not message_id:
+            return False
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            res = await self.post('/delete_essence_msg', {'message_id': message_id})
+            result = json.loads(res)
+            return result['status'] == 'ok'
+        return False
