@@ -4,7 +4,6 @@ import websockets
 
 from typing import Callable
 from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.adapters.helper import BotAdapterHelper, BotAdapterType
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
@@ -35,8 +34,7 @@ class MiraiBotInstance(BotAdapterProtocol):
 
         self.session = None
 
-        self.api = MiraiAPI(f'{host}:{http_port}')
-        self.helper = BotAdapterHelper(self, BotAdapterType.MIRAI)
+        self.api = MiraiAPI(self)
 
     def __str__(self):
         return 'Mirai'
@@ -89,7 +87,7 @@ class MiraiBotInstance(BotAdapterProtocol):
             data = data['data']
 
             if 'session' in data:
-                self.api.session = self.session = data['session']
+                self.session = data['session']
                 log.info(f'websocket({self.appid}) handshake successful. session: ' + self.session)
                 return False
 
@@ -140,4 +138,4 @@ class MiraiBotInstance(BotAdapterProtocol):
         return package_mirai_message(self, self.appid, message)
 
     async def recall_message(self, message_id: str, target_id: str = None):
-        await self.api.recall_message(message_id, target_id)
+        await self.api.delete_message(message_id, target_id)
