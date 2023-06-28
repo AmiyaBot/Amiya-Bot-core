@@ -40,9 +40,6 @@ class MiraiAPI(BotAdapterAPI):
             *HttpAdapter.group_message(self.session, group_id, chain_list)
         )
 
-    async def send_nudge(self, user_id: str, group_id: str):
-        await self.post(*HttpAdapter.nudge(self.session, user_id, group_id))
-
     async def send_group_notice(self, group_id: str, content: str, **kwargs) -> bool:
         """发布群公告
 
@@ -95,3 +92,6 @@ class MiraiAPI(BotAdapterAPI):
         if result.get('code') == 0:
             return True
         return False
+
+    async def send_nudge(self, user_id: str, group_id: str):
+        await self.post(*HttpAdapter.nudge(self.session, user_id, group_id))
