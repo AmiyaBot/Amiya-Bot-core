@@ -1,10 +1,11 @@
 import abc
 
-from typing import Any, List, Union, Callable, Coroutine
+from typing import Any, List, Union, Callable, Coroutine, Optional
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 
-handler_type = Callable[[str, dict], Coroutine[Any, Any, None]]
+HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
+PACKAGE_RESULT = Union[Message, Event, EventList]
 
 
 class BotAdapterProtocol:
@@ -13,6 +14,12 @@ class BotAdapterProtocol:
         self.token = token
         self.alive = False
         self.keep_run = True
+
+        # 适配器实例连接信息
+        self.host: Optional[str] = None
+        self.ws_port: Optional[int] = None
+        self.http_port: Optional[int] = None
+        self.session: Optional[str] = None
 
     def __str__(self):
         return 'Adapter'
@@ -25,7 +32,7 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def connect(self, private: bool, handler: handler_type):
+    async def connect(self, private: bool, handler: HANDLER_TYPE):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -50,7 +57,7 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def package_message(self, event: str, message: dict) -> Union[Message, Event, EventList]:
+    async def package_message(self, event: str, message: dict) -> PACKAGE_RESULT:
         """
         预处理并封装消息对象
 

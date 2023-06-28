@@ -38,7 +38,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         self.ws_port = ws_port
         self.http_port = http_port
 
-        self.api = CQHttpAPI(f'{host}:{http_port}', token)
+        self.api = CQHttpAPI(self)
 
     def __str__(self):
         return 'CQHttp'
@@ -132,4 +132,4 @@ class CQHttpBotInstance(BotAdapterProtocol):
         return package_cqhttp_message(self, self.appid, message)
 
     async def recall_message(self, message_id: str, target_id: str = None):
-        await self.api.post('delete_msg', {'message_id': message_id})
+        await self.api.delete_message(message_id, target_id)
