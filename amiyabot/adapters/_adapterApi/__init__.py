@@ -22,49 +22,59 @@ class BotAdapterAPI:
             return self.instance.session
         return ''
 
-    async def get(self, path: str, params: dict = None):
+    async def get(self, path: str, params: dict = None, **kwargs):
         """GET 请求
 
         Args:
             path (str): 接口路径
             params (dict, optional): 请求参数. 默认为 None.
+            **kwargs: 其他参数
 
         Returns:
             HTTPResponse: HTTP 响应
         """
         if self.adapter_type == BotAdapterType.CQHTTP:
             return await http_requests.get(
-                self.url + path, params=params, headers={'Authorization': self.token}
+                self.url + path,
+                params=params,
+                headers={'Authorization': self.token},
+                **kwargs,
             )
 
         if self.adapter_type == BotAdapterType.MIRAI:
             params['sessionKey'] = self.session
-            return await http_requests.get(self.url + path, params=params)
+            return await http_requests.get(self.url + path, params=params, **kwargs)
 
-    async def post(self, path: str, params: dict = None):
+    async def post(
+        self, path: str, params: dict = None, headers: dict = None, **kwargs
+    ):
         """POST 请求
 
         Args:
             path (str): 接口路径
-            params (dict, optional): 请求参数. 默认为 None.
+            params (dict, optional): 请求参数. 默认为 None
+            headers (dict, optional): 请求头. 默认为 {}
+            **kwargs: 其他参数
 
         Returns:
             HTTPResponse: HTTP 响应
         """
         if self.adapter_type == BotAdapterType.CQHTTP:
-            return await http_requests.post(
-                self.url + path, params, {'Authorization': self.token}
-            )
+            if headers:
+                headers.update({'Authorization': self.token})
+            else:
+                headers = {'Authorization': self.token}
+            return await http_requests.post(self.url + path, params, headers, **kwargs)
 
         if self.adapter_type == BotAdapterType.MIRAI:
             params['sessionKey'] = self.session
-            return await http_requests.post(self.url + path, params)
+            return await http_requests.post(self.url + path, params, headers, **kwargs)
 
     # 缓存操作
 
-    async def get_message(self,
-                          message_id: MessageId,
-                          target: Optional[Union[UserId, GroupId]] = None) -> Optional[PACKAGE_RESULT]:
+    async def get_message(
+        self, message_id: MessageId, target: Optional[Union[UserId, GroupId]] = None
+    ) -> Optional[PACKAGE_RESULT]:
         """通过消息 ID 获取消息
 
         Args:
@@ -103,11 +113,14 @@ class BotAdapterAPI:
             return result['status'] == 'ok'
 
         if self.adapter_type == BotAdapterType.MIRAI:
-            res = await self.post('/recall', {
-                'sessionKey': self.session,
-                'messageId': message_id,
-                'target': target_id
-            })
+            res = await self.post(
+                '/recall',
+                {
+                    'sessionKey': self.session,
+                    'messageId': message_id,
+                    'target': target_id,
+                },
+            )
             result = json.loads(res)
             return result['code'] == 0
 
@@ -182,7 +195,9 @@ class BotAdapterAPI:
                         group_list[i['id']] = i
                 return list(group_list.values())
 
-    async def get_group_member_list(self, group_id: GroupId, nocache: bool = False) -> Optional[list]:
+    async def get_group_member_list(
+        self, group_id: GroupId, nocache: bool = False
+    ) -> Optional[list]:
         """获取群成员列表
 
         Args:
@@ -220,7 +235,9 @@ class BotAdapterAPI:
         group_id = int(group_id)
 
         if self.adapter_type == BotAdapterType.CQHTTP:
-            res = await self.post('/get_group_member_list', {'group_id': group_id, 'no_cache': nocache})
+            res = await self.post(
+                '/get_group_member_list', {'group_id': group_id, 'no_cache': nocache}
+            )
             result = json.loads(res)
             result_list = []
             if result['status'] == 'ok':
@@ -291,11 +308,13 @@ class BotAdapterAPI:
                         )
                 return result_list
 
-    async def get_user_info(self,
-                            user_id: UserId,
-                            relation_type: RelationType = RelationType.STRANGER,
-                            group_id: Optional[GroupId] = None,
-                            no_cache: bool = False) -> Optional[dict]:
+    async def get_user_info(
+        self,
+        user_id: UserId,
+        relation_type: RelationType = RelationType.STRANGER,
+        group_id: Optional[GroupId] = None,
+        no_cache: bool = False,
+    ) -> Optional[dict]:
         """获取用户信息
 
         Args:
@@ -437,11 +456,13 @@ class BotAdapterAPI:
 
         return False
 
-    async def remove_group_member(self,
-                                  group_id: GroupId,
-                                  user_id: UserId,
-                                  reject: bool = False,
-                                  msg: Optional[str] = None, ) -> bool:
+    async def remove_group_member(
+        self,
+        group_id: GroupId,
+        user_id: UserId,
+        reject: bool = False,
+        msg: Optional[str] = None,
+    ) -> bool:
         """移除群成员
 
         Args:
@@ -542,7 +563,9 @@ class BotAdapterAPI:
 
         return False
 
-    async def set_essence_msg(self, message_id: MessageId, group_id: Optional[GroupId] = None) -> bool:
+    async def set_essence_msg(
+        self, message_id: MessageId, group_id: Optional[GroupId] = None
+    ) -> bool:
         """设置精华消息
 
         Args:
@@ -593,6 +616,10 @@ class BotAdapterAPI:
             return result['status'] == 'ok'
 
         return False
+
+    @abc.abstractmethod
+    async def send_group_notice(self, group_id: str, content: str, **kwargs) -> bool:
+        raise NotImplementedError
 
     @abc.abstractmethod
     async def send_nudge(self, user_id: str, group_id: str):
