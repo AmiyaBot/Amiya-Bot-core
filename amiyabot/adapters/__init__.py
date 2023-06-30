@@ -1,10 +1,10 @@
 import abc
 
-from typing import Any, List, Union, Callable, Coroutine, Optional
+from typing import List, Union, Callable, Awaitable, Optional
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 
-HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
+HANDLER_TYPE = Callable[[str, dict], Awaitable[None]]
 PACKAGE_RESULT = Union[Message, Event, EventList]
 
 

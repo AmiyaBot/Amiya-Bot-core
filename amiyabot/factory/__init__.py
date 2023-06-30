@@ -146,7 +146,7 @@ class BotHandlerFactory(FactoryCore):
         return handler
 
     def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None, sub_tag: str = 'default_tag'):
-        def register(task: Callable[[BotHandlerFactory], Coroutine[Any, Any, None]]):
+        def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
             @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)
             async def _():
                 await task(self)

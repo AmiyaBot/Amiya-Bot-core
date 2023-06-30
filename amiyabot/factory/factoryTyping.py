@@ -1,7 +1,7 @@
 import re
 import abc
 
-from typing import Any, Type, Dict, List, Tuple, Union, Optional, Callable, Coroutine
+from typing import Any, Type, Dict, List, Tuple, Union, Optional, Callable, Awaitable
 from dataclasses import dataclass
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.message import EventType, Message, Equal, Waiter, Verify
@@ -10,12 +10,12 @@ from amiyabot.adapters import BotAdapterProtocol
 KeywordsType = Union[str, Equal, re.Pattern, List[Union[str, Equal, re.Pattern]]]
 CheckPrefixType = Optional[Union[bool, List[str]]]
 
-NoneReturn = Coroutine[Any, Any, None]
-BoolReturn = Coroutine[Any, Any, Optional[bool]]
-ChainReturn = Coroutine[Any, Any, Optional[Chain]]
-EventReturn = Coroutine[Any, Any, Optional[EventType]]
-MessageReturn = Coroutine[Any, Any, Optional[Message]]
-VerifyResultReturn = Coroutine[Any, Any, Union[bool, Tuple[bool, int], Tuple[bool, int, Any]]]
+NoneReturn = Awaitable[None]
+BoolReturn = Awaitable[Optional[bool]]
+ChainReturn = Awaitable[Optional[Chain]]
+EventReturn = Awaitable[Optional[EventType]]
+MessageReturn = Awaitable[Optional[Message]]
+VerifyResultReturn = Awaitable[Union[bool, Tuple[bool, int], Tuple[bool, int, Any]]]
 
 FunctionType = Callable[[Message], ChainReturn]
 VerifyMethodType = Callable[[Message], VerifyResultReturn]

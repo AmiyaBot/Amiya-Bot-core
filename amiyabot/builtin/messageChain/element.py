@@ -1,17 +1,18 @@
 import asyncio
 
 from dataclasses import dataclass
-from typing import Optional, Callable, Coroutine, Union, List, Any
+from typing import Optional, Callable, Awaitable, Union, List, Any
 from amiyabot.builtin.lib.browserService import basic_browser_service
 from amiyabot.adapters.common import CQCode
 from amiyabot.util import argv
 from amiyabot import log
 
-IMAGE_GETTER_HOOK = Callable[[Union[str, bytes]], Coroutine[Any, Any, Union[str, bytes]]]
+IMAGE_GETTER_HOOK = Callable[[Union[str, bytes]], Awaitable[Union[str, bytes]]]
 
 DEFAULT_WIDTH = argv('browser-width', int) or 1280
 DEFAULT_HEIGHT = argv('browser-height', int) or 720
 DEFAULT_RENDER_TIME = argv('browser-render-time', int) or 200
+BROWSER_PAGE_NOT_CLOSE = bool(argv('browser-page-not-close'))
 
 
 @dataclass
@@ -83,7 +84,8 @@ class Html:
                 if res:
                     result = res
 
-            await page.close()
+            if not BROWSER_PAGE_NOT_CLOSE:
+                await page.close()
 
             return result
 
