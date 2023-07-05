@@ -1,10 +1,14 @@
 import abc
+import asyncio
+import websockets
 
-from typing import List, Union, Callable, Awaitable, Optional
+from typing import Any, List, Union, Callable, Coroutine, Optional
+from contextlib import asynccontextmanager
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
+from amiyabot.log import LoggerManager
 
-HANDLER_TYPE = Callable[[str, dict], Awaitable[None]]
+HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
 PACKAGE_RESULT = Union[Message, Event, EventList]
 
 
@@ -21,11 +25,26 @@ class BotAdapterProtocol:
         self.http_port: Optional[int] = None
         self.session: Optional[str] = None
 
+        self.log = LoggerManager(self.__str__())
+
     def __str__(self):
         return 'Adapter'
 
     def set_alive(self, status: bool):
         self.alive = status
+
+    @asynccontextmanager
+    async def get_websocket_connection(self, mark: str, url: str):
+        async with self.log.catch(f'websocket connection({mark}) error:',
+                                  ignore=[asyncio.CancelledError,
+                                          websockets.ConnectionClosedError,
+                                          websockets.ConnectionClosedOK]):
+            self.set_alive(True)
+            async with websockets.connect(url) as websocket:
+                yield websocket
+
+        self.set_alive(False)
+        self.log.info(f'websocket connection({mark}) closed.')
 
     @abc.abstractmethod
     async def close(self):

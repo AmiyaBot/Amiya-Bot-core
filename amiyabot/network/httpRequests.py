@@ -1,7 +1,7 @@
 import json
 import aiohttp
 
-from typing import Union
+from typing import Union, Any
 from amiyabot import log
 
 
@@ -26,7 +26,7 @@ class HttpRequests:
                     if res.status in cls.async_success:
                         return ''
                     if not ignore_error:
-                        log.error(f'bad to request <{url}>[{request_name}]. Got code {res.status}')
+                        log.error(f'bad to request <{url}>[{request_name}]. Got code {res.status} {res.reason}')
         except aiohttp.ClientConnectorError:
             if not ignore_error:
                 log.error(f'fail to request <{url}>[{request_name}]')
@@ -37,8 +37,9 @@ class HttpRequests:
     @classmethod
     async def get(cls,
                   interface: str,
+                  params: Union[dict, list] = None,
                   **kwargs):
-        return await cls.request(interface, 'get', **kwargs)
+        return await cls.request(interface, 'get', params=params, **kwargs)
 
     @classmethod
     async def post(cls,
@@ -100,6 +101,16 @@ class HttpRequests:
             data.add_field(field, value)
 
         return data
+
+
+class ResponseException(Exception):
+    def __init__(self, code: int, message: str, data: Any = None):
+        self.code = code
+        self.message = message
+        self.data = data
+
+    def __str__(self):
+        return f'[{self.code}] {self.message} -- data: {self.data}'
 
 
 http_requests = HttpRequests

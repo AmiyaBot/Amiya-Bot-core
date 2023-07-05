@@ -2,15 +2,14 @@ import abc
 import json
 import asyncio
 
-from typing import Callable, Optional, Any
-from amiyabot.network.httpRequests import http_requests
+from typing import Optional
+from amiyabot.network.httpRequests import http_requests, ResponseException
+from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.log import LoggerManager
 
 from .url import APIConstant, get_url
 from .model import GateWay, ConnectionHandler
 from .builder import MessageSendRequest
-
-from .. import BotAdapterProtocol
 
 log = LoggerManager('Tencent')
 
@@ -26,7 +25,7 @@ class TencentAPI(BotAdapterProtocol):
             'Authorization': f'Bot {appid}.{token}'
         }
 
-    async def connect(self, private: bool, handler: Callable):
+    async def connect(self, private: bool, handler: HANDLER_TYPE):
         log.info(f'requesting appid {self.appid} gateway')
 
         resp = await self.get_request(APIConstant.gatewayBotURI)
@@ -127,19 +126,9 @@ class TencentAPI(BotAdapterProtocol):
         try:
             data = json.loads(response_text)
         except json.JSONDecodeError as e:
-            raise ResponseException(0, repr(e)) from e
+            raise ResponseException(-1, repr(e)) from e
 
         if 'code' in data and data['code'] != 200:
             raise ResponseException(**data)
 
         return data
-
-
-class ResponseException(Exception):
-    def __init__(self, code: int, message: str, data: Any = None):
-        self.code = code
-        self.message = message
-        self.data = data
-
-    def __str__(self):
-        return f'[{self.code}] {self.message} -- data: {self.data}'

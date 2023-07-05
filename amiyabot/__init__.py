@@ -7,6 +7,7 @@ from amiyabot import log
 
 # adapters
 from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters.kook import KOOKBotInstance
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.cqhttp import CQHttpBotInstance
 from amiyabot.adapters.tencent import TencentBotInstance

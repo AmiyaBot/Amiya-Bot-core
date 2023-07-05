@@ -1,5 +1,4 @@
-from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message, Event
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
@@ -38,7 +37,7 @@ class TestInstance(BotAdapterProtocol):
     async def close(self):
         ...
 
-    async def connect(self, private: bool, handler: Callable):
+    async def connect(self, private: bool, handler: HANDLER_TYPE):
         await self.server.run(handler)
 
     async def send_message(self,
