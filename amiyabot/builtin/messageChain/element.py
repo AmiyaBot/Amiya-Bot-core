@@ -17,12 +17,12 @@ BROWSER_PAGE_NOT_CLOSE = bool(argv('browser-page-not-close'))
 
 @dataclass
 class At:
-    target: int
+    target: Union[str, int]
 
 
 @dataclass
 class Face:
-    face_id: int
+    face_id: Union[str, int]
 
 
 @dataclass

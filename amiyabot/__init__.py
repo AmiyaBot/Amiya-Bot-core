@@ -34,8 +34,8 @@ from amiyabot.builtin.messageChain import Chain, ChainBuilder
 
 class AmiyaBot(BotInstance):
     def __init__(self,
-                 appid: str,
-                 token: str,
+                 appid: str = None,
+                 token: str = None,
                  private: bool = False,
                  adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance):
         super().__init__(appid, token, adapter)

@@ -10,10 +10,8 @@ from ..common import text_convert
 async def package_kook_message(instance: BotAdapterProtocol,
                                event: str,
                                message: dict):
-    print(json.dumps(message, ensure_ascii=False))
-
     if message['type'] == 255:
-        return Event(instance, event, message)
+        return Event(instance, message['extra']['type'], message)
 
     extra: dict = message['extra']
     user: dict = extra['author']
@@ -37,6 +35,9 @@ async def package_kook_message(instance: BotAdapterProtocol,
     data.channel_id = message['target_id']
     data.nickname = user['nickname']
     data.avatar = user['vip_avatar'] or user['avatar']
+
+    for item in extra['emoji']:
+        data.face.append(list(item.keys())[0])
 
     for user_id in extra['mention']:
         data.at_target.append(user_id)

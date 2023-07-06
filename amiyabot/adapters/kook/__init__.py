@@ -2,15 +2,14 @@ import json
 import asyncio
 import dataclasses
 
-from typing import Optional
+from typing import Optional, Union
 from dataclasses import dataclass
 from amiyabot.network.httpRequests import http_requests, ResponseException
+from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
-from amiyabot.log import LoggerManager
 
 from .package import package_kook_message
-
-log = LoggerManager('KOOK')
+from .builder import build_message_send, KOOKMessageCallback, log
 
 
 class KOOKBotInstance(BotAdapterProtocol):
@@ -130,6 +129,27 @@ class KOOKBotInstance(BotAdapterProtocol):
 
     async def package_message(self, event: str, message: dict):
         return await package_kook_message(self, event, message)
+
+    async def send_chain_message(self, chain: Chain, is_sync: bool = False):
+        message = await build_message_send(self, chain)
+        callback = []
+
+        for item in [message]:
+            payload = {
+                'target_id': chain.data.channel_id,
+                **item
+            }
+            if chain.reference:
+                payload['quote'] = chain.data.message_id
+
+            callback.append(
+                KOOKMessageCallback(self, await self.post_request('/message/create', payload))
+            )
+
+        return callback
+
+    async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
+        await self.post_request('/message/delete', {'msg_id': message_id})
 
     async def get_request(self, url: str, params: dict = None):
         return self.__check_response(
