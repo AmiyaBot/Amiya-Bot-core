@@ -8,6 +8,8 @@ from amiyabot.network.httpRequests import http_requests, ResponseException
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.log import LoggerManager
 
+from .package import package_kook_message
+
 log = LoggerManager('KOOK')
 
 
@@ -33,6 +35,10 @@ class KOOKBotInstance(BotAdapterProtocol):
         return self.keep_run and self.connection
 
     async def connect(self, private: bool, handler: HANDLER_TYPE):
+        me_req = await self.get_request('/user/me')
+        if me_req:
+            self.appid = me_req['data']['id']
+
         while self.keep_run:
             await self.__connect(handler)
             await asyncio.sleep(10)
@@ -67,6 +73,8 @@ class KOOKBotInstance(BotAdapterProtocol):
 
                     if payload.s == 1:
                         if payload.d['code'] != 0:
+                            self.ws_url = ''
+                            self.last_sn = 0
                             raise TimeoutError
 
                         if self.last_sn:
@@ -121,8 +129,7 @@ class KOOKBotInstance(BotAdapterProtocol):
         await self.close_connection()
 
     async def package_message(self, event: str, message: dict):
-
-        print(message)
+        return await package_kook_message(self, event, message)
 
     async def get_request(self, url: str, params: dict = None):
         return self.__check_response(

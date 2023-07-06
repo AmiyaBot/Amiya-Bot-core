@@ -1,5 +1,4 @@
 import re
-import jieba
 
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters.tencent.api import TencentAPI
@@ -7,8 +6,6 @@ from amiyabot.adapters.tencent.api import TencentAPI
 from ..common import text_convert
 
 ADMIN = ['2', '4', '5']
-
-jieba.setLogLevel(jieba.logging.INFO)
 
 
 async def package_tencent_message(instance: TencentAPI,
@@ -36,7 +33,6 @@ async def package_tencent_message(instance: TencentAPI,
         if 'member' in message:
             if 'roles' in message['member'] and [n for n in message['member']['roles'] if n in ADMIN]:
                 data.is_admin = True
-            data.joined_at = message['member']['joined_at']
 
         if 'attachments' in message:
             for item in message['attachments']:

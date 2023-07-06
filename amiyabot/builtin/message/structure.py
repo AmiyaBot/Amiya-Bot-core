@@ -1,7 +1,8 @@
 import abc
 import time
 
-from typing import Any, Union, Optional, Callable
+from typing import Any, List, Union, Optional, Callable
+from dataclasses import dataclass
 from amiyabot.typeIndexes import *
 
 
@@ -29,6 +30,9 @@ class MessageStructure:
         self.face = []
         self.image = []
 
+        self.files: List[File] = []
+        self.video = ''
+
         self.text = ''
         self.text_digits = ''
         self.text_unsigned = ''
@@ -38,17 +42,16 @@ class MessageStructure:
         self.at_target = []
 
         self.is_at = False
+        self.is_at_all = False
         self.is_admin = False
         self.is_direct = False
 
         self.user_id = ''
-        self.channel_id = ''
         self.guild_id = ''
+        self.channel_id = ''
         self.src_guild_id = ''
         self.nickname = ''
         self.avatar = ''
-
-        self.joined_at = ''
 
         self.verify: Optional[Verify] = None
         self.time = int(time.time())
@@ -108,3 +111,9 @@ class Verify:
 
     def __repr__(self):
         return f'<Verify, {self.result}, {self.weight}>'
+
+
+@dataclass
+class File:
+    url: str
+    filename: str = ''
