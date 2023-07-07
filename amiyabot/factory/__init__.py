@@ -14,9 +14,9 @@ from .factoryCore import FactoryCore
 
 class BotHandlerFactory(FactoryCore):
     def __init__(self,
-                 appid: str = None,
-                 token: str = None,
-                 adapter: Type[BotAdapterProtocol] = None):
+                 appid: Optional[str] = None,
+                 token: Optional[str] = None,
+                 adapter: Optional[Type[BotAdapterProtocol]] = None):
         super().__init__()
 
         # override FactoryCore.plugins
@@ -174,7 +174,7 @@ class BotInstance(BotHandlerFactory):
     def load_plugin(cls,
                     plugin: Union[str, os.PathLike, "PluginInstance"],
                     extract_plugin: bool = False,
-                    extract_plugin_dest: str = None):
+                    extract_plugin_dest: Optional[str] = None):
         if isinstance(plugin, str):
             dest = ''
 

@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 from amiyabot.adapters import BotAdapterProtocol
 from .._adapterApi import BotAdapterAPI, BotAdapterType
 
@@ -21,7 +22,7 @@ class CQHttpAPI(BotAdapterAPI):
             'messages': forward_node
         })
 
-    async def send_group_notice(self, group_id: str, content: str, **kwargs) -> bool:
+    async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:
         """发布群公告
 
         Args:
@@ -38,6 +39,8 @@ class CQHttpAPI(BotAdapterAPI):
         if kwargs.get('image'):
             data['image'] = kwargs['image']
         res = await self.post('/set_group_notice', data)
+        if not res:
+            return None
         result = json.loads(res)
         if result['status'] == 'ok':
             return True

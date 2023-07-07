@@ -1,7 +1,7 @@
 import abc
 import json
 
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 
 class MiraiPostPayload:
@@ -9,9 +9,9 @@ class MiraiPostPayload:
     @abc.abstractmethod
     def builder(cls,
                 command: str,
-                sub_command: str = None,
-                content: dict = None,
-                options: dict = None) -> Tuple[str, Union[dict, str]]:
+                sub_command: Optional[str] = None,
+                content: Optional[dict] = None,
+                options: Optional[dict] = None) -> Tuple[str, Union[dict, str]]:
         raise NotImplementedError('builder must be implemented when inheriting class GeneralDefinition.')
 
     @classmethod
@@ -23,7 +23,7 @@ class MiraiPostPayload:
         })
 
     @classmethod
-    def group_message(cls, session: str, target_id: str, chains: List[dict], quote: int = None):
+    def group_message(cls, session: str, target_id: str, chains: List[dict], quote: Optional[int] = None):
         return cls.builder('sendGroupMessage', options={'quote': quote}, content={
             'sessionKey': session,
             'target': target_id,
@@ -63,9 +63,9 @@ class WebsocketAdapter(MiraiPostPayload):
     @classmethod
     def builder(cls,
                 command: str,
-                sub_command: str = None,
-                content: dict = None,
-                options: dict = None,
+                sub_command: Optional[str] = None,
+                content: Optional[dict] = None,
+                options: Optional[dict] = None,
                 sync_id: int = 1):
         return command, json.dumps(
             {
@@ -83,7 +83,7 @@ class HttpAdapter(MiraiPostPayload):
     @classmethod
     def builder(cls,
                 command: str,
-                sub_command: str = None,
-                content: dict = None,
-                options: dict = None):
+                sub_command: Optional[str] = None,
+                content: Optional[dict] = None,
+                options: Optional[dict] = None):
         return command, content

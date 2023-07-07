@@ -1,7 +1,7 @@
 import json
 import aiohttp
 
-from typing import Union, Any
+from typing import Optional, Union, Any
 from amiyabot import log
 
 
@@ -13,7 +13,7 @@ class HttpRequests:
     async def request(cls,
                       url: str,
                       method: str = 'post',
-                      request_name: str = None,
+                      request_name: Optional[str] = None,
                       ignore_error: bool = False,
                       **kwargs):
         try:
@@ -37,15 +37,15 @@ class HttpRequests:
     @classmethod
     async def get(cls,
                   interface: str,
-                  params: Union[dict, list] = None,
+                  params: Optional[Union[dict, list]] = None,
                   **kwargs):
         return await cls.request(interface, 'get', params=params, **kwargs)
 
     @classmethod
     async def post(cls,
                    interface: str,
-                   payload: Union[dict, list] = None,
-                   headers: dict = None,
+                   payload: Optional[Union[dict, list]] = None,
+                   headers: Optional[dict] = None,
                    **kwargs):
         _headers = {
             'Content-Type': 'application/json',
@@ -54,13 +54,13 @@ class HttpRequests:
         _payload = {
             **(payload or {})
         }
-        return await cls.request(interface, 'post', data=json.dumps(_payload), headers=_headers, **kwargs)
+        return await cls.request(interface, 'post', request_name='post', data=json.dumps(_payload), headers=_headers, **kwargs)
 
     @classmethod
     async def post_form(cls,
                         interface: str,
-                        payload: dict = None,
-                        headers: dict = None,
+                        payload: Optional[dict] = None,
+                        headers: Optional[dict] = None,
                         **kwargs):
         _headers = {
             **(headers or {})
@@ -75,8 +75,8 @@ class HttpRequests:
                           interface: str,
                           file: bytes,
                           file_field: str = 'file',
-                          payload: dict = None,
-                          headers: dict = None,
+                          payload: Optional[dict] = None,
+                          headers: Optional[dict] = None,
                           **kwargs):
         _headers = {
             **(headers or {})
@@ -90,7 +90,7 @@ class HttpRequests:
         return await cls.request(interface, 'post', 'post-upload', data=data, headers=_headers, **kwargs)
 
     @classmethod
-    def __build_form_data(cls, payload: dict):
+    def __build_form_data(cls, payload: Optional[dict]):
         data = aiohttp.FormData()
 
         for field, value in (payload or {}).items():
