@@ -1,12 +1,24 @@
 import abc
 import json
 
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from amiyabot.adapters import BotAdapterProtocol, PACKAGE_RESULT
 from amiyabot.network.httpRequests import http_requests
 
 from .define import *
+
+
+def get_json_result(res: Optional[str]) -> dict:
+    """获取 JSON 结果
+
+    Args:
+        res (str): HTTP 响应
+
+    Returns:
+        dict: JSON 结果
+    """
+    return json.loads(res)
 
 
 class BotAdapterAPI:
@@ -22,7 +34,7 @@ class BotAdapterAPI:
             return self.instance.session
         return ''
 
-    async def get(self, path: str, params: dict = None, **kwargs):
+    async def get(self, path: str, params: Dict = {}, **kwargs):
         """GET 请求
 
         Args:
@@ -112,9 +124,10 @@ class BotAdapterAPI:
             if result['code'] == 0:
                 return await self.instance.package_message('', result['data'])
 
-    async def delete_message(self, message_id: str, target_id: str = None):
+    async def delete_message(self, message_id: str, target_id: Optional[str] = None) -> bool:
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/delete_msg', {'message_id': message_id})
+
             result = json.loads(res)
             return result['status'] == 'ok'
 
@@ -129,6 +142,8 @@ class BotAdapterAPI:
             )
             result = json.loads(res)
             return result['code'] == 0
+
+        return False
 
     # 获取账号信息
 
@@ -630,3 +645,5 @@ class BotAdapterAPI:
     @abc.abstractmethod
     async def send_nudge(self, user_id: str, group_id: str):
         raise NotImplementedError
+
+    async def set_member_info(self, user_id: )
