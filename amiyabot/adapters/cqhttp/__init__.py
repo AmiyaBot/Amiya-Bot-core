@@ -94,7 +94,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         for reply_list in [[reply], cq_codes, voice_list]:
             for item in reply_list:
                 if is_sync:
-                    res.append(await self.api.post('send_msg', item))
+                    res.append(await self.api.post('/send_msg', item))
                 else:
                     await self.connection.send(json.dumps({
                         'action': 'send_msg',

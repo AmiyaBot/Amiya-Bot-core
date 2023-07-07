@@ -33,6 +33,9 @@ class BotAdapterAPI:
         Returns:
             HTTPResponse: HTTP 响应
         """
+        if not path.startswith('/'):
+            path = '/' + path
+
         if self.adapter_type == BotAdapterType.CQHTTP:
             return await http_requests.get(
                 self.url + path,
@@ -59,6 +62,9 @@ class BotAdapterAPI:
         Returns:
             HTTPResponse: HTTP 响应
         """
+        if not path.startswith('/'):
+            path = '/' + path
+
         if self.adapter_type == BotAdapterType.CQHTTP:
             if headers:
                 headers.update({'Authorization': self.token})
