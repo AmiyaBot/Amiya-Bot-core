@@ -1,7 +1,7 @@
 import abc
 import json
 
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from amiyabot.adapters import BotAdapterProtocol, PACKAGE_RESULT
 from amiyabot.network.httpRequests import http_requests
