@@ -31,7 +31,7 @@ async def package_kook_message(instance: BotAdapterProtocol,
     data.is_at_all = extra['mention_all'] or extra['mention_here']
 
     data.user_id = user['id']
-    data.guild_id = extra['guild_id']
+    data.guild_id = extra.get('guild_id', '')
     data.channel_id = message['target_id']
     data.nickname = user['nickname']
     data.avatar = user['vip_avatar'] or user['avatar']

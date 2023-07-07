@@ -5,6 +5,7 @@ import dataclasses
 from typing import Optional, Union
 from dataclasses import dataclass
 from amiyabot.network.httpRequests import http_requests, ResponseException
+from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
@@ -134,19 +135,44 @@ class KOOKBotInstance(BotAdapterProtocol):
         message = await build_message_send(self, chain)
         callback = []
 
+        url = '/direct-message/create' if chain.data.is_direct else '/message/create'
+
         for item in [message]:
             payload = {
-                'target_id': chain.data.channel_id,
+                'target_id': chain.data.user_id if chain.data.is_direct else chain.data.channel_id,
                 **item
             }
             if chain.reference:
                 payload['quote'] = chain.data.message_id
 
             callback.append(
-                KOOKMessageCallback(self, await self.post_request('/message/create', payload))
+                KOOKMessageCallback(self, await self.post_request(url, payload))
             )
 
         return callback
+
+    async def send_message(self,
+                           chain: Chain,
+                           user_id: str = '',
+                           channel_id: str = '',
+                           direct_src_guild_id: str = ''):
+        data = Message(self)
+
+        data.user_id = user_id
+        data.channel_id = channel_id
+
+        if not channel_id and not user_id:
+            raise TypeError(
+                'KOOKBotInstance.send_message() missing argument: "channel_id" or "user_id"')
+
+        if not channel_id and user_id:
+            data.is_direct = True
+
+        message = Chain(data)
+        message.chain = chain.chain
+        message.builder = chain.builder
+
+        return await self.send_chain_message(message)
 
     async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
         await self.post_request('/message/delete', {'msg_id': message_id})
