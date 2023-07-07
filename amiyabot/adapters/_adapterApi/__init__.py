@@ -424,15 +424,17 @@ class BotAdapterAPI:
             elif relation_type == RelationType.FRIEND:
                 res = await self.get('/friendProfile', {'target': user_id})
                 if not res:
-                    return None
-                result = json.loads(res)
-                result['gender'] = UserGender.from_str(result.pop('sex'))
+                    result = None
+                else:
+                    result = json.loads(res)
+                    result['gender'] = UserGender.from_str(result.pop('sex'))
             elif relation_type == RelationType.STRANGER:
                 res = await self.get('/userProfile', {'target': user_id})
                 if not res:
-                    return None
-                result = json.loads(res)
-                result['gender'] = UserGender.from_str(result.pop('sex'))
+                    result = None
+                else:
+                    result = json.loads(res)
+                    result['gender'] = UserGender.from_str(result.pop('sex'))
             return result
 
     # 账号管理
@@ -654,23 +656,16 @@ class BotAdapterAPI:
 
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/set_essence_msg', {'message_id': message_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            return json.loads(res)['status'] == 'ok' if res else None
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not group_id:
                 return False
-
             group_id = int(group_id)
             res = await self.post(
                 '/recall', {'target': group_id, 'messageId': message_id}
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            return json.loads(res)['code'] == 0 if res else None
 
         return None
 
