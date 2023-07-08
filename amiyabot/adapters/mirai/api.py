@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Optional
 
 from amiyabot.log import LoggerManager
 from amiyabot.network.httpRequests import http_requests
@@ -40,7 +41,7 @@ class MiraiAPI(BotAdapterAPI):
             *HttpAdapter.group_message(self.session, group_id, chain_list)
         )
 
-    async def send_group_notice(self, group_id: str, content: str, **kwargs) -> bool:
+    async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:
         """发布群公告
 
         Args:
@@ -88,6 +89,8 @@ class MiraiAPI(BotAdapterAPI):
         if kwargs.get('require_confirm'):
             data['requireConfirmation'] = kwargs['require_confirm']
         res = await self.post('/anno/publish', data)
+        if not res:
+            return None
         result = json.loads(res)
         if result.get('code') == 0:
             return True

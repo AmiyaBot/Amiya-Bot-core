@@ -206,9 +206,9 @@ class KOOKBotInstance(BotAdapterProtocol):
 @dataclass
 class WSPayload:
     s: int
-    d: dict = None
-    sn: int = None
-    extra: dict = None
+    d: Optional[dict] = None
+    sn: Optional[int] = None
+    extra: Optional[dict] = None
 
     def to_json(self):
         return json.dumps(dataclasses.asdict(self), ensure_ascii=False)

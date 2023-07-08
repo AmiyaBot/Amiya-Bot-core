@@ -1,7 +1,7 @@
 import typing
 import asyncio
 
-from typing import Union
+from typing import Optional, Union
 
 from amiyabot import log
 
@@ -34,8 +34,8 @@ from amiyabot.builtin.messageChain import Chain, ChainBuilder
 
 class AmiyaBot(BotInstance):
     def __init__(self,
-                 appid: str = None,
-                 token: str = None,
+                 appid: Optional[str] = None,
+                 token: Optional[str] = None,
                  private: bool = False,
                  adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance):
         super().__init__(appid, token, adapter)
