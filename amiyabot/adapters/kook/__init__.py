@@ -134,14 +134,14 @@ class KOOKBotInstance(BotAdapterProtocol):
             if time.time() - RolePermissionCache.cache_create_time[guild_id] < 10:
                 return
 
-        res = await self.get_request('/guild-role/list', {'guild_id': guild_id})
+        res = await self.get_request('/guild-role/list', {'guild_id': guild_id}, ignore_error=True)
         if res:
             roles = {}
             for item in res['data']['items']:
                 roles[item['role_id']] = item['permissions']
 
             RolePermissionCache.guild_role[guild_id] = roles
-            RolePermissionCache.cache_create_time[guild_id] = time.time()
+        RolePermissionCache.cache_create_time[guild_id] = time.time()
 
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
@@ -202,14 +202,14 @@ class KOOKBotInstance(BotAdapterProtocol):
     async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
         await self.post_request('/message/delete', {'msg_id': message_id})
 
-    async def get_request(self, url: str, params: dict = None):
+    async def get_request(self, url: str, params: dict = None, **kwargs):
         return self.__check_response(
-            await http_requests.get(self.base_url + url, params, headers=self.headers)
+            await http_requests.get(self.base_url + url, params, headers=self.headers, **kwargs)
         )
 
-    async def post_request(self, url: str, payload: dict = None):
+    async def post_request(self, url: str, payload: dict = None, **kwargs):
         return self.__check_response(
-            await http_requests.post(self.base_url + url, payload, headers=self.headers)
+            await http_requests.post(self.base_url + url, payload, headers=self.headers, **kwargs)
         )
 
     @staticmethod
