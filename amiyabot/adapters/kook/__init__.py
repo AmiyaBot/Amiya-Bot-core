@@ -141,6 +141,10 @@ class KOOKBotInstance(BotAdapterProtocol):
                 roles[item['role_id']] = item['permissions']
 
             RolePermissionCache.guild_role[guild_id] = roles
+
+        elif guild_id in RolePermissionCache.guild_role:
+            del RolePermissionCache.guild_role[guild_id]
+
         RolePermissionCache.cache_create_time[guild_id] = time.time()
 
     async def close(self):
