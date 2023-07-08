@@ -14,9 +14,9 @@ from .factoryCore import FactoryCore
 
 class BotHandlerFactory(FactoryCore):
     def __init__(self,
-                 appid: str = None,
-                 token: str = None,
-                 adapter: Type[BotAdapterProtocol] = None):
+                 appid: Optional[str] = None,
+                 token: Optional[str] = None,
+                 adapter: Optional[Type[BotAdapterProtocol]] = None):
         super().__init__()
 
         # override FactoryCore.plugins
@@ -146,7 +146,7 @@ class BotHandlerFactory(FactoryCore):
         return handler
 
     def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None, sub_tag: str = 'default_tag'):
-        def register(task: Callable[[BotHandlerFactory], Coroutine[Any, Any, None]]):
+        def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
             @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)
             async def _():
                 await task(self)
@@ -174,7 +174,7 @@ class BotInstance(BotHandlerFactory):
     def load_plugin(cls,
                     plugin: Union[str, os.PathLike, "PluginInstance"],
                     extract_plugin: bool = False,
-                    extract_plugin_dest: str = None):
+                    extract_plugin_dest: Optional[str] = None):
         if isinstance(plugin, str):
             dest = ''
 

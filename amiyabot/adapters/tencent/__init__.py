@@ -8,8 +8,6 @@ from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.adapters import BotAdapterProtocol
-from contextlib import asynccontextmanager
 
 from .api import TencentAPI
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
@@ -18,20 +16,6 @@ from .package import package_tencent_message
 from .builder import build_message_send, TencentMessageCallback
 
 log = LoggerManager('Tencent')
-
-
-@asynccontextmanager
-async def ws(cls: BotAdapterProtocol, sign, url):
-    async with log.catch(f'connection({sign}) error:',
-                         ignore=[asyncio.CancelledError,
-                                 websockets.ConnectionClosedError,
-                                 websockets.ConnectionClosedOK]):
-        cls.set_alive(True)
-        async with websockets.connect(url) as websocket:
-            yield websocket
-
-    cls.set_alive(False)
-    log.info(f'connection({sign}) closed.')
 
 
 class TencentBotInstance(TencentAPI):
@@ -46,7 +30,7 @@ class TencentBotInstance(TencentAPI):
     def __str__(self):
         return 'Tencent'
 
-    def __create_heartbeat(self, websocket, interval, record: ShardsRecord):
+    def __create_heartbeat(self, websocket, interval: int, record: ShardsRecord):
         heartbeat_key = random_code(10)
         record.heartbeat_key = heartbeat_key
         asyncio.create_task(
@@ -70,7 +54,7 @@ class TencentBotInstance(TencentAPI):
 
         log.info(f'connecting({sign})...')
 
-        async with ws(self, sign, gateway.url) as websocket:
+        async with self.get_websocket_connection(sign, gateway.url) as websocket:
             self.shards_record[shards_index] = ShardsRecord(shards_index, connection=websocket)
 
             while self.keep_run:
@@ -120,7 +104,7 @@ class TencentBotInstance(TencentAPI):
     async def reconnect(self, handler: ConnectionHandler, record: ShardsRecord, sign: str):
         log.info(f'reconnecting({sign})...')
 
-        async with ws(self, sign, handler.gateway.url) as websocket:
+        async with self.get_websocket_connection(sign, handler.gateway.url) as websocket:
             record.connection = websocket
 
             while self.keep_run:

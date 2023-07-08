@@ -5,7 +5,7 @@ from typing import Callable, Optional, Union, List, Tuple, Any
 from dataclasses import dataclass
 
 from .callback import MessageCallback, MessageCallbackType
-from .structure import EventStructure, MessageStructure, Verify
+from .structure import EventStructure, MessageStructure, Verify, File
 from .waitEvent import (
     WaitEvent,
     ChannelWaitEvent,

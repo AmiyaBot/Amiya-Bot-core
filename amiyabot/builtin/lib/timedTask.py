@@ -1,12 +1,12 @@
 import asyncio
 
-from typing import Coroutine, Callable, Any, List, Dict
+from typing import Awaitable, Callable, List, Dict
 from amiyabot.network.httpServer import ServerEventHandler
 from amiyabot.util import Singleton
 from amiyabot import log
 
-TASK_CORO = Callable[[], Coroutine[Any, Any, None]]
-CUSTOM_CHECK = Callable[[int], Coroutine[Any, Any, bool]]
+TASK_CORO = Callable[[], Awaitable[None]]
+CUSTOM_CHECK = Callable[[int], Awaitable[bool]]
 
 
 class TimedTask:

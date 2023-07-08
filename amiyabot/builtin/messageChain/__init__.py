@@ -58,7 +58,7 @@ class Chain:
 
         return self
 
-    def face(self, face_id: int):
+    def face(self, face_id: Union[str, int]):
         self.chain.append(Face(face_id))
         return self
 

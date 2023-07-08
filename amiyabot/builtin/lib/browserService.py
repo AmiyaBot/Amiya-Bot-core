@@ -2,14 +2,18 @@ import os
 import json
 
 from typing import Optional, Union
-from playwright.async_api import Browser, BrowserType, Page, ViewportSize, Playwright, async_playwright
-from amiyabot import log
+from amiyabot.log import LoggerManager
+from amiyabot.util import argv
+from playwright.async_api import (Browser, BrowserType, Page, ViewportSize, Playwright, ConsoleMessage,
+                                  Error as PageError, async_playwright)
+
+log = LoggerManager('Browser')
 
 
 class BrowserLaunchConfig:
     def __init__(self):
         self.browser_type: str = 'chromium'
-        self.debug: bool = False
+        self.debug: bool = bool(argv('debug'))
 
     async def launch_browser(self, playwright: Playwright) -> Browser:
         browser: BrowserType = getattr(playwright, self.browser_type)
@@ -45,6 +49,9 @@ class BrowserService:
         if self.browser:
             page = await self.browser.new_page(no_viewport=True, viewport=ViewportSize(width=width, height=height))
 
+            page.on('console', self.__console)
+            page.on('pageerror', self.__page_error)
+
             if is_file:
                 url = 'file:///' + os.path.abspath(url)
 
@@ -57,6 +64,21 @@ class BrowserService:
                 return None
 
             return PageController(page)
+
+    @staticmethod
+    async def __console(message: ConsoleMessage):
+        text = message.text + '\n    at {url}:{lineNumber}:{columnNumber}'.format(**message.location)
+
+        if message.type == 'warning':
+            log.warning(text)
+        elif message.type == 'error':
+            log.warning(text)
+        else:
+            log.info(text)
+
+    @staticmethod
+    async def __page_error(error: PageError):
+        log.error(error.stack)
 
 
 class PageController:

@@ -3,7 +3,7 @@ import asyncio
 import websockets
 
 from typing import Callable
-from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
@@ -50,7 +50,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         if self.connection:
             await self.connection.close()
 
-    async def connect(self, private: bool, handler: Callable):
+    async def connect(self, private: bool, handler: HANDLER_TYPE):
         while self.keep_run:
             await self.keep_connect(handler)
             await asyncio.sleep(10)
@@ -94,7 +94,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         for reply_list in [[reply], cq_codes, voice_list]:
             for item in reply_list:
                 if is_sync:
-                    res.append(await self.api.post('send_msg', item))
+                    res.append(await self.api.post('/send_msg', item))
                 else:
                     await self.connection.send(json.dumps({
                         'action': 'send_msg',

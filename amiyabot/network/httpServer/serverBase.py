@@ -7,11 +7,11 @@ from amiyabot.log import LoggerManager
 
 
 class ServerLog:
-    logger = LoggerManager('Server')
+    logger = LoggerManager('Server', save_filename='server')
 
     @classmethod
     def write(cls, text: str):
-        cls.logger.info(text, 'server')
+        cls.logger.info(text)
 
 
 class ServerEventHandler:
