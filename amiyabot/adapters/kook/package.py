@@ -1,15 +1,18 @@
 import json
 
-from typing import List
+from typing import List, Dict
 from amiyabot.builtin.message import Event, Message, File
 from amiyabot.adapters import BotAdapterProtocol
 
 from ..common import text_convert
 
 
-async def package_kook_message(instance: BotAdapterProtocol,
-                               event: str,
-                               message: dict):
+class RolePermissionCache:
+    guild_role: Dict[str, Dict[str, int]] = {}
+    cache_create_time: Dict[str, float] = {}
+
+
+async def package_kook_message(instance: BotAdapterProtocol, message: dict):
     if message['type'] == 255:
         return Event(instance, message['extra']['type'], message)
 
@@ -27,16 +30,25 @@ async def package_kook_message(instance: BotAdapterProtocol,
     data.message_type = message['channel_type']
 
     data.is_at = instance.appid in extra['mention']
+    data.is_at_all = bool(extra.get('mention_all') or extra.get('mention_here'))
     data.is_direct = message['channel_type'] == 'PERSON'
-    data.is_at_all = extra['mention_all'] or extra['mention_here']
 
     data.user_id = user['id']
     data.guild_id = extra.get('guild_id', '')
     data.channel_id = message['target_id']
-    data.nickname = user['nickname']
+    data.nickname = user['nickname'] or user['username']
     data.avatar = user['vip_avatar'] or user['avatar']
 
-    for item in extra['emoji']:
+    if data.guild_id in RolePermissionCache.guild_role:
+        for item in user['roles']:
+            if item not in RolePermissionCache.guild_role[data.guild_id]:
+                continue
+
+            permission = RolePermissionCache.guild_role[data.guild_id][item]
+            if permission & (1 << 0) == (1 << 0) or permission & (1 << 1) == (1 << 1):
+                data.is_admin = True
+
+    for item in extra.get('emoji', []):
         data.face.append(list(item.keys())[0])
 
     for user_id in extra['mention']:

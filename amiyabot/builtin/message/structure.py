@@ -61,11 +61,12 @@ class MessageStructure:
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
 
-        return 'Bot:{bot} Channel:{channel} User:{user}{direct} {nickname}: {message}'.format(
+        return 'Bot:{bot} Channel:{channel} User:{user}{admin}{direct} {nickname}: {message}'.format(
             **{
                 'bot': self.instance.appid,
                 'channel': self.channel_id,
                 'user': self.user_id,
+                'admin': '(admin)' if self.is_admin else '',
                 'direct': '(direct)' if self.is_direct else '',
                 'nickname': self.nickname,
                 'message': text + face + image

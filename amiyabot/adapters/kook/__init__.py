@@ -1,3 +1,4 @@
+import time
 import json
 import asyncio
 import dataclasses
@@ -9,7 +10,7 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
-from .package import package_kook_message
+from .package import package_kook_message, RolePermissionCache
 from .builder import build_message_send, KOOKMessageCallback, log
 
 
@@ -27,6 +28,8 @@ class KOOKBotInstance(BotAdapterProtocol):
         self.pong = 0
         self.last_sn = 0
 
+        self.bot_name = 'kook_bot'
+
     def __str__(self):
         return 'KOOK'
 
@@ -38,6 +41,7 @@ class KOOKBotInstance(BotAdapterProtocol):
         me_req = await self.get_request('/user/me')
         if me_req:
             self.appid = me_req['data']['id']
+            self.bot_name = me_req['data']['username']
 
         while self.keep_run:
             await self.__connect(handler)
@@ -76,6 +80,8 @@ class KOOKBotInstance(BotAdapterProtocol):
                             self.ws_url = ''
                             self.last_sn = 0
                             raise TimeoutError
+
+                        log.info(f'connected({self.appid}): {self.bot_name}')
 
                         if self.last_sn:
                             log.info(f'resuming({self.appid})...')
@@ -123,13 +129,32 @@ class KOOKBotInstance(BotAdapterProtocol):
             await self.connection.close()
         self.connection = None
 
+    async def record_role_list(self, guild_id: str):
+        if guild_id in RolePermissionCache.cache_create_time:
+            if time.time() - RolePermissionCache.cache_create_time[guild_id] < 10:
+                return
+
+        res = await self.get_request('/guild-role/list', {'guild_id': guild_id})
+        if res:
+            roles = {}
+            for item in res['data']['items']:
+                roles[item['role_id']] = item['permissions']
+
+            RolePermissionCache.guild_role[guild_id] = roles
+            RolePermissionCache.cache_create_time[guild_id] = time.time()
+
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
         self.keep_run = False
         await self.close_connection()
 
     async def package_message(self, event: str, message: dict):
-        return await package_kook_message(self, event, message)
+        if message['type'] != 255:
+            guild_id = message['extra'].get('guild_id', '')
+            if guild_id:
+                await self.record_role_list(guild_id)
+
+        return await package_kook_message(self, message)
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         message = await build_message_send(self, chain)
