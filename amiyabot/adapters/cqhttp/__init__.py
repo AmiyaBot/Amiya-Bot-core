@@ -71,7 +71,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
                     if message == b'':
                         await websocket.close()
                         log.warning(f'{mark} cq-http close the connection.')
-                        return False
+                        return None
 
                     async with log.catch(ignore=[json.JSONDecodeError]):
                         asyncio.create_task(handler('', json.loads(message)))

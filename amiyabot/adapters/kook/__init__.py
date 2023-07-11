@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from amiyabot.network.httpRequests import http_requests, ResponseException
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
+from amiyabot.adapters import BotAdapterProtocol, ManualCloseException, HANDLER_TYPE
 
 from .package import package_kook_message, RolePermissionCache
 from .builder import build_message_send, KOOKMessageCallback, log
@@ -54,7 +54,7 @@ class KOOKBotInstance(BotAdapterProtocol):
 
                 resp = await self.get_request('/gateway/index', {'compress': 0})
                 if not resp:
-                    raise TimeoutError
+                    raise ManualCloseException
 
                 self.ws_url = resp['data']['url']
 
@@ -79,7 +79,7 @@ class KOOKBotInstance(BotAdapterProtocol):
                         if payload.d['code'] != 0:
                             self.ws_url = ''
                             self.last_sn = 0
-                            raise TimeoutError
+                            raise ManualCloseException
 
                         log.info(f'connected({self.appid}): {self.bot_name}')
 
@@ -100,6 +100,9 @@ class KOOKBotInstance(BotAdapterProtocol):
 
                     if payload.s == 6:
                         log.info(f'resume({self.appid}) done.')
+
+                    if payload.sn:
+                        self.last_sn = payload.sn
 
         finally:
             await self.close_connection()
