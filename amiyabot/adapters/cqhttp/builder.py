@@ -1,4 +1,5 @@
 import os
+import json
 import base64
 
 from graiax import silkcoder
@@ -14,7 +15,10 @@ class CQHttpMessageCallback(MessageCallback):
         if not self.response:
             log.warning('can not recall message because the response is None.')
             return False
-        await self.instance.recall_message(self.response['data']['message_id'])
+
+        response = json.loads(self.response)
+
+        await self.instance.recall_message(response['data']['message_id'])
 
 
 async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chain_only: bool = False):

@@ -1,3 +1,4 @@
+import json
 import time
 
 from typing import Type
@@ -21,7 +22,10 @@ class MiraiMessageCallback(MessageCallback):
         if not self.response:
             log.warning('can not recall message because the response is None.')
             return False
-        await self.instance.recall_message(self.response['messageId'], self.target_id)
+
+        response = json.loads(self.response)
+
+        await self.instance.recall_message(response['messageId'], self.target_id)
 
 
 async def build_message_send(api: MiraiAPI,
