@@ -2,6 +2,7 @@ import re
 import asyncio
 
 from typing import Callable, Optional, Union, List, Tuple, Any
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 from .callback import MessageCallback, MessageCallbackType
@@ -46,17 +47,21 @@ class EventList:
 
 
 class Message(MessageStructure):
-    async def send(self, reply) -> SendReturn:
-
+    @asynccontextmanager
+    async def processing_context(self, reply: Union["Chain", list]):
         # todo 生命周期 - message_before_send
         for method in self._bot.process_message_before_send:
             reply = await method(reply, self.factory_name, self.instance) or reply
 
-        callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, is_sync=True)
+        yield
 
         # todo 生命周期 - message_after_send
         for method in self._bot.process_message_after_send:
             await method(reply, self.factory_name, self.instance)
+
+    async def send(self, reply: "Chain") -> SendReturn:
+        async with self.processing_context(reply):
+            callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, is_sync=True)
 
         if not callbacks:
             return None
