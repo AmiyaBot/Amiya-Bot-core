@@ -20,10 +20,9 @@ class APIResponse:
         def from_str(cls, value: str):
             if value.lower() == 'get':
                 return cls.GET
-            elif value.lower() == 'post':
+            if value.lower() == 'post':
                 return cls.POST
-            else:
-                return cls.UNKNOWN
+            return cls.UNKNOWN
 
     # 响应数据
     status: int
@@ -723,8 +722,6 @@ class BotAdapterAPI:
             if res.data and res.data['code'] == 0:
                 return True
             return False
-
-        return None
 
     async def delete_essence_msg(self, message_id: MessageId) -> Optional[bool]:
         """移除精华消息(仅cqhttp支持)
