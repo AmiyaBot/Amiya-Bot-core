@@ -1,4 +1,5 @@
 import abc
+import asyncio
 import json
 
 from typing import Optional, Union
@@ -7,6 +8,95 @@ from amiyabot.adapters import BotAdapterProtocol, PACKAGE_RESULT
 from amiyabot.network.httpRequests import http_requests
 
 from .define import *
+
+
+class APIResponse:
+    class RequestType(Enum):
+        GET = 0
+        POST = 1
+        UNKNOWN = 2
+
+        @classmethod
+        def from_str(cls, value: str):
+            if value.lower() == 'get':
+                return cls.GET
+            if value.lower() == 'post':
+                return cls.POST
+            return cls.UNKNOWN
+
+    # 响应数据
+    status: int
+    origin: Optional[str]
+    data: Optional[dict]
+
+    # 请求信息
+    method: RequestType
+    path: str
+    params: Optional[dict]
+    headers: Optional[dict]
+    kwargs: dict
+
+    def __init__(
+        self,
+        method: str,
+        path: str,
+        params: Optional[dict] = None,
+        headers: Optional[dict] = None,
+        res: Optional[str] = None,
+        **kwargs,
+    ):
+        self.__init(res)
+        self.method = self.RequestType.from_str(method)
+        self.path = path
+        self.params = params
+        self.headers = headers
+        self.kwargs = kwargs
+
+    def __init(self, res: Optional[str] = None):
+        if res:
+            try:
+                self.data = json.loads(res)
+                self.status = 200
+                self.origin = res
+            except json.JSONDecodeError:
+                self.data = None
+                self.status = 500
+                self.origin = res
+        else:
+            self.data = None
+            self.status = 500
+            self.origin = res
+
+    async def retry(self, max_retry: int = 3, retry_interval: int = 1) -> 'APIResponse':
+        """重试
+
+        Args:
+            max_retry (int, optional): 最大重试次数. 默认为 3
+            retry_interval (int, optional): 重试间隔, 单位秒. 默认为 1
+
+        Returns:
+            APIResponse: HTTP 响应
+        """
+        if self.status == 200:
+            return self
+
+        for _ in range(max_retry):
+            if self.method == self.RequestType.GET:
+                res = await http_requests.get(self.path, self.params, **self.kwargs)
+            elif self.method == self.RequestType.POST:
+                res = await http_requests.post(
+                    self.path, self.params, self.headers, **self.kwargs
+                )
+            else:
+                res = None
+
+            if res:
+                self.__init(res)
+                if self.status == 200:
+                    return self
+            await asyncio.sleep(retry_interval)
+
+        return self
 
 
 class BotAdapterAPI:
@@ -22,7 +112,9 @@ class BotAdapterAPI:
             return self.instance.session
         return ''
 
-    async def get(self, path: str, params: Optional[dict] = None, **kwargs):
+    async def get(
+        self, path: str, params: Optional[dict] = None, **kwargs
+    ) -> APIResponse:
         """GET 请求
 
         Args:
@@ -37,18 +129,24 @@ class BotAdapterAPI:
             path = '/' + path
 
         if self.adapter_type == BotAdapterType.CQHTTP:
-            return await http_requests.get(
+            if kwargs.get('headers'):
+                kwargs['headers'].update({'Authorization': self.token})
+            else:
+                kwargs['headers'] = {'Authorization': self.token}
+            res = await http_requests.get(
                 self.url + path,
                 params=params,
-                headers={'Authorization': self.token},
                 **kwargs,
             )
+            return APIResponse('GET', path, params, None, res, **kwargs)
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not params:
                 params = {}
             params['sessionKey'] = self.session
-            return await http_requests.get(self.url + path, params=params, **kwargs)
+            res = await http_requests.get(self.url + path, params=params, **kwargs)
+            return APIResponse('GET', path, params, None, res, **kwargs)
+        return APIResponse('GET', path, params, None, None, **kwargs)
 
     async def post(
         self,
@@ -56,7 +154,7 @@ class BotAdapterAPI:
         params: Optional[dict] = None,
         headers: Optional[dict] = None,
         **kwargs,
-    ):
+    ) -> APIResponse:
         """POST 请求
 
         Args:
@@ -76,13 +174,16 @@ class BotAdapterAPI:
                 headers.update({'Authorization': self.token})
             else:
                 headers = {'Authorization': self.token}
-            return await http_requests.post(self.url + path, params, headers, **kwargs)
+            res = await http_requests.post(self.url + path, params, headers, **kwargs)
+            return APIResponse('POST', path, params, headers, res, **kwargs)
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not params:
                 params = {}
             params['sessionKey'] = self.session
-            return await http_requests.post(self.url + path, params, headers, **kwargs)
+            res = await http_requests.post(self.url + path, params, headers, **kwargs)
+            return APIResponse('POST', path, params, headers, res, **kwargs)
+        return APIResponse('POST', path, params, headers, None, **kwargs)
 
     # 缓存操作
 
@@ -104,11 +205,8 @@ class BotAdapterAPI:
 
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/get_msg', {'message_id': message_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            if result['status'] == 'ok':
-                return await self.instance.package_message('', result['data'])
+            if res.data and res.data['status'] == 'ok':
+                return await self.instance.package_message('', res.data['data'])
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not target:
@@ -118,21 +216,17 @@ class BotAdapterAPI:
             res = await self.get(
                 '/messageFromId', {'messageId': message_id, 'target': target}
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            if result['code'] == 0:
-                return await self.instance.package_message('', result['data'])
+            if res.data and res.data['code'] == 0:
+                return await self.instance.package_message('', res.data['data'])
 
     async def delete_message(
         self, message_id: str, target_id: Optional[str] = None
     ) -> Optional[bool]:
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/delete_msg', {'message_id': message_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
         if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.post(
@@ -143,10 +237,9 @@ class BotAdapterAPI:
                     'target': target_id,
                 },
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            if res.data and res.data['code'] == 0:
+                return True
+            return False
 
         return None
 
@@ -164,21 +257,15 @@ class BotAdapterAPI:
         """
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/get_friend_list')
-            if not res:
-                return None
-            result = json.loads(res)
-            if result['status'] == 'ok':
-                for i in result['data']:
+            if res.data and res.data['status'] == 'ok':
+                for i in res.data['data']:
                     i['id'] = i.pop('user_id')
-                return result['data']
+                return res.data['data']
 
         if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.get('/friendList')
-            if not res:
-                return None
-            result = json.loads(res)
-            if result['code'] == 0:
-                return result['data']
+            if res.data and res.data['code'] == 0:
+                return res.data['data']
 
     async def get_group_list(self, nocache: bool = False) -> Optional[list]:
         """获取群列表
@@ -202,11 +289,8 @@ class BotAdapterAPI:
         """
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/get_group_list', {'no_cache': nocache})
-            if not res:
-                return None
-            result = json.loads(res)
-            if result['status'] == 'ok':
-                for i in result['data']:
+            if res.data and res.data['status'] == 'ok':
+                for i in res.data['data']:
                     i['id'] = i.pop('group_id')
                     i['name'] = i.pop('group_name')
                     i['remark'] = i.pop('group_memo')
@@ -214,16 +298,13 @@ class BotAdapterAPI:
                     i['level'] = i.pop('group_level')
                     i['count'] = i.pop('member_count')
                     i['max_count'] = i.pop('max_member_count')
-                return result['data']
+                return res.data['data']
 
         if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.get('/groupList')
-            if not res:
-                return None
-            result = json.loads(res)
-            if result['code'] == 0:
+            if res.data and res.data['code'] == 0:
                 group_list = {}
-                for i in result['data']:
+                for i in res.data['data']:
                     if i['id'] not in group_list:
                         i['permission'] = UserPermission.from_str(i.pop('permission'))
                         group_list[i['id']] = i
@@ -272,12 +353,9 @@ class BotAdapterAPI:
             res = await self.post(
                 '/get_group_member_list', {'group_id': group_id, 'no_cache': nocache}
             )
-            if not res:
-                return None
-            result = json.loads(res)
             result_list = []
-            if result['status'] == 'ok':
-                for i in result['data']:
+            if res.data and res.data['status'] == 'ok':
+                for i in res.data['data']:
                     ires = await self.post(
                         '/get_group_member_info',
                         {
@@ -286,11 +364,8 @@ class BotAdapterAPI:
                             'no_cache': nocache,
                         },
                     )
-                    if not ires:
-                        continue
-                    iresult = json.loads(ires)
-                    if iresult['status'] == 'ok':
-                        data = iresult['data']
+                    if ires.data and ires.data['status'] == 'ok':
+                        data = ires.data['data']
                         result_list.append(
                             {
                                 'group_id': data['group_id'],
@@ -317,20 +392,14 @@ class BotAdapterAPI:
             res = await self.get(
                 '/latestMemberList' if nocache else '/memberList', {'target': group_id}
             )
-            if not res:
-                return None
-            result = json.loads(res)
             result_list = []
-            if result['code'] == 0:
-                for i in result['data']:
+            if res.data and res.data['code'] == 0:
+                for i in res.data['data']:
                     ires = await self.get(
                         '/memberProfile', {'target': group_id, 'memberId': i['id']}
                     )
-                    if not ires:
-                        continue
-                    iresult = json.loads(ires)
-                    if iresult['code'] == 0:
-                        data = iresult['data']
+                    if ires.data and ires.data['code'] == 0:
+                        data = ires.data['data']
                         result_list.append(
                             {
                                 'group_id': i['group']['id'],
@@ -401,11 +470,8 @@ class BotAdapterAPI:
                 res = await self.post(
                     '/get_stranger_info', {'user_id': user_id, 'no_cache': no_cache}
                 )
-                if not res:
-                    return None
-                result = json.loads(res)
-                if result['status'] == 'ok':
-                    result = result['data']
+                if res.data and res.data['status'] == 'ok':
+                    result = res.data['data']
                     result['gender'] = UserGender.from_str(result.pop('sex'))
                 else:
                     result = None
@@ -423,17 +489,13 @@ class BotAdapterAPI:
                             result = i
             elif relation_type == RelationType.FRIEND:
                 res = await self.get('/friendProfile', {'target': user_id})
-                if not res:
-                    result = None
-                else:
-                    result = json.loads(res)
+                if res.data:
+                    result = res.data
                     result['gender'] = UserGender.from_str(result.pop('sex'))
             elif relation_type == RelationType.STRANGER:
                 res = await self.get('/userProfile', {'target': user_id})
-                if not res:
-                    result = None
-                else:
-                    result = json.loads(res)
+                if res.data:
+                    result = res.data
                     result['gender'] = UserGender.from_str(result.pop('sex'))
             return result
 
@@ -455,19 +517,17 @@ class BotAdapterAPI:
 
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/delete_friend', {'user_id': user_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
         if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.post('/deleteFriend', {'target': user_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            if res.data and res.data['code'] == 0:
+                return True
+            return False
 
-        return False
+        return None
 
     # 群操作
 
@@ -495,10 +555,9 @@ class BotAdapterAPI:
                 '/set_group_ban',
                 {'group_id': group_id, 'user_id': user_id, 'duration': time},
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if time == 0:
@@ -509,12 +568,11 @@ class BotAdapterAPI:
                 res = await self.post(
                     '/mute', {'target': group_id, 'memberId': user_id, 'time': time}
                 )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            if res.data and res.data['code'] == 0:
+                return True
+            return False
 
-        return False
+        return None
 
     async def remove_group_member(
         self,
@@ -549,22 +607,20 @@ class BotAdapterAPI:
                     'reject_add_request': reject,
                 },
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
         if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.post(
                 '/kick',
                 {'target': group_id, 'memberId': user_id, 'block': reject, 'msg': msg},
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            if res.data and res.data['code'] == 0:
+                return True
+            return False
 
-        return False
+        return None
 
     async def exit_group(
         self, group_id: GroupId, is_dismiss: bool = False
@@ -587,17 +643,15 @@ class BotAdapterAPI:
             res = await self.post(
                 '/set_group_leave', {'group_id': group_id, 'is_dismiss': is_dismiss}
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
         if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.get('/quit', {'target': group_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            if res.data and res.data['code'] == 0:
+                return True
+            return False
 
         return None
 
@@ -620,20 +674,18 @@ class BotAdapterAPI:
             res = await self.post(
                 '/set_group_whole_ban', {'group_id': group_id, 'enable': enable}
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if enable:
                 res = await self.post('/muteAll', {'target': group_id})
             else:
                 res = await self.post('/unmuteAll', {'target': group_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            if res.data and res.data['code'] == 0:
+                return True
+            return False
 
         return None
 
@@ -656,7 +708,9 @@ class BotAdapterAPI:
 
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/set_essence_msg', {'message_id': message_id})
-            return json.loads(res)['status'] == 'ok' if res else None
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not group_id:
@@ -665,9 +719,9 @@ class BotAdapterAPI:
             res = await self.post(
                 '/recall', {'target': group_id, 'messageId': message_id}
             )
-            return json.loads(res)['code'] == 0 if res else None
-
-        return None
+            if res.data and res.data['code'] == 0:
+                return True
+            return False
 
     async def delete_essence_msg(self, message_id: MessageId) -> Optional[bool]:
         """移除精华消息(仅cqhttp支持)
@@ -683,12 +737,11 @@ class BotAdapterAPI:
 
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/delete_essence_msg', {'message_id': message_id})
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['status'] == 'ok'
+            if res.data and res.data['status'] == 'ok':
+                return True
+            return False
 
-        return False
+        return None
 
     @abc.abstractmethod
     async def send_group_notice(
@@ -731,10 +784,8 @@ class BotAdapterAPI:
                     '/set_group_card',
                     {'group_id': group_id, 'user_id': user_id, 'card': nickname},
                 )
-                if not res:
-                    flag = False
-                else:
-                    result = json.loads(res)
+                if res.data:
+                    result = res.data
                     if result['status'] != 'ok':
                         flag = False
             if special_title:
@@ -746,10 +797,8 @@ class BotAdapterAPI:
                         'special_title': special_title,
                     },
                 )
-                if not res:
-                    flag = False
-                else:
-                    result = json.loads(res)
+                if res.data:
+                    result = res.data
                     if result['status'] != 'ok':
                         flag = False
             return flag
@@ -767,7 +816,6 @@ class BotAdapterAPI:
                     'info': info,
                 },
             )
-            if not res:
-                return None
-            result = json.loads(res)
-            return result['code'] == 0
+            if res.data and res.data['code'] == 0:
+                return True
+            return False

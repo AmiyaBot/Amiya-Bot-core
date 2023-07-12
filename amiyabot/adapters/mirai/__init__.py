@@ -101,7 +101,8 @@ class MiraiBotInstance(BotAdapterProtocol):
         for reply_list in [[reply], voice_list]:
             for item in reply_list:
                 if is_sync:
-                    res.append(await self.api.post(item[0], item[1]))
+                    request = await self.api.post(item[0], item[1])
+                    res.append(request.origin)
                 else:
                     await self.connection.send(item[1])
 
