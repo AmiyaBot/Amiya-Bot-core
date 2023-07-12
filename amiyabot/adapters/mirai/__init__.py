@@ -67,7 +67,7 @@ class MiraiBotInstance(BotAdapterProtocol):
                     if message == b'':
                         await websocket.close()
                         log.warning(f'{mark} mirai-api-http close the connection.')
-                        return False
+                        return None
 
                     await self.handle_message(str(message), handler)
 
@@ -89,7 +89,7 @@ class MiraiBotInstance(BotAdapterProtocol):
             if 'session' in data:
                 self.session = data['session']
                 log.info(f'websocket({self.appid}) handshake successful. session: ' + self.session)
-                return False
+                return None
 
             asyncio.create_task(handler('', data))
 
@@ -101,9 +101,8 @@ class MiraiBotInstance(BotAdapterProtocol):
         for reply_list in [[reply], voice_list]:
             for item in reply_list:
                 if is_sync:
-                    res.append({
-                        **await self.api.post(item[0], item[1])
-                    })
+                    request = await self.api.post(item[0], item[1])
+                    res.append(request.origin)
                 else:
                     await self.connection.send(item[1])
 

@@ -65,8 +65,11 @@ class MiraiForwardMessage:
         })
 
     async def send(self):
-        return MiraiMessageCallback(
-            self.data.channel_id,
-            self.data.instance,
-            await self.api.send_group_message(self.data.channel_id, [self.node])
-        )
+        async with self.data.processing_context([self.node]):
+            callback = MiraiMessageCallback(
+                self.data.channel_id,
+                self.data.instance,
+                await self.api.send_group_message(self.data.channel_id, [self.node])
+            )
+
+        return callback

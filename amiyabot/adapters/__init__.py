@@ -38,7 +38,8 @@ class BotAdapterProtocol:
         async with self.log.catch(f'websocket connection({mark}) error:',
                                   ignore=[asyncio.CancelledError,
                                           websockets.ConnectionClosedError,
-                                          websockets.ConnectionClosedOK]):
+                                          websockets.ConnectionClosedOK,
+                                          ManualCloseException]):
             self.set_alive(True)
             async with websockets.connect(url) as websocket:
                 yield websocket
@@ -95,3 +96,7 @@ class BotAdapterProtocol:
         :return:
         """
         raise NotImplementedError
+
+
+class ManualCloseException(Exception):
+    ...
