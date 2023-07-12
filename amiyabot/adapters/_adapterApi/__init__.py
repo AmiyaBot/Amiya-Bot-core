@@ -206,7 +206,9 @@ class BotAdapterAPI:
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/get_msg', {'message_id': message_id})
             if res.data and res.data['status'] == 'ok':
-                return await self.instance.package_message('', res.data['data'])
+                message = res.data['data']
+                message['post_type'] = 'message'
+                return await self.instance.package_message('', message)
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not target:
