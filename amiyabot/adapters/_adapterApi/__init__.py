@@ -104,7 +104,10 @@ class BotAdapterAPI:
         self.instance = instance
         self.adapter_type = adapter_type
         self.token = instance.token
-        self.url = f'http://{instance.host}:{instance.http_port}'
+        if adapter_type == BotAdapterType.CQHTTP or adapter_type == BotAdapterType.MIRAI:
+            self.url = f'http://{instance.host}:{instance.http_port}'
+        elif adapter_type == BotAdapterType.KOOK:
+            self.url = f'https://www.kookapp.cn/api/v3'
 
     @property
     def session(self) -> str:
@@ -146,6 +149,15 @@ class BotAdapterAPI:
             params['sessionKey'] = self.session
             res = await http_requests.get(self.url + path, params=params, **kwargs)
             return APIResponse('GET', path, params, None, res, **kwargs)
+
+        if self.adapter_type == BotAdapterType.KOOK:
+            if kwargs.get('headers'):
+                kwargs['headers'].update({'Authorization': f'Bot {self.token}'})
+            else:
+                kwargs['headers'] = {'Authorization': f'Bot {self.token}'}
+            res = await http_requests.get(self.url + path, params, **kwargs)
+            return APIResponse('GET', path, params, None, res, **kwargs)
+
         return APIResponse('GET', path, params, None, None, **kwargs)
 
     async def post(
@@ -183,6 +195,15 @@ class BotAdapterAPI:
             params['sessionKey'] = self.session
             res = await http_requests.post(self.url + path, params, headers, **kwargs)
             return APIResponse('POST', path, params, headers, res, **kwargs)
+
+        if self.adapter_type == BotAdapterType.KOOK:
+            if headers:
+                headers.update({'Authorization': f'Bot {self.token}'})
+            else:
+                headers = {'Authorization': f'Bot {self.token}'}
+            res = await http_requests.post(self.url + path, params, headers, **kwargs)
+            return APIResponse('POST', path, params, headers, res, **kwargs)
+
         return APIResponse('POST', path, params, headers, None, **kwargs)
 
     # 缓存操作
@@ -500,6 +521,10 @@ class BotAdapterAPI:
                     result = res.data
                     result['gender'] = UserGender.from_str(result.pop('sex'))
             return result
+
+    @abc.abstractmethod
+    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
+        raise NotImplementedError
 
     # 账号管理
 

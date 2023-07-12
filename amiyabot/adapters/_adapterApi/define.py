@@ -10,6 +10,7 @@ MessageId = Union[str, int]
 class BotAdapterType(Enum):
     CQHTTP = 1
     MIRAI = 2
+    KOOK = 3
 
 
 class UserPermission(Enum):

@@ -1,12 +1,14 @@
+import hashlib
 import json
 import re
 from typing import Optional
 
 from amiyabot.log import LoggerManager
+from amiyabot.network.download import download_async
 from amiyabot.network.httpRequests import http_requests
 from amiyabot.adapters import BotAdapterProtocol
 
-from .._adapterApi import BotAdapterAPI, BotAdapterType
+from .._adapterApi import BotAdapterAPI, BotAdapterType, UserId
 from .payload import HttpAdapter
 
 log = LoggerManager('Mirai')
@@ -15,6 +17,22 @@ log = LoggerManager('Mirai')
 class MiraiAPI(BotAdapterAPI):
     def __init__(self, instance: BotAdapterProtocol):
         super().__init__(instance, BotAdapterType.MIRAI)
+
+    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
+        """获取用户头像
+
+        Args:
+            user_id (UserId): 用户ID
+
+        Returns:
+            Optional[bytes]: 头像数据
+        """
+        url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=640'
+        data = await download_async(url)
+        if data and hashlib.md5(data).hexdigest() == 'acef72340ac0e914090bd35799f5594e':
+            url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=100'
+            data = await download_async(url)
+        return data
 
     async def upload(self, interface: str, field_type: str, file: bytes, msg_type: str):
         res = await http_requests.post_upload(
