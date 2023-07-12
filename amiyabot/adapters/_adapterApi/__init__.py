@@ -104,10 +104,10 @@ class BotAdapterAPI:
         self.instance = instance
         self.adapter_type = adapter_type
         self.token = instance.token
-        if adapter_type == BotAdapterType.CQHTTP or adapter_type == BotAdapterType.MIRAI:
+        if adapter_type in [BotAdapterType.CQHTTP ,BotAdapterType.MIRAI]:
             self.url = f'http://{instance.host}:{instance.http_port}'
         elif adapter_type == BotAdapterType.KOOK:
-            self.url = f'https://www.kookapp.cn/api/v3'
+            self.url = 'https://www.kookapp.cn/api/v3'
 
     @property
     def session(self) -> str:

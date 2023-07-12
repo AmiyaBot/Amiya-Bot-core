@@ -1,5 +1,6 @@
 from typing import Optional
 from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters._adapterApi.define import GroupId
 from amiyabot.network.download import download_async
 from .._adapterApi import BotAdapterAPI, BotAdapterType, UserId
 
@@ -26,4 +27,10 @@ class KOOKAPI(BotAdapterAPI):
             url = res.data['avatar']
             data = await download_async(url)
             return data
+        return None
+
+    async def send_group_notice(self, group_id: GroupId, content: str, **kwargs) -> Optional[bool]:
+        return None
+
+    async def send_nudge(self, user_id: UserId, group_id: GroupId) -> Optional[bool]:
         return None
