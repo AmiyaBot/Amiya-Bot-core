@@ -272,7 +272,8 @@ class PluginInstance(BotHandlerFactory):
                  plugin_id: str,
                  plugin_type: str = None,
                  description: str = None,
-                 document: str = None):
+                 document: str = None,
+                 priority: int = 1):
         super().__init__()
 
         self.name = name
@@ -281,6 +282,7 @@ class PluginInstance(BotHandlerFactory):
         self.plugin_type = plugin_type
         self.description = description
         self.document = document
+        self.priority = priority
 
         self.path = []
 
