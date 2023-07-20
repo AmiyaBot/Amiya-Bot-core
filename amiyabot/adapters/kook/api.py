@@ -1,8 +1,11 @@
 from typing import Optional
+from amiyabot.log import LoggerManager
 from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters._adapterApi.define import GroupId
 from amiyabot.network.download import download_async
 from .._adapterApi import BotAdapterAPI, BotAdapterType, UserId
+
+log = LoggerManager('KOOK')
 
 
 class KOOKAPI(BotAdapterAPI):
@@ -41,12 +44,13 @@ class KOOKAPI(BotAdapterAPI):
         Returns:
             Optional[bytes]: 头像数据
         """
+        user_id = int(user_id)
         params = {'user_id': user_id}
         if kwargs.get('guild_id'):
             params['guild_id'] = kwargs['guild_id']
         res = await self.get('/user/view', params=params)
         if res.data:
-            url = res.data['avatar']
+            url = res.data['data']['avatar']
             data = await download_async(url)
             return data
         return None
