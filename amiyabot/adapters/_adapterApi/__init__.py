@@ -141,14 +141,22 @@ class BotAdapterAPI:
                 params=params,
                 **kwargs,
             )
-            return APIResponse('GET', path, params, None, res, **kwargs)
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse('GET', path, params, headers, res, **kwargs)
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if not params:
                 params = {}
             params['sessionKey'] = self.session
             res = await http_requests.get(self.url + path, params=params, **kwargs)
-            return APIResponse('GET', path, params, None, res, **kwargs)
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse('GET', path, params, headers, res, **kwargs)
 
         if self.adapter_type == BotAdapterType.KOOK:
             if kwargs.get('headers'):
@@ -156,9 +164,17 @@ class BotAdapterAPI:
             else:
                 kwargs['headers'] = {'Authorization': f'Bot {self.token}'}
             res = await http_requests.get(self.url + path, params, **kwargs)
-            return APIResponse('GET', path, params, None, res, **kwargs)
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse('GET', path, params, headers, res, **kwargs)
 
-        return APIResponse('GET', path, params, None, None, **kwargs)
+        if kwargs.get('headers'):
+            headers = kwargs.pop('headers')
+        else:
+            headers = None
+        return APIResponse('GET', path, params, headers, None, **kwargs)
 
     async def post(
         self,
