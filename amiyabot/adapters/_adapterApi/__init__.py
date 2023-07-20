@@ -459,7 +459,7 @@ class BotAdapterAPI:
             no_cache (bool, optional): 是否不使用缓存. 默认为 False. - all: optional
 
         Returns:
-            Optional[dict]: 用户信息=
+            Optional[dict]: 用户信息
             GROUP -
                 同 get_group_member_list 信息
             FRIEND, STRANGER -
