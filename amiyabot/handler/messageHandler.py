@@ -29,7 +29,7 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
 
     _log.info(data.__str__())
 
-    data._bot = bot
+    data.bot = bot
 
     # todo 生命周期 - message_created
     for method in bot.process_message_created:

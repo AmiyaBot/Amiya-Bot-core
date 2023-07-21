@@ -183,19 +183,18 @@ class KOOKBotInstance(BotAdapterProtocol):
 
         return callback
 
-    async def send_message(self,
-                           chain: Chain,
-                           user_id: str = '',
-                           channel_id: str = '',
-                           direct_src_guild_id: str = ''):
+    async def build_active_message_chain(self,
+                                         chain: Chain,
+                                         user_id: str,
+                                         channel_id: str,
+                                         direct_src_guild_id: str):
         data = Message(self)
 
         data.user_id = user_id
         data.channel_id = channel_id
 
         if not channel_id and not user_id:
-            raise TypeError(
-                'KOOKBotInstance.send_message() missing argument: "channel_id" or "user_id"')
+            raise TypeError('send_message() missing argument: "channel_id" or "user_id"')
 
         if not channel_id and user_id:
             data.is_direct = True
@@ -204,7 +203,7 @@ class KOOKBotInstance(BotAdapterProtocol):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        return await self.send_chain_message(message)
+        return message
 
     async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
         await self.post_request('/message/delete', {'msg_id': message_id})

@@ -18,7 +18,7 @@ class EventStructure:
 
 class MessageStructure:
     def __init__(self, instance: T_BotAdapterProtocol, message: dict = None):
-        self._bot: Optional[T_BotHandlerFactory] = None
+        self.bot: Optional[T_BotHandlerFactory] = None
         self.instance = instance
 
         self.factory_name = ''

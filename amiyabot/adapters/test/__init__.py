@@ -40,12 +40,12 @@ class TestInstance(BotAdapterProtocol):
     async def connect(self, private: bool, handler: HANDLER_TYPE):
         await self.server.run(handler)
 
-    async def send_message(self,
-                           chain: Chain,
-                           user_id: str = '',
-                           channel_id: str = '',
-                           direct_src_guild_id: str = ''):
-        await self.send_chain_message(chain)
+    async def build_active_message_chain(self,
+                                         chain: Chain,
+                                         user_id: str,
+                                         channel_id: str,
+                                         direct_src_guild_id: str):
+        return chain
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reply, voice_list = await build_message_send(chain)

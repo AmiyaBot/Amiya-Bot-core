@@ -44,6 +44,7 @@ class Chain:
         self.reference = reference
 
         self.chain: CHAIN_LIST = []
+        self.raw_chain: Any = None
 
         if data and at and not data.is_direct:
             self.at(enter=True)

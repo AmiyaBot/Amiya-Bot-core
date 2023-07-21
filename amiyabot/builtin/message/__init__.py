@@ -2,19 +2,19 @@ import re
 import asyncio
 
 from typing import Callable, Optional, Union, List, Tuple, Any
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from amiyabot.typeIndexes import T_Chain
 
 from .callback import MessageCallback, MessageCallbackType
 from .structure import EventStructure, MessageStructure, Verify, File
 from .waitEvent import (
     WaitEvent,
+    WaitEventsBucket,
+    WaitEventCancel,
+    WaitEventException,
+    WaitEventOutOfFocus,
     ChannelWaitEvent,
     ChannelMessagesItem,
-    WaitEventsBucket,
-    WaitEventException,
-    WaitEventCancel,
-    WaitEventOutOfFocus,
     wait_events_bucket
 )
 
@@ -47,20 +47,8 @@ class EventList:
 
 
 class Message(MessageStructure):
-    @asynccontextmanager
-    async def processing_context(self, reply: Union["Chain", list]):
-        # todo 生命周期 - message_before_send
-        for method in self._bot.process_message_before_send:
-            reply = await method(reply, self.factory_name, self.instance) or reply
-
-        yield
-
-        # todo 生命周期 - message_after_send
-        for method in self._bot.process_message_after_send:
-            await method(reply, self.factory_name, self.instance)
-
-    async def send(self, reply: "Chain") -> SendReturn:
-        async with self.processing_context(reply):
+    async def send(self, reply: T_Chain) -> SendReturn:
+        async with self.bot.processing_context(reply):
             callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, is_sync=True)
 
         if not callbacks:
@@ -82,9 +70,6 @@ class Message(MessageStructure):
         else:
             target_id = f'{self.instance.appid}_{self.channel_id}_{self.user_id}'
 
-        # callbacks: SendReturn = None
-        # if reply:
-        #     callbacks = await self.send(reply)
         if reply:
             await self.send(reply)
 
@@ -121,9 +106,6 @@ class Message(MessageStructure):
 
         target_id = f'{self.instance.appid}_{self.channel_id}'
 
-        # callbacks: SendReturn = None
-        # if reply:
-        #     callbacks = await self.send(reply)
         if reply:
             await self.send(reply)
 

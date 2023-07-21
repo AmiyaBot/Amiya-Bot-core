@@ -60,13 +60,13 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def send_message(self,
-                           chain: Chain,
-                           user_id: str = '',
-                           channel_id: str = '',
-                           direct_src_guild_id: str = '') -> List[MessageCallback]:
+    async def build_active_message_chain(self,
+                                         chain: Chain,
+                                         user_id: str,
+                                         channel_id: str,
+                                         direct_src_guild_id: str) -> Chain:
         """
-        发送主动消息
+        构建主动消息的 Chain 对象
 
         :param chain:               消息 Chain 对象
         :param user_id:             用户 ID

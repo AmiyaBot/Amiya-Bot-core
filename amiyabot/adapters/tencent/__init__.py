@@ -164,23 +164,22 @@ class TencentBotInstance(TencentAPI):
 
         return [TencentMessageCallback(self, item) for item in res]
 
-    async def send_message(self,
-                           chain: Chain,
-                           user_id: str = '',
-                           channel_id: str = '',
-                           direct_src_guild_id: str = ''):
+    async def build_active_message_chain(self,
+                                         chain: Chain,
+                                         user_id: str,
+                                         channel_id: str,
+                                         direct_src_guild_id: str):
         data = Message(self)
 
         data.user_id = user_id
         data.channel_id = channel_id
 
         if not channel_id and not direct_src_guild_id:
-            raise TypeError(
-                'TencentBotInstance.send_message() missing argument: "channel_id" or "direct_src_guild_id"')
+            raise TypeError('send_message() missing argument: "channel_id" or "direct_src_guild_id"')
 
         if direct_src_guild_id:
             if not user_id:
-                raise TypeError('TencentBotInstance.send_message(direct_src_guild_id=...) missing argument: "user_id"')
+                raise TypeError('send_message(direct_src_guild_id=...) missing argument: "user_id"')
 
             data.is_direct = True
             data.src_guild_id = direct_src_guild_id
@@ -189,7 +188,7 @@ class TencentBotInstance(TencentAPI):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        return await self.send_chain_message(message)
+        return message
 
     async def package_message(self, event: str, message: dict):
         return await package_tencent_message(self, event, message)

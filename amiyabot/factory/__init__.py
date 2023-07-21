@@ -2,6 +2,7 @@ import os
 import copy
 import shutil
 import zipimport
+import contextlib
 
 from amiyabot import log
 from amiyabot.util import temp_sys_path, extract_zip, import_module
@@ -50,6 +51,18 @@ class BotHandlerFactory(FactoryCore):
     @property
     def group_config(self) -> Dict[str, GroupConfig]:
         return self.get_with_plugins()
+
+    @contextlib.asynccontextmanager
+    async def processing_context(self, reply: Chain):
+        # todo 生命周期 - message_before_send
+        for method in self.process_message_before_send:
+            reply = await method(reply, self.factory_name, self.instance) or reply
+
+        yield
+
+        # todo 生命周期 - message_after_send
+        for method in self.process_message_after_send:
+            await method(reply, self.factory_name, self.instance)
 
     def on_message(self,
                    group_id: Union[GroupConfig, str] = None,
