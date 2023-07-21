@@ -41,8 +41,6 @@ class AmiyaBot(BotInstance):
         super().__init__(appid, token, adapter)
 
         self.private = private
-        self.send_message = self.instance.send_message
-
         self.__allow_close = True
 
         ServerEventHandler.on_shutdown.append(self.close)
@@ -59,6 +57,23 @@ class AmiyaBot(BotInstance):
         if self.__allow_close:
             self.__allow_close = False
             await self.instance.close()
+
+    async def send_message(self,
+                           chain: Chain,
+                           user_id: str = '',
+                           channel_id: str = '',
+                           direct_src_guild_id: str = ''):
+        chain = await self.instance.build_active_message_chain(
+            chain,
+            user_id,
+            channel_id,
+            direct_src_guild_id
+        )
+
+        async with self.processing_context(chain):
+            callback = await self.instance.send_chain_message(chain, is_sync=True)
+
+        return callback
 
     async def __message_handler(self, event: str, message: dict):
         async with log.catch(desc='package error:'):

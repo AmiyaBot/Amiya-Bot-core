@@ -104,11 +104,11 @@ class CQHttpBotInstance(BotAdapterProtocol):
 
         return [CQHttpMessageCallback(self, item) for item in res]
 
-    async def send_message(self,
-                           chain: Chain,
-                           user_id: str = '',
-                           channel_id: str = '',
-                           direct_src_guild_id: str = ''):
+    async def build_active_message_chain(self,
+                                         chain: Chain,
+                                         user_id: str,
+                                         channel_id: str,
+                                         direct_src_guild_id: str):
         data = Message(self)
 
         data.user_id = user_id
@@ -116,8 +116,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         data.message_type = 'group'
 
         if not channel_id and not user_id:
-            raise TypeError(
-                'CQHttpBotInstance.send_message() missing argument: "channel_id" or "user_id"')
+            raise TypeError('send_message() missing argument: "channel_id" or "user_id"')
 
         if not channel_id and user_id:
             data.message_type = 'private'
@@ -127,7 +126,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         message.chain = chain.chain
         message.builder = chain.builder
 
-        return await self.send_chain_message(message)
+        return message
 
     async def package_message(self, event: str, message: dict):
         return package_cqhttp_message(self, self.appid, message)

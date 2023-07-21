@@ -21,11 +21,19 @@ class CQHttpMessageCallback(MessageCallback):
         await self.instance.recall_message(response['data']['message_id'])
 
 
-async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None, chain_only: bool = False):
-    chain_list = custom_chain or chain.chain
+async def build_message_send(chain: Chain, chain_only: bool = False):
+    chain_list = chain.chain
     chain_data = []
     voice_list = []
     cq_codes = []
+
+    if chain.reference and chain.data and chain.data.message_id:
+        chain_data.append({
+            'type': 'reply',
+            'data': {
+                'id': chain.data.message_id
+            }
+        })
 
     if chain_list:
         for item in chain_list:

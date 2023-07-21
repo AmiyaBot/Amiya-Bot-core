@@ -65,7 +65,10 @@ class MiraiForwardMessage:
         })
 
     async def send(self):
-        async with self.data.processing_context([self.node]):
+        chain = Chain()
+        chain.raw_chain = [self.node]
+
+        async with self.data.bot.processing_context(chain):
             callback = MiraiMessageCallback(
                 self.data.channel_id,
                 self.data.instance,
