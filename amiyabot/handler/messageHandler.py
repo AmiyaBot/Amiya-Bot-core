@@ -106,7 +106,7 @@ async def event_handler(bot: BotHandlerFactory, data: Union[Event, EventList], _
             sub_methods += bot.event_handlers[item.event_name]
 
         if sub_methods:
-            _log.info(f'{item.__str__()} Handlers Counts: {len(sub_methods)}')
+            _log.info(item.__str__())
 
             for method in sub_methods:
                 async with _log.catch('event handler error:'):
