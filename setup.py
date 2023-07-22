@@ -49,13 +49,13 @@ setuptools.setup(
     author_email='826197021@qq.com',
     url='https://www.amiyabot.com',
     license='MIT Licence',
-    description='简洁高效的异步 Python QQ 频道机器人框架',
+    description='简洁高效的异步 Python 机器人框架，支持 KOOK、QQ频道、MiraiHttp 以及 CQHttp',
     long_description=description,
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(include=['amiyabot', 'amiyabot.*']),
     data_files=[('amiyabot', data_files)],
     include_package_data=True,
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     install_requires=requirements
 )
 
