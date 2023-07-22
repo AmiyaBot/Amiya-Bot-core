@@ -13,7 +13,7 @@ class EventStructure:
         self.data = data
 
     def __str__(self):
-        return f'Bot: {self.instance.appid} Event: {self.event_name}'
+        return f'Bot:{self.instance.appid} Event:{self.event_name}'
 
 
 class MessageStructure:
