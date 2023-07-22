@@ -4,6 +4,7 @@ import websockets
 
 from typing import Any, List, Union, Callable, Coroutine, Optional
 from contextlib import asynccontextmanager
+from amiyabot.typeIndexes import T_BotHandlerFactory
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
@@ -26,12 +27,30 @@ class BotAdapterProtocol:
         self.session: Optional[str] = None
 
         self.log = LoggerManager(self.__str__())
+        self.bot: Optional[T_BotHandlerFactory] = None
 
     def __str__(self):
         return 'Adapter'
 
     def set_alive(self, status: bool):
         self.alive = status
+
+    async def send_message(self,
+                           chain: Chain,
+                           user_id: str = '',
+                           channel_id: str = '',
+                           direct_src_guild_id: str = ''):
+        chain = await self.build_active_message_chain(
+            chain,
+            user_id,
+            channel_id,
+            direct_src_guild_id
+        )
+
+        async with self.bot.processing_context(chain):
+            callback = await self.send_chain_message(chain, is_sync=True)
+
+        return callback
 
     @asynccontextmanager
     async def get_websocket_connection(self, mark: str, url: str):
@@ -49,14 +68,30 @@ class BotAdapterProtocol:
 
     @abc.abstractmethod
     async def close(self):
+        """
+        关闭此实例
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     async def connect(self, private: bool, handler: HANDLER_TYPE):
+        """
+        连接至服务并启动实例
+
+        :param private: 是否私域
+        :param handler: 消息处理方法
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     async def send_chain_message(self, chain: Chain, is_sync: bool = False) -> List[MessageCallback]:
+        """
+        使用 Chain 对象发送消息
+
+        :param chain:   Chain 对象
+        :param is_sync: 是否同步发送消息
+        :return:        如果是同步发送，则返回 MessageCallback 列表
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -72,7 +107,7 @@ class BotAdapterProtocol:
         :param user_id:             用户 ID
         :param channel_id:          子频道 ID
         :param direct_src_guild_id: 来源的频道 ID（私信时需要）
-        :return:
+        :return:                    Chain 对象
         """
         raise NotImplementedError
 
@@ -83,6 +118,7 @@ class BotAdapterProtocol:
 
         :param event:   事件名
         :param message: 消息对象
+        :return:        封装结果：Message、Event、EventList
         """
         raise NotImplementedError
 
@@ -93,7 +129,6 @@ class BotAdapterProtocol:
 
         :param message_id: 消息 ID
         :param target_id:  目标 ID
-        :return:
         """
         raise NotImplementedError
 

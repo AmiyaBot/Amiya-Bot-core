@@ -27,6 +27,7 @@ class BotHandlerFactory(FactoryCore):
         self.instance: Optional[BotAdapterProtocol] = None
         if adapter:
             self.instance = adapter(appid, token)
+            self.instance.bot = self
 
     @property
     def prefix_keywords(self) -> PrefixKeywords:
