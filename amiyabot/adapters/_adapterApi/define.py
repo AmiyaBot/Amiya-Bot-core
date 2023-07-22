@@ -30,6 +30,9 @@ class UserPermission(Enum):
             return cls.MEMBER
         return cls.UNKNOWN
 
+    def __str__(self):
+        return self.name.lower()
+
 
 class UserGender(Enum):
     UNKNOWN = 0
@@ -45,8 +48,25 @@ class UserGender(Enum):
             return cls.FEMALE
         return cls.UNKNOWN
 
+    def __str__(self):
+        return self.name.lower()
+
 
 class RelationType(Enum):
     FRIEND = 1
     GROUP = 2
     STRANGER = 3
+
+    @classmethod
+    def from_str(cls, string: str):
+        string = string.lower()
+        if string == 'friend':
+            return cls.FRIEND
+        if string == 'group':
+            return cls.GROUP
+        if string == 'stranger':
+            return cls.STRANGER
+        return None
+
+    def __str__(self):
+        return self.name.lower()
