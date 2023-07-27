@@ -20,18 +20,12 @@ class ConvertSetting:
     max_length = argv('text-max-length', int) or 100
 
 
-class ChainBuilder:
-    @staticmethod
-    async def image_getter_hook(image: Union[str, bytes]):
-        return image
-
-
 class Chain:
     def __init__(self,
                  data: MessageStructure = None,
                  at: bool = True,
                  reference: bool = False,
-                 builder: ChainBuilder = ChainBuilder()):
+                 chain_builder: ChainBuilder = ChainBuilder()):
         """
         创建回复消息
 
@@ -40,7 +34,6 @@ class Chain:
         :param reference: 是否引用该 Message 对象的消息
         """
         self.data = data
-        self.builder = builder
         self.reference = reference
 
         self.chain: CHAIN_LIST = []
@@ -48,6 +41,20 @@ class Chain:
 
         if data and at and not data.is_direct:
             self.at(enter=True)
+
+        self._builder = chain_builder
+
+    @property
+    def builder(self):
+        return self._builder
+
+    @builder.setter
+    def builder(self, value: ChainBuilder):
+        self._builder = value
+
+        for item in self.chain:
+            if isinstance(item, (Html, Image)):
+                item.builder = value
 
     def at(self, user: str = None, enter: bool = False):
         if self.data and self.data.is_direct:
@@ -110,7 +117,7 @@ class Chain:
 
     def image(self, target: Union[str, bytes, List[Union[str, bytes]]] = None, url: str = None):
         if url:
-            self.chain.append(Image(url=url, getter_hook=self.builder.image_getter_hook))
+            self.chain.append(Image(url=url, builder=self.builder))
         else:
             if not isinstance(target, list):
                 target = [target]
@@ -119,9 +126,9 @@ class Chain:
                 if isinstance(item, str):
                     if os.path.exists(item):
                         with open(item, mode='rb') as f:
-                            self.chain.append(Image(content=f.read(), getter_hook=self.builder.image_getter_hook))
+                            self.chain.append(Image(content=f.read(), builder=self.builder))
                 else:
-                    self.chain.append(Image(content=item, getter_hook=self.builder.image_getter_hook))
+                    self.chain.append(Image(content=item, builder=self.builder))
 
         return self
 
@@ -150,7 +157,7 @@ class Chain:
             height=height,
             is_file=is_template,
             render_time=render_time,
-            getter_hook=self.builder.image_getter_hook
+            builder=self.builder
         ))
         return self
 

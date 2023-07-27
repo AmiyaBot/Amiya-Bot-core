@@ -49,7 +49,7 @@ setuptools.setup(
     author_email='826197021@qq.com',
     url='https://www.amiyabot.com',
     license='MIT Licence',
-    description='简洁高效的异步 Python 机器人框架，支持 KOOK、QQ频道、MiraiHttp 以及 CQHttp',
+    description='简洁高效的 Python 异步渐进式机器人框架，支持 KOOK、QQ频道、MiraiHttp 以及 CQHttp',
     long_description=description,
     long_description_content_type='text/markdown',
     packages=setuptools.find_packages(include=['amiyabot', 'amiyabot.*']),

@@ -1,18 +1,22 @@
 import asyncio
 
 from dataclasses import dataclass
-from typing import Optional, Callable, Awaitable, Union, List, Any
+from typing import Optional, Union, List, Any
 from amiyabot.builtin.lib.browserService import basic_browser_service
 from amiyabot.adapters.common import CQCode
 from amiyabot.util import argv
 from amiyabot import log
 
-IMAGE_GETTER_HOOK = Callable[[Union[str, bytes]], Awaitable[Union[str, bytes]]]
-
 DEFAULT_WIDTH = argv('browser-width', int) or 1280
 DEFAULT_HEIGHT = argv('browser-height', int) or 720
 DEFAULT_RENDER_TIME = argv('browser-render-time', int) or 200
 BROWSER_PAGE_NOT_CLOSE = bool(argv('browser-page-not-close'))
+
+
+class ChainBuilder:
+    @classmethod
+    async def get_image(cls, image: Union[str, bytes]) -> Union[str, bytes]:
+        return image
 
 
 @dataclass
@@ -34,12 +38,12 @@ class Text:
 class Image:
     url: Optional[str] = None
     content: Optional[bytes] = None
-    getter_hook: IMAGE_GETTER_HOOK = None
+    builder: ChainBuilder = None
     dhash: int = None
 
     async def get(self):
-        if self.getter_hook:
-            res = await self.getter_hook(self.url or self.content)
+        if self.builder:
+            res = await self.builder.get_image(self.url or self.content)
             if res:
                 return res
         return self.url or self.content
@@ -59,7 +63,7 @@ class Html:
     render_time: int = DEFAULT_RENDER_TIME
     width: int = DEFAULT_WIDTH
     height: int = DEFAULT_HEIGHT
-    getter_hook: IMAGE_GETTER_HOOK = None
+    builder: ChainBuilder = None
 
     async def create_html_image(self):
         async with log.catch('html convert error:'):
@@ -79,8 +83,8 @@ class Html:
 
             result = await page.make_image()
 
-            if self.getter_hook:
-                res = await self.getter_hook(result)
+            if self.builder:
+                res = await self.builder.get_image(result)
                 if res:
                     result = res
 
