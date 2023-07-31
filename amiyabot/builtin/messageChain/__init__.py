@@ -10,6 +10,7 @@ cur_file_path = os.path.abspath(__file__)
 cur_file_folder = os.path.dirname(cur_file_path)
 
 md_template = os.path.join(cur_file_folder, '../../_assets/markdown/template.html')
+md_template_dark = os.path.join(cur_file_folder, '../../_assets/markdown/template-dark.html')
 
 PADDING = 10
 IMAGE_WIDTH = 700
@@ -136,8 +137,8 @@ class Chain:
         self.chain.append(Voice(file, title))
         return self
 
-    def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME):
-        return self.html(md_template,
+    def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME, is_dark: bool = False):
+        return self.html(md_template_dark if is_dark else md_template,
                          width=50,
                          height=50,
                          data={'content': content},

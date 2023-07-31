@@ -1,11 +1,17 @@
 import os
-import json
 
-from typing import Optional, Union
+from typing import Optional
 from amiyabot.log import LoggerManager
 from amiyabot.util import argv
-from playwright.async_api import (Browser, BrowserType, Page, ViewportSize, Playwright, ConsoleMessage,
-                                  Error as PageError, async_playwright)
+from playwright.async_api import (
+    async_playwright,
+    Browser,
+    BrowserType,
+    ViewportSize,
+    Playwright,
+    ConsoleMessage,
+    Error as PageError
+)
 
 log = LoggerManager('Browser')
 
@@ -26,31 +32,41 @@ class BrowserService:
         self.playwright: Optional[Playwright] = None
         self.browser: Optional[Browser] = None
 
-        self.launched = False
+        self._launched = False
+        self._launch_config: Optional[BrowserLaunchConfig] = None
+        self._type = 'unknown'
+
+    def __str__(self):
+        return f'browser({self._type})'
 
     async def launch(self, config: BrowserLaunchConfig):
-        if self.launched:
+        if self._launched:
             return None
-        self.launched = True
+
+        self._launched = True
+        self._launch_config = config
 
         log.info('launching browser...')
 
         self.playwright = await async_playwright().start()
         self.browser = await config.launch_browser(self.playwright)
 
-        log.info(f'browser({self.browser._impl_obj._browser_type.name}) launched successful.')
+        self._type = self.browser._impl_obj._browser_type.name
+
+        log.info(f'{self} launched successful.')
 
     async def close(self):
         await self.browser.close()
         await self.playwright.stop()
-        log.info('browser closed.')
+        log.info(f'{self} closed.')
 
     async def open_page(self, url: str, width: int, height: int, is_file: bool = False):
         if self.browser:
             page = await self.browser.new_page(no_viewport=True, viewport=ViewportSize(width=width, height=height))
 
-            page.on('console', self.__console)
-            page.on('pageerror', self.__page_error)
+            if self._launch_config.debug:
+                page.on('console', self.__console)
+                page.on('pageerror', self.__page_error)
 
             if is_file:
                 url = 'file:///' + os.path.abspath(url)
@@ -63,7 +79,7 @@ class BrowserService:
                 await page.close()
                 return None
 
-            return PageController(page)
+            return page
 
     @staticmethod
     async def __console(message: ConsoleMessage):
@@ -72,27 +88,13 @@ class BrowserService:
         if message.type == 'warning':
             log.warning(text)
         elif message.type == 'error':
-            log.warning(text)
+            log.error(text)
         else:
             log.info(text)
 
     @staticmethod
     async def __page_error(error: PageError):
         log.error(error.stack)
-
-
-class PageController:
-    def __init__(self, page: Page):
-        self.page = page
-
-    async def init_data(self, data: Union[dict, list]):
-        await self.page.evaluate(f'init({json.dumps(data)})')
-
-    async def make_image(self):
-        return await self.page.screenshot(full_page=True)
-
-    async def close(self):
-        await self.page.close()
 
 
 basic_browser_service = BrowserService()

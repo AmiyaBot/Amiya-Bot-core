@@ -1,7 +1,9 @@
+import json
 import asyncio
 
 from dataclasses import dataclass
 from typing import Optional, Union, List, Any
+from playwright.async_api import Page
 from amiyabot.builtin.lib.browserService import basic_browser_service
 from amiyabot.adapters.common import CQCode
 from amiyabot.util import argv
@@ -17,6 +19,10 @@ class ChainBuilder:
     @classmethod
     async def get_image(cls, image: Union[str, bytes]) -> Union[str, bytes]:
         return image
+
+    @classmethod
+    async def on_page_rendered(cls, page: Page):
+        ...
 
 
 @dataclass
@@ -67,21 +73,36 @@ class Html:
 
     async def create_html_image(self):
         async with log.catch('html convert error:'):
-            page = await basic_browser_service.open_page(self.url,
-                                                         is_file=self.is_file,
-                                                         width=self.width,
-                                                         height=self.height)
+            page: Optional[Page] = await basic_browser_service.open_page(
+                self.url,
+                is_file=self.is_file,
+                width=self.width,
+                height=self.height
+            )
 
             if not page:
                 return None
 
             if self.data:
-                await page.init_data(self.data)
+                injected = '''
+                    if ('init' in window) {
+                        init(%s)
+                    } else {
+                        console.warn('Can not execute "window.init(data)" because this function does not exist.')
+                    }
+                ''' % json.dumps(self.data)
+
+                await page.evaluate(injected)
 
             # 等待渲染
             await asyncio.sleep(self.render_time / 1000)
 
-            result = await page.make_image()
+            # 执行钩子
+            if self.builder:
+                await self.builder.on_page_rendered(page)
+
+            # 截图
+            result = await page.screenshot(full_page=True)
 
             if self.builder:
                 res = await self.builder.get_image(result)
