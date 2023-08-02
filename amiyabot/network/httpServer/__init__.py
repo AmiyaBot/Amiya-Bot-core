@@ -1,5 +1,3 @@
-import os
-
 from typing import Any
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +8,6 @@ from starlette.staticfiles import StaticFiles
 from amiyabot.util import snake_case_to_pascal_case
 
 from .serverBase import *
-
-cur_file_path = os.path.abspath(__file__)
-cur_file_folder = os.path.dirname(cur_file_path)
 
 
 class HttpServer(metaclass=ServerMeta):
@@ -67,11 +62,14 @@ class HttpServer(metaclass=ServerMeta):
         self.__allow_path += paths
 
     def __load_server(self, options):
-        return uvicorn.Server(config=uvicorn.Config(self.app,
-                                                    loop='asyncio',
-                                                    log_config=os.path.join(cur_file_folder,
-                                                                            '../../_assets/serverLogger.yaml'),
-                                                    **options))
+        return uvicorn.Server(
+            config=uvicorn.Config(
+                self.app,
+                loop='asyncio',
+                log_config=LOG_CONFIG,
+                **options
+            )
+        )
 
     def route(self, router_path: str = None, method: str = 'post', allow_unauthorized: bool = False, **kwargs):
         def decorator(fn):

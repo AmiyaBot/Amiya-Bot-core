@@ -9,16 +9,15 @@ from .element import *
 cur_file_path = os.path.abspath(__file__)
 cur_file_folder = os.path.dirname(cur_file_path)
 
-md_template = os.path.join(cur_file_folder, '../../_assets/markdown/template.html')
-md_template_dark = os.path.join(cur_file_folder, '../../_assets/markdown/template-dark.html')
-
 PADDING = 10
 IMAGE_WIDTH = 700
 MAX_SEAT = IMAGE_WIDTH - PADDING * 2
 
 
-class ConvertSetting:
+class ChainConfig:
     max_length = argv('text-max-length', int) or 100
+    md_template = os.path.join(cur_file_folder, '../../_assets/markdown/template.html')
+    md_template_dark = os.path.join(cur_file_folder, '../../_assets/markdown/template-dark.html')
 
 
 class Chain:
@@ -93,7 +92,7 @@ class Chain:
                 if index <= len(face) - 1:
                     chain.append(Face(face[index]))
         else:
-            if auto_convert and len(text) >= ConvertSetting.max_length:
+            if auto_convert and len(text) >= ChainConfig.max_length:
                 self.text_image(text)
             else:
                 chain.append(Text(text))
@@ -138,7 +137,7 @@ class Chain:
         return self
 
     def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME, is_dark: bool = False):
-        return self.html(md_template_dark if is_dark else md_template,
+        return self.html(ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
                          width=50,
                          height=50,
                          data={'content': content},
