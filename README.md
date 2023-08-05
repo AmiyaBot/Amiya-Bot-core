@@ -2,7 +2,7 @@
 
 ![PyPI](https://img.shields.io/pypi/v/amiyabot)
 
-Python 异步渐进式 QQ 机器人框架
+简洁高效的 Python 异步渐进式机器人框架，支持 KOOK、QQ频道、MiraiHttp 以及 CQHttp
 
 官方文档：[www.amiyabot.com](https://www.amiyabot.com/)
 

@@ -9,21 +9,15 @@ from .element import *
 cur_file_path = os.path.abspath(__file__)
 cur_file_folder = os.path.dirname(cur_file_path)
 
-md_template = os.path.join(cur_file_folder, '../../_assets/markdown/template.html')
-
 PADDING = 10
 IMAGE_WIDTH = 700
 MAX_SEAT = IMAGE_WIDTH - PADDING * 2
 
 
-class ConvertSetting:
+class ChainConfig:
     max_length = argv('text-max-length', int) or 100
-
-
-class ChainBuilder:
-    @staticmethod
-    async def image_getter_hook(image: Union[str, bytes]):
-        return image
+    md_template = os.path.join(cur_file_folder, '../../_assets/markdown/template.html')
+    md_template_dark = os.path.join(cur_file_folder, '../../_assets/markdown/template-dark.html')
 
 
 class Chain:
@@ -31,7 +25,7 @@ class Chain:
                  data: MessageStructure = None,
                  at: bool = True,
                  reference: bool = False,
-                 builder: ChainBuilder = ChainBuilder()):
+                 chain_builder: ChainBuilder = ChainBuilder()):
         """
         创建回复消息
 
@@ -40,7 +34,6 @@ class Chain:
         :param reference: 是否引用该 Message 对象的消息
         """
         self.data = data
-        self.builder = builder
         self.reference = reference
 
         self.chain: CHAIN_LIST = []
@@ -48,6 +41,20 @@ class Chain:
 
         if data and at and not data.is_direct:
             self.at(enter=True)
+
+        self._builder = chain_builder
+
+    @property
+    def builder(self):
+        return self._builder
+
+    @builder.setter
+    def builder(self, value: ChainBuilder):
+        self._builder = value
+
+        for item in self.chain:
+            if isinstance(item, (Html, Image)):
+                item.builder = value
 
     def at(self, user: str = None, enter: bool = False):
         if self.data and self.data.is_direct:
@@ -85,7 +92,7 @@ class Chain:
                 if index <= len(face) - 1:
                     chain.append(Face(face[index]))
         else:
-            if auto_convert and len(text) >= ConvertSetting.max_length:
+            if auto_convert and len(text) >= ChainConfig.max_length:
                 self.text_image(text)
             else:
                 chain.append(Text(text))
@@ -110,7 +117,7 @@ class Chain:
 
     def image(self, target: Union[str, bytes, List[Union[str, bytes]]] = None, url: str = None):
         if url:
-            self.chain.append(Image(url=url, getter_hook=self.builder.image_getter_hook))
+            self.chain.append(Image(url=url, builder=self.builder))
         else:
             if not isinstance(target, list):
                 target = [target]
@@ -119,9 +126,9 @@ class Chain:
                 if isinstance(item, str):
                     if os.path.exists(item):
                         with open(item, mode='rb') as f:
-                            self.chain.append(Image(content=f.read(), getter_hook=self.builder.image_getter_hook))
+                            self.chain.append(Image(content=f.read(), builder=self.builder))
                 else:
-                    self.chain.append(Image(content=item, getter_hook=self.builder.image_getter_hook))
+                    self.chain.append(Image(content=item, builder=self.builder))
 
         return self
 
@@ -129,8 +136,8 @@ class Chain:
         self.chain.append(Voice(file, title))
         return self
 
-    def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME):
-        return self.html(md_template,
+    def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME, is_dark: bool = False):
+        return self.html(ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
                          width=50,
                          height=50,
                          data={'content': content},
@@ -150,7 +157,7 @@ class Chain:
             height=height,
             is_file=is_template,
             render_time=render_time,
-            getter_hook=self.builder.image_getter_hook
+            builder=self.builder
         ))
         return self
 

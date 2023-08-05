@@ -25,10 +25,11 @@ async def package_tencent_message(instance: TencentAPI,
         data.is_direct = 'direct_message' in message and message['direct_message']
 
         bot = await instance.get_me()
-        channel = await instance.get_channel(data.channel_id)
 
-        if not channel:
-            return None
+        if not data.is_direct:
+            channel = await instance.get_channel(data.channel_id)
+            if not channel:
+                return None
 
         if 'member' in message:
             if 'roles' in message['member'] and [n for n in message['member']['roles'] if n in ADMIN]:

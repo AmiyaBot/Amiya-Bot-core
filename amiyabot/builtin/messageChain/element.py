@@ -1,18 +1,28 @@
+import json
 import asyncio
 
 from dataclasses import dataclass
-from typing import Optional, Callable, Awaitable, Union, List, Any
+from typing import Optional, Union, List, Any
+from playwright.async_api import Page
 from amiyabot.builtin.lib.browserService import basic_browser_service
 from amiyabot.adapters.common import CQCode
 from amiyabot.util import argv
 from amiyabot import log
 
-IMAGE_GETTER_HOOK = Callable[[Union[str, bytes]], Awaitable[Union[str, bytes]]]
-
 DEFAULT_WIDTH = argv('browser-width', int) or 1280
 DEFAULT_HEIGHT = argv('browser-height', int) or 720
 DEFAULT_RENDER_TIME = argv('browser-render-time', int) or 200
 BROWSER_PAGE_NOT_CLOSE = bool(argv('browser-page-not-close'))
+
+
+class ChainBuilder:
+    @classmethod
+    async def get_image(cls, image: Union[str, bytes]) -> Union[str, bytes]:
+        return image
+
+    @classmethod
+    async def on_page_rendered(cls, page: Page):
+        ...
 
 
 @dataclass
@@ -34,12 +44,12 @@ class Text:
 class Image:
     url: Optional[str] = None
     content: Optional[bytes] = None
-    getter_hook: IMAGE_GETTER_HOOK = None
+    builder: ChainBuilder = None
     dhash: int = None
 
     async def get(self):
-        if self.getter_hook:
-            res = await self.getter_hook(self.url or self.content)
+        if self.builder:
+            res = await self.builder.get_image(self.url or self.content)
             if res:
                 return res
         return self.url or self.content
@@ -59,28 +69,43 @@ class Html:
     render_time: int = DEFAULT_RENDER_TIME
     width: int = DEFAULT_WIDTH
     height: int = DEFAULT_HEIGHT
-    getter_hook: IMAGE_GETTER_HOOK = None
+    builder: ChainBuilder = None
 
     async def create_html_image(self):
         async with log.catch('html convert error:'):
-            page = await basic_browser_service.open_page(self.url,
-                                                         is_file=self.is_file,
-                                                         width=self.width,
-                                                         height=self.height)
+            page: Optional[Page] = await basic_browser_service.open_page(
+                self.url,
+                is_file=self.is_file,
+                width=self.width,
+                height=self.height
+            )
 
             if not page:
                 return None
 
             if self.data:
-                await page.init_data(self.data)
+                injected = '''
+                    if ('init' in window) {
+                        init(%s)
+                    } else {
+                        console.warn('Can not execute "window.init(data)" because this function does not exist.')
+                    }
+                ''' % json.dumps(self.data)
+
+                await page.evaluate(injected)
 
             # 等待渲染
             await asyncio.sleep(self.render_time / 1000)
 
-            result = await page.make_image()
+            # 执行钩子
+            if self.builder:
+                await self.builder.on_page_rendered(page)
 
-            if self.getter_hook:
-                res = await self.getter_hook(result)
+            # 截图
+            result = await page.screenshot(full_page=True)
+
+            if self.builder:
+                res = await self.builder.get_image(result)
                 if res:
                     result = res
 

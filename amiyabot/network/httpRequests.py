@@ -28,12 +28,10 @@ class HttpRequests:
                     if res.status in cls.async_success:
                         return ''
                     if not ignore_error:
-                        log.error(
-                            f'bad to request <{url}>[{request_name}]. Got code {res.status} {res.reason}'
-                        )
+                        log.warning(f'Request failed <{url}>[{request_name}]. Got code {res.status} {res.reason}')
         except aiohttp.ClientConnectorError:
             if not ignore_error:
-                log.error(f'fail to request <{url}>[{request_name}]')
+                log.error(f'Unable to request <{url}>[{request_name}]')
         except Exception as e:
             if not ignore_error:
                 log.error(e)

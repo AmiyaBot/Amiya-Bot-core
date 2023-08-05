@@ -126,7 +126,9 @@ class MultipleAccounts(BotInstance):
         while self.__keep_alive:
             await asyncio.sleep(1)
 
-    def append(self, item: AmiyaBot, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False,
+    def append(self,
+               item: AmiyaBot,
+               launch_browser: typing.Union[bool, BrowserLaunchConfig] = False,
                start_up: bool = True):
         assert self.__ready, 'MultipleAccounts not started'
 
