@@ -332,7 +332,7 @@ class BotAdapterAPI:
                 for i in res.data['data']:
                     i['id'] = i.pop('group_id')
                     i['name'] = i.pop('group_name')
-                    i['remark'] = i.pop('group_memo')
+                    i['remark'] = i.pop('group_memo') if i.get('group_memo') else ''
                     i['create_time'] = i.pop('group_create_time')
                     i['level'] = i.pop('group_level')
                     i['count'] = i.pop('member_count')
