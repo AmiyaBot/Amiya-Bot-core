@@ -1,12 +1,14 @@
 import os
 
-from typing import Optional
+from typing import Optional, Union
 from amiyabot.log import LoggerManager
 from amiyabot.util import argv
 from playwright.async_api import (
     async_playwright,
+    Page,
     Browser,
     BrowserType,
+    BrowserContext,
     ViewportSize,
     Playwright,
     ConsoleMessage,
@@ -21,16 +23,19 @@ class BrowserLaunchConfig:
         self.browser_type: str = 'chromium'
         self.debug: bool = bool(argv('debug'))
 
-    async def launch_browser(self, playwright: Playwright) -> Browser:
+    async def launch_browser(self, playwright: Playwright) -> Union[Browser, BrowserContext]:
         browser: BrowserType = getattr(playwright, self.browser_type)
 
         return await browser.launch(headless=not self.debug)
+
+    async def new_page(self, browser: Union[Browser, BrowserContext], viewport_size: ViewportSize) -> Page:
+        return await browser.new_page(no_viewport=True, viewport=viewport_size)
 
 
 class BrowserService:
     def __init__(self):
         self.playwright: Optional[Playwright] = None
-        self.browser: Optional[Browser] = None
+        self.browser: Optional[Union[Browser, BrowserContext]] = None
 
         self._launched = False
         self._launch_config: Optional[BrowserLaunchConfig] = None
@@ -62,7 +67,7 @@ class BrowserService:
 
     async def open_page(self, url: str, width: int, height: int, is_file: bool = False):
         if self.browser:
-            page = await self.browser.new_page(no_viewport=True, viewport=ViewportSize(width=width, height=height))
+            page = await self._launch_config.new_page(self.browser, ViewportSize(width=width, height=height))
 
             if self._launch_config.debug:
                 page.on('console', self.__console)
