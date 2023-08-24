@@ -78,7 +78,7 @@ class CQHTTPForwardMessage:
         chain = Chain()
         chain.raw_chain = self.node
 
-        async with self.data.bot.processing_context(chain):
+        async with self.data.bot.processing_context(chain, self.data.factory_name):
             callback = CQHttpMessageCallback(
                 self.data.instance,
                 await self.api.send_group_forward_msg(self.data.channel_id, self.node)

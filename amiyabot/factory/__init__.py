@@ -54,16 +54,16 @@ class BotHandlerFactory(FactoryCore):
         return self.get_with_plugins()
 
     @contextlib.asynccontextmanager
-    async def processing_context(self, reply: Chain):
+    async def processing_context(self, reply: Chain, factory_name: Optional[str] = None):
         # todo 生命周期 - message_before_send
         for method in self.process_message_before_send:
-            reply = await method(reply, self.factory_name, self.instance) or reply
+            reply = await method(reply, factory_name or self.factory_name, self.instance) or reply
 
         yield
 
         # todo 生命周期 - message_after_send
         for method in self.process_message_after_send:
-            await method(reply, self.factory_name, self.instance)
+            await method(reply, factory_name or self.factory_name, self.instance)
 
     def on_message(self,
                    group_id: Union[GroupConfig, str] = None,

@@ -2,7 +2,7 @@ import abc
 import asyncio
 import json
 
-from typing import Optional, Union
+from typing import Optional
 
 from amiyabot.adapters import BotAdapterProtocol, PACKAGE_RESULT
 from amiyabot.network.httpRequests import http_requests

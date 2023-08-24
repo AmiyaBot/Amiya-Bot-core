@@ -32,7 +32,6 @@ class FactoryCore:
         }
 
         self.plugins: Dict[str, FactoryCore] = dict()
-
         self.factory_name = 'default_factory'
 
     def get_container(self, key: str) -> Union[dict, list]:

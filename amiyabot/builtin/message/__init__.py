@@ -48,7 +48,7 @@ class EventList:
 
 class Message(MessageStructure):
     async def send(self, reply: T_Chain) -> SendReturn:
-        async with self.bot.processing_context(reply):
+        async with self.bot.processing_context(reply, self.factory_name):
             callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, is_sync=True)
 
         if not callbacks:
@@ -60,7 +60,8 @@ class Message(MessageStructure):
         if self.message_id:
             await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
 
-    async def wait(self, reply=None,
+    async def wait(self,
+                   reply=None,
                    force: bool = False,
                    max_time: int = 30,
                    data_filter: Callable = None,
