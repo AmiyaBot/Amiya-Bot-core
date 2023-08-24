@@ -2,7 +2,16 @@ import json
 from typing import Optional
 
 from amiyabot.adapters import MessageCallback
-from amiyabot.builtin.messageChain.element import CHAIN_LIST, Image, Html, Extend, At, Face, Text, Voice
+from amiyabot.builtin.messageChain.element import (
+    CHAIN_LIST,
+    Image,
+    Html,
+    Extend,
+    At,
+    Face,
+    Text,
+    Voice,
+)
 from amiyabot.network.httpRequests import http_requests
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
@@ -21,16 +30,8 @@ class KOOKMessageCallback(MessageCallback):
 async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
     chain_list = custom_chain or chain.chain
 
-    message = {
-        'type': 9,
-        'content': ''
-    }
-    card_message = {
-        'type': 'card',
-        'theme': 'none',
-        'size': 'lg',
-        'modules': []
-    }
+    message = {'type': 9, 'content': ''}
+    card_message = {'type': 'card', 'theme': 'none', 'size': 'lg', 'modules': []}
 
     use_card = len(chain_list) > 1 and len([n for n in chain_list if type(n) in [Image, Html, Extend]])
 
@@ -40,35 +41,19 @@ async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAI
                 card_message['modules'][-1]['text']['content'] += data
                 return
 
-            card_message['modules'].append({
-                'type': 'section',
-                'text': {
-                    'type': 'kmarkdown',
-                    'content': data
-                }
-            })
+            card_message['modules'].append({'type': 'section', 'text': {'type': 'kmarkdown', 'content': data}})
             return
 
         message['content'] += data
 
     async def make_image_message(data):
-        res = await http_requests.request(instance.base_url + '/asset/create',
-                                          data=data,
-                                          headers=instance.headers)
+        res = await http_requests.request(instance.base_url + '/asset/create', data=data, headers=instance.headers)
         if res:
             async with log.catch():
                 url = json.loads(res)['data']['url']
 
             if use_card:
-                card_message['modules'].append({
-                    'type': 'container',
-                    'elements': [
-                        {
-                            'type': 'image',
-                            'src': url
-                        }
-                    ]
-                })
+                card_message['modules'].append({'type': 'container', 'elements': [{'type': 'image', 'src': url}]})
             else:
                 message['type'] = 2
                 message['content'] = url

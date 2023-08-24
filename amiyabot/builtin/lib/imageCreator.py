@@ -36,7 +36,13 @@ class CharElem:
 
 
 class TextParser:
-    def __init__(self, text: str, max_seat: int, color: str = '#000000', font_size: int = FontStyle.font_size):
+    def __init__(
+        self,
+        text: str,
+        max_seat: int,
+        color: str = '#000000',
+        font_size: int = FontStyle.font_size,
+    ):
         self.font = ImageFont.truetype(FontStyle.file, font_size)
         self.text = text
         self.color = color
@@ -92,9 +98,7 @@ class TextParser:
     def __append_row(self, color, text, enter=True):
         if enter:
             self.line += 1
-        self.char_list.append(
-            CharElem(enter, color, text, *self.__font_seat(text))
-        )
+        self.char_list.append(CharElem(enter, color, text, *self.__font_seat(text)))
 
     def __font_seat(self, char):
         return self.font.getsize_multiline(char)
@@ -103,16 +107,18 @@ class TextParser:
 IMAGES_TYPE = List[Union[ImageElem, Dict[str, Any]]]
 
 
-def create_image(text: str = '',
-                 width: int = 0,
-                 height: int = None,
-                 padding: int = 10,
-                 max_seat: int = None,
-                 font_size: int = FontStyle.font_size,
-                 line_height: int = FontStyle.line_height,
-                 color: str = FontStyle.color,
-                 bgcolor: str = FontStyle.bgcolor,
-                 images: IMAGES_TYPE = None):
+def create_image(
+    text: str = '',
+    width: int = 0,
+    height: int = None,
+    padding: int = 10,
+    max_seat: int = None,
+    font_size: int = FontStyle.font_size,
+    line_height: int = FontStyle.line_height,
+    color: str = FontStyle.color,
+    bgcolor: str = FontStyle.bgcolor,
+    images: IMAGES_TYPE = None,
+):
     """
     文字转图片
 
@@ -151,7 +157,12 @@ def create_image(text: str = '',
     row = 0
     col = padding
     for _, item in enumerate(text_obj.char_list):
-        draw.text((col, padding + row * line_height), item.text, font=text_obj.font, fill=item.color)
+        draw.text(
+            (col, padding + row * line_height),
+            item.text,
+            font=text_obj.font,
+            fill=item.color,
+        )
         col += item.width
         if item.enter:
             row += 1

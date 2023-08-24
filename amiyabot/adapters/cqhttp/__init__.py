@@ -28,9 +28,7 @@ class CQHttpBotInstance(BotAdapterProtocol):
         super().__init__(appid, token)
 
         self.url = f'ws://{host}:{ws_port}/'
-        self.headers = {
-            'Authorization': f'Bearer {token}'
-        }
+        self.headers = {'Authorization': f'Bearer {token}'}
 
         self.connection: websockets.WebSocketClientProtocol = None
 
@@ -81,7 +79,11 @@ class CQHttpBotInstance(BotAdapterProtocol):
                 self.set_alive(False)
                 log.info(f'{mark} closed.')
 
-        except (websockets.ConnectionClosedOK, websockets.ConnectionClosedError, websockets.InvalidStatusCode) as e:
+        except (
+            websockets.ConnectionClosedOK,
+            websockets.ConnectionClosedError,
+            websockets.InvalidStatusCode,
+        ) as e:
             log.error(f'{mark} connection closed. {e}')
         except ConnectionRefusedError:
             log.error(f'cannot connect to cq-http {mark} server.')
@@ -97,18 +99,11 @@ class CQHttpBotInstance(BotAdapterProtocol):
                     request = await self.api.post('/send_msg', item)
                     res.append(request.origin)
                 else:
-                    await self.connection.send(json.dumps({
-                        'action': 'send_msg',
-                        'params': item
-                    }))
+                    await self.connection.send(json.dumps({'action': 'send_msg', 'params': item}))
 
         return [CQHttpMessageCallback(self, item) for item in res]
 
-    async def build_active_message_chain(self,
-                                         chain: Chain,
-                                         user_id: str,
-                                         channel_id: str,
-                                         direct_src_guild_id: str):
+    async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
 
         data.user_id = user_id

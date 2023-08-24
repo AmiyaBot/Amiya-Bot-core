@@ -84,9 +84,7 @@ class APIResponse:
             if self.method == self.RequestType.GET:
                 res = await http_requests.get(self.path, self.params, **self.kwargs)
             elif self.method == self.RequestType.POST:
-                res = await http_requests.post(
-                    self.path, self.params, self.headers, **self.kwargs
-                )
+                res = await http_requests.post(self.path, self.params, self.headers, **self.kwargs)
             else:
                 res = None
 
@@ -104,7 +102,7 @@ class BotAdapterAPI:
         self.instance = instance
         self.adapter_type = adapter_type
         self.token = instance.token
-        if adapter_type in [BotAdapterType.CQHTTP ,BotAdapterType.MIRAI]:
+        if adapter_type in [BotAdapterType.CQHTTP, BotAdapterType.MIRAI]:
             self.url = f'http://{instance.host}:{instance.http_port}'
         elif adapter_type == BotAdapterType.KOOK:
             self.url = 'https://www.kookapp.cn/api/v3'
@@ -115,9 +113,7 @@ class BotAdapterAPI:
             return self.instance.session
         return ''
 
-    async def get(
-        self, path: str, params: Optional[dict] = None, **kwargs
-    ) -> APIResponse:
+    async def get(self, path: str, params: Optional[dict] = None, **kwargs) -> APIResponse:
         """GET 请求
 
         Args:
@@ -252,15 +248,11 @@ class BotAdapterAPI:
                 return None
 
             target = int(target)
-            res = await self.get(
-                '/messageFromId', {'messageId': message_id, 'target': target}
-            )
+            res = await self.get('/messageFromId', {'messageId': message_id, 'target': target})
             if res.data and res.data['code'] == 0:
                 return await self.instance.package_message('', res.data['data'])
 
-    async def delete_message(
-        self, message_id: str, target_id: Optional[str] = None
-    ) -> Optional[bool]:
+    async def delete_message(self, message_id: str, target_id: Optional[str] = None) -> Optional[bool]:
         if self.adapter_type == BotAdapterType.CQHTTP:
             res = await self.post('/delete_msg', {'message_id': message_id})
             if res.data and res.data['status'] == 'ok':
@@ -349,9 +341,7 @@ class BotAdapterAPI:
                         group_list[i['id']] = i
                 return list(group_list.values())
 
-    async def get_group_member_list(
-        self, group_id: GroupId, nocache: bool = False
-    ) -> Optional[list]:
+    async def get_group_member_list(self, group_id: GroupId, nocache: bool = False) -> Optional[list]:
         """获取群成员列表
 
         Args:
@@ -389,9 +379,7 @@ class BotAdapterAPI:
         group_id = int(group_id)
 
         if self.adapter_type == BotAdapterType.CQHTTP:
-            res = await self.post(
-                '/get_group_member_list', {'group_id': group_id, 'no_cache': nocache}
-            )
+            res = await self.post('/get_group_member_list', {'group_id': group_id, 'no_cache': nocache})
             result_list = []
             if res.data and res.data['status'] == 'ok':
                 for i in res.data['data']:
@@ -428,15 +416,11 @@ class BotAdapterAPI:
                 return result_list
 
         if self.adapter_type == BotAdapterType.MIRAI:
-            res = await self.get(
-                '/latestMemberList' if nocache else '/memberList', {'target': group_id}
-            )
+            res = await self.get('/latestMemberList' if nocache else '/memberList', {'target': group_id})
             result_list = []
             if res.data and res.data['code'] == 0:
                 for i in res.data['data']:
-                    ires = await self.get(
-                        '/memberProfile', {'target': group_id, 'memberId': i['id']}
-                    )
+                    ires = await self.get('/memberProfile', {'target': group_id, 'memberId': i['id']})
                     if ires.data and ires.data['code'] == 0:
                         data = ires.data['data']
                         result_list.append(
@@ -506,9 +490,7 @@ class BotAdapterAPI:
                         if i['user_id'] == user_id:
                             result = i
             elif relation_type in [RelationType.FRIEND, RelationType.STRANGER]:
-                res = await self.post(
-                    '/get_stranger_info', {'user_id': user_id, 'no_cache': no_cache}
-                )
+                res = await self.post('/get_stranger_info', {'user_id': user_id, 'no_cache': no_cache})
                 if res.data and res.data['status'] == 'ok':
                     result = res.data['data']
                     result['gender'] = UserGender.from_str(result.pop('sex'))
@@ -574,9 +556,7 @@ class BotAdapterAPI:
 
     # 群操作
 
-    async def mute(
-        self, group_id: GroupId, user_id: UserId, time: int
-    ) -> Optional[bool]:
+    async def mute(self, group_id: GroupId, user_id: UserId, time: int) -> Optional[bool]:
         """禁言
 
         Args:
@@ -604,13 +584,9 @@ class BotAdapterAPI:
 
         if self.adapter_type == BotAdapterType.MIRAI:
             if time == 0:
-                res = await self.post(
-                    '/unmute', {'target': group_id, 'memberId': user_id}
-                )
+                res = await self.post('/unmute', {'target': group_id, 'memberId': user_id})
             else:
-                res = await self.post(
-                    '/mute', {'target': group_id, 'memberId': user_id, 'time': time}
-                )
+                res = await self.post('/mute', {'target': group_id, 'memberId': user_id, 'time': time})
             if res.data and res.data['code'] == 0:
                 return True
             return False
@@ -665,9 +641,7 @@ class BotAdapterAPI:
 
         return None
 
-    async def exit_group(
-        self, group_id: GroupId, is_dismiss: bool = False
-    ) -> Optional[bool]:
+    async def exit_group(self, group_id: GroupId, is_dismiss: bool = False) -> Optional[bool]:
         """退出群
 
         Args:
@@ -683,9 +657,7 @@ class BotAdapterAPI:
         group_id = int(group_id)
 
         if self.adapter_type == BotAdapterType.CQHTTP:
-            res = await self.post(
-                '/set_group_leave', {'group_id': group_id, 'is_dismiss': is_dismiss}
-            )
+            res = await self.post('/set_group_leave', {'group_id': group_id, 'is_dismiss': is_dismiss})
             if res.data and res.data['status'] == 'ok':
                 return True
             return False
@@ -714,9 +686,7 @@ class BotAdapterAPI:
         group_id = int(group_id)
 
         if self.adapter_type == BotAdapterType.CQHTTP:
-            res = await self.post(
-                '/set_group_whole_ban', {'group_id': group_id, 'enable': enable}
-            )
+            res = await self.post('/set_group_whole_ban', {'group_id': group_id, 'enable': enable})
             if res.data and res.data['status'] == 'ok':
                 return True
             return False
@@ -732,9 +702,7 @@ class BotAdapterAPI:
 
         return None
 
-    async def set_essence_msg(
-        self, message_id: MessageId, group_id: Optional[GroupId] = None
-    ) -> Optional[bool]:
+    async def set_essence_msg(self, message_id: MessageId, group_id: Optional[GroupId] = None) -> Optional[bool]:
         """设置精华消息
 
         Args:
@@ -759,9 +727,7 @@ class BotAdapterAPI:
             if not group_id:
                 return False
             group_id = int(group_id)
-            res = await self.post(
-                '/recall', {'target': group_id, 'messageId': message_id}
-            )
+            res = await self.post('/recall', {'target': group_id, 'messageId': message_id})
             if res.data and res.data['code'] == 0:
                 return True
             return False
@@ -787,9 +753,7 @@ class BotAdapterAPI:
         return None
 
     @abc.abstractmethod
-    async def send_group_notice(
-        self, group_id: GroupId, content: str, **kwargs
-    ) -> Optional[bool]:
+    async def send_group_notice(self, group_id: GroupId, content: str, **kwargs) -> Optional[bool]:
         raise NotImplementedError
 
     @abc.abstractmethod

@@ -15,52 +15,30 @@ async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
         for item in chain_list:
             # At
             if isinstance(item, At):
-                chain_data.append({
-                    'type': 'text',
-                    'data': f'@{chain.data.nickname}'
-                })
+                chain_data.append({'type': 'text', 'data': f'@{chain.data.nickname}'})
 
             # Face
             if isinstance(item, Face):
-                chain_data.append({
-                    'type': 'text',
-                    'data': f'[{item.face_id}]'
-                })
+                chain_data.append({'type': 'text', 'data': f'[{item.face_id}]'})
 
             # Text
             if isinstance(item, Text):
-                chain_data.append({
-                    'type': 'text',
-                    'data': item.content
-                })
+                chain_data.append({'type': 'text', 'data': item.content})
 
             # Image
             if isinstance(item, Image):
                 img = await item.get()
-                chain_data.append({
-                    'type': 'image',
-                    'data': await append_image(img)
-                })
+                chain_data.append({'type': 'image', 'data': await append_image(img)})
 
             # Voice
             if isinstance(item, Voice):
-                voice_list.append(send_msg(
-                    [
-                        {
-                            'type': 'text',
-                            'data': '[voice]'
-                        }
-                    ]
-                ))
+                voice_list.append(send_msg([{'type': 'text', 'data': '[voice]'}]))
 
             # Html
             if isinstance(item, Html):
                 result = await item.create_html_image()
                 if result:
-                    chain_data.append({
-                        'type': 'image',
-                        'data': await append_image(result)
-                    })
+                    chain_data.append({'type': 'image', 'data': await append_image(result)})
                 else:
                     log.warning('html convert fail.')
 
@@ -74,7 +52,4 @@ async def append_image(img: Union[bytes, str]):
 
 
 def send_msg(chain_data: list):
-    return json.dumps({
-        'event': 'message',
-        'event_data': chain_data
-    }, ensure_ascii=False)
+    return json.dumps({'event': 'message', 'event_data': chain_data}, ensure_ascii=False)

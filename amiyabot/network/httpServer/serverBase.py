@@ -42,47 +42,34 @@ class ServerMeta(type):
 
 
 LOG_CONFIG = {
+    'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'access': {
             '()': 'uvicorn.logging.AccessFormatter',
-            'fmt': '%(client_addr)s - %(request_line)s %(status_code)s'
+            'fmt': '%(client_addr)s - %(request_line)s %(status_code)s',
         },
         'default': {
             '()': 'uvicorn.logging.DefaultFormatter',
             'fmt': '%(message)s',
-            'use_colors': None
-        }
+            'use_colors': None,
+        },
     },
     'handlers': {
         'access': {
             'class': 'logging.StreamHandler',
             'formatter': 'access',
-            'stream': 'ext://amiyabot.network.httpServer.ServerLog'
+            'stream': 'ext://amiyabot.network.httpServer.ServerLog',
         },
         'default': {
             'class': 'logging.StreamHandler',
             'formatter': 'default',
-            'stream': 'ext://amiyabot.network.httpServer.ServerLog'
-        }
+            'stream': 'ext://amiyabot.network.httpServer.ServerLog',
+        },
     },
     'loggers': {
-        'uvicorn': {
-            'handlers': [
-                'default'
-            ],
-            'level': 'INFO'
-        },
-        'uvicorn.access': {
-            'handlers': [
-                'access'
-            ],
-            'level': 'INFO',
-            'propagate': False
-        },
-        'uvicorn.error': {
-            'level': 'INFO'
-        }
+        'uvicorn': {'handlers': ['default'], 'level': 'INFO'},
+        'uvicorn.access': {'handlers': ['access'], 'level': 'INFO', 'propagate': False},
+        'uvicorn.error': {'level': 'INFO'},
     },
-    'version': 1
 }

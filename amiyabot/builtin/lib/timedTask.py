@@ -66,11 +66,13 @@ class TasksControl(metaclass=Singleton):
         except KeyboardInterrupt:
             pass
 
-    def timed_task(self,
-                   each: int = None,
-                   custom: CUSTOM_CHECK = None,
-                   tag: str = '__default__',
-                   sub_tag: str = '__sub__'):
+    def timed_task(
+        self,
+        each: int = None,
+        custom: CUSTOM_CHECK = None,
+        tag: str = '__default__',
+        sub_tag: str = '__sub__',
+    ):
         """
         注册定时任务
         非严格定时，因为执行协程会产生切换的耗时。所以此注册器定义的循环时间为"约等于"。

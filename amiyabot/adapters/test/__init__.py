@@ -28,8 +28,10 @@ class TestInstance(BotAdapterProtocol):
 
         @self.server.app.on_event('startup')
         async def startup():
-            log.info('The test service has been started. '
-                     'Please go to https://console.amiyabot.com/#/test Connect and start testing.')
+            log.info(
+                'The test service has been started. '
+                'Please go to https://console.amiyabot.com/#/test Connect and start testing.'
+            )
 
     def __str__(self):
         return 'Testing'
@@ -40,11 +42,7 @@ class TestInstance(BotAdapterProtocol):
     async def connect(self, private: bool, handler: HANDLER_TYPE):
         await self.server.run(handler)
 
-    async def build_active_message_chain(self,
-                                         chain: Chain,
-                                         user_id: str,
-                                         channel_id: str,
-                                         direct_src_guild_id: str):
+    async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         return chain
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):

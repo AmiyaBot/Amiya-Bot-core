@@ -28,41 +28,21 @@ async def build_message_send(chain: Chain, chain_only: bool = False):
     cq_codes = []
 
     if chain.reference and chain.data and chain.data.message_id:
-        chain_data.append({
-            'type': 'reply',
-            'data': {
-                'id': chain.data.message_id
-            }
-        })
+        chain_data.append({'type': 'reply', 'data': {'id': chain.data.message_id}})
 
     if chain_list:
         for item in chain_list:
             # At
             if isinstance(item, At):
-                chain_data.append({
-                    'type': 'at',
-                    'data': {
-                        'qq': item.target or chain.data.user_id
-                    }
-                })
+                chain_data.append({'type': 'at', 'data': {'qq': item.target or chain.data.user_id}})
 
             # Face
             if isinstance(item, Face):
-                chain_data.append({
-                    'type': 'face',
-                    'data': {
-                        'id': item.face_id
-                    }
-                })
+                chain_data.append({'type': 'face', 'data': {'id': item.face_id}})
 
             # Text
             if isinstance(item, Text):
-                chain_data.append({
-                    'type': 'text',
-                    'data': {
-                        'text': item.content
-                    }
-                })
+                chain_data.append({'type': 'text', 'data': {'text': item.content}})
 
             # Image
             if isinstance(item, Image):
@@ -101,34 +81,20 @@ async def build_message_send(chain: Chain, chain_only: bool = False):
 
 async def append_image(img: Union[bytes, str]):
     if isinstance(img, bytes):
-        data = {
-            'file': 'base64://' + base64.b64encode(img).decode()
-        }
+        data = {'file': 'base64://' + base64.b64encode(img).decode()}
     elif is_valid_url(img):
-        data = {
-            'url': img
-        }
+        data = {'url': img}
     else:
-        data = {
-            'file': img
-        }
+        data = {'file': img}
 
-    return {
-        'type': 'image',
-        'data': data
-    }
+    return {'type': 'image', 'data': data}
 
 
 async def append_voice(file: str):
     if os.path.exists(file):
         file = 'base64://' + base64.b64encode(await silkcoder.async_encode(file, ios_adaptive=True)).decode()
 
-    return {
-        'type': 'record',
-        'data': {
-            'file': file
-        }
-    }
+    return {'type': 'record', 'data': {'file': file}}
 
 
 def send_msg(chain: Chain, chain_data: Union[str, list]):
@@ -136,5 +102,5 @@ def send_msg(chain: Chain, chain_data: Union[str, list]):
         'message_type': chain.data.message_type,
         'user_id': chain.data.user_id,
         'group_id': chain.data.channel_id,
-        'message': chain_data
+        'message': chain_data,
     }

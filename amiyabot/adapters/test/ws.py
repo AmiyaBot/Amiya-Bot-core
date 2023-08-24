@@ -27,7 +27,6 @@ class TestServer(HttpServer):
     def __create_websocket_api(self):
         @self.app.websocket(f'/{self.appid}')
         async def websocket_endpoint(websocket: WebSocket):
-
             await websocket.accept()
 
             self.clients.append(websocket)
@@ -35,9 +34,7 @@ class TestServer(HttpServer):
             while True:
                 try:
                     asyncio.create_task(
-                        self.__handle_message(
-                            ReceivedMessage(await websocket.receive_text(), websocket)
-                        )
+                        self.__handle_message(ReceivedMessage(await websocket.receive_text(), websocket))
                     )
                 except WebSocketDisconnect:
                     break

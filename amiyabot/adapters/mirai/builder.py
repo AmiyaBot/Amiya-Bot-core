@@ -28,11 +28,13 @@ class MiraiMessageCallback(MessageCallback):
         await self.instance.recall_message(response['messageId'], self.target_id)
 
 
-async def build_message_send(api: MiraiAPI,
-                             chain: Chain,
-                             custom_chain: CHAIN_LIST = None,
-                             chain_only: bool = False,
-                             use_http: bool = False):
+async def build_message_send(
+    api: MiraiAPI,
+    chain: Chain,
+    custom_chain: CHAIN_LIST = None,
+    chain_only: bool = False,
+    use_http: bool = False,
+):
     chain_list = custom_chain or chain.chain
     chain_data = []
     voice_list = []
@@ -43,44 +45,34 @@ async def build_message_send(api: MiraiAPI,
         for item in chain_list:
             # At
             if isinstance(item, At):
-                chain_data.append({
-                    'type': 'At',
-                    'target': item.target or chain.data.user_id
-                })
+                chain_data.append({'type': 'At', 'target': item.target or chain.data.user_id})
 
             # Face
             if isinstance(item, Face):
-                chain_data.append({
-                    'type': 'Face',
-                    'faceId': item.face_id
-                })
+                chain_data.append({'type': 'Face', 'faceId': item.face_id})
 
             # Text
             if isinstance(item, Text):
-                chain_data.append({
-                    'type': 'Plain',
-                    'text': item.content
-                })
+                chain_data.append({'type': 'Plain', 'text': item.content})
 
             # Image
             if isinstance(item, Image):
                 target = await item.get()
                 if is_valid_url(target):
-                    chain_data.append({
-                        'type': 'Image',
-                        'url': target
-                    })
+                    chain_data.append({'type': 'Image', 'url': target})
                 else:
-                    chain_data.append({
-                        'type': 'Image',
-                        'imageId': await get_image_id(api, target, chain.data.message_type)
-                    })
+                    chain_data.append(
+                        {
+                            'type': 'Image',
+                            'imageId': await get_image_id(api, target, chain.data.message_type),
+                        }
+                    )
 
             # Voice
             if isinstance(item, Voice):
                 voice_item = {
                     'type': 'Voice',
-                    'voiceId': await get_voice_id(api, item.file, chain.data.message_type)
+                    'voiceId': await get_voice_id(api, item.file, chain.data.message_type),
                 }
                 if chain_only:
                     voice_list.append(voice_item)
@@ -91,10 +83,12 @@ async def build_message_send(api: MiraiAPI,
             if isinstance(item, Html):
                 result = await item.create_html_image()
                 if result:
-                    chain_data.append({
-                        'type': 'Image',
-                        'imageId': await get_image_id(api, result, chain.data.message_type)
-                    })
+                    chain_data.append(
+                        {
+                            'type': 'Image',
+                            'imageId': await get_image_id(api, result, chain.data.message_type),
+                        }
+                    )
                 else:
                     log.warning('html convert fail.')
 
@@ -123,23 +117,25 @@ async def get_voice_id(http: MiraiAPI, path: str, msg_type: str):
     return await http.upload_voice(await silkcoder.async_encode(path, ios_adaptive=True), msg_type)
 
 
-def select_type(chain: Chain, session: str, chain_data: List[dict], payload_builder: Type[MiraiPostPayload]):
+def select_type(
+    chain: Chain,
+    session: str,
+    chain_data: List[dict],
+    payload_builder: Type[MiraiPostPayload],
+):
     reply = None
 
     if chain_data:
         if chain.data.message_type == 'group':
-            reply = payload_builder.group_message(session,
-                                                  chain.data.channel_id,
-                                                  chain_data,
-                                                  quote=chain.data.message_id if chain.reference else None)
+            reply = payload_builder.group_message(
+                session,
+                chain.data.channel_id,
+                chain_data,
+                quote=chain.data.message_id if chain.reference else None,
+            )
         if chain.data.message_type == 'temp':
-            reply = payload_builder.temp_message(session,
-                                                 chain.data.user_id,
-                                                 chain.data.channel_id,
-                                                 chain_data)
+            reply = payload_builder.temp_message(session, chain.data.user_id, chain.data.channel_id, chain_data)
         if chain.data.message_type == 'friend':
-            reply = payload_builder.friend_message(session,
-                                                   chain.data.user_id,
-                                                   chain_data)
+            reply = payload_builder.friend_message(session, chain.data.user_id, chain_data)
 
     return reply

@@ -21,7 +21,7 @@ class MysqlConfig:
             'host': self.host,
             'port': self.port,
             'user': self.user,
-            'password': self.password
+            'password': self.password,
         }
 
 
@@ -39,11 +39,14 @@ class ModelClass(Model):
             cls.insert_many(rows).execute()
 
     @classmethod
-    def insert_or_update(cls, insert: dict, update: dict = None, conflict_target: list = None, preserve: list = None):
-        conflict = {
-            'update': update,
-            'preserve': preserve
-        }
+    def insert_or_update(
+        cls,
+        insert: dict,
+        update: dict = None,
+        conflict_target: list = None,
+        preserve: list = None,
+    ):
+        conflict = {'update': update, 'preserve': preserve}
         if isinstance(cls._meta.database, ReconnectMySQLDatabase):
             conflict['conflict_target'] = conflict_target
 
@@ -76,15 +79,11 @@ def table(cls: ModelClass) -> Any:
 
     # 取 AB 差集增加字段
     for f in set(model_columns) - set(table_columns):
-        migrate_list.append(
-            migrator.add_column(table_name, f, getattr(cls, f))
-        )
+        migrate_list.append(migrator.add_column(table_name, f, getattr(cls, f)))
 
     # 取 BA 差集删除字段
     for f in set(table_columns) - set(model_columns):
-        migrate_list.append(
-            migrator.drop_column(table_name, f)
-        )
+        migrate_list.append(migrator.drop_column(table_name, f))
 
     if migrate_list:
         migrate(*tuple(migrate_list))
@@ -106,15 +105,11 @@ def connect_database(database: str, is_mysql: bool = False, config: MysqlConfig 
         return ReconnectMySQLDatabase(database, **config.dict())
 
     create_dir(database, is_file=True)
-    return SqliteDatabase(database, pragmas={
-        'timeout': 30
-    })
+    return SqliteDatabase(database, pragmas={'timeout': 30})
 
 
 def convert_model(model, select_model: peewee.Select = None) -> dict:
-    data = {
-        **model_to_dict(model)
-    }
+    data = {**model_to_dict(model)}
     if select_model:
         for field in select_model._returning:
             if field.name not in data:
@@ -131,7 +126,7 @@ def select_for_paginate(select: peewee.ModelSelect, page: int, page_size: int):
     return {
         'list': query_to_list(
             select.objects().paginate(page=page, paginate_by=page_size),
-            select_model=select
+            select_model=select,
         ),
-        'total': select.count()
+        'total': select.count(),
     }

@@ -12,7 +12,7 @@ from playwright.async_api import (
     ViewportSize,
     Playwright,
     ConsoleMessage,
-    Error as PageError
+    Error as PageError,
 )
 
 log = LoggerManager('Browser')

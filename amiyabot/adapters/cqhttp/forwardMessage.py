@@ -14,17 +14,14 @@ class CQHTTPForwardMessage:
         self.api: CQHttpAPI = data.instance.api
         self.node = []
 
-    async def add_message(self,
-                          chain: Union[Chain, list],
-                          user_id: int = None,
-                          nickname: str = None):
+    async def add_message(self, chain: Union[Chain, list], user_id: int = None, nickname: str = None):
         node = {
             'type': 'node',
             'data': {
                 'uin': user_id,
                 'name': nickname,
-                'content': chain if isinstance(chain, list) else []
-            }
+                'content': chain if isinstance(chain, list) else [],
+            },
         }
 
         if isinstance(chain, Chain):
@@ -43,36 +40,17 @@ class CQHTTPForwardMessage:
             self.node.append(copy.deepcopy(node))
 
             for _ in voice_list:
-                node['data']['content'] = [
-                    {
-                        'type': 'text',
-                        'data': {
-                            'text': '[语音]'
-                        }
-                    }
-                ]
+                node['data']['content'] = [{'type': 'text', 'data': {'text': '[语音]'}}]
                 self.node.append(copy.deepcopy(node))
 
             for item in cq_codes:
-                node['data']['content'] = [
-                    {
-                        'type': 'text',
-                        'data': {
-                            'text': item['message']
-                        }
-                    }
-                ]
+                node['data']['content'] = [{'type': 'text', 'data': {'text': item['message']}}]
                 self.node.append(copy.deepcopy(node))
         else:
             self.node.append(node)
 
     async def add_message_by_id(self, message_id: int):
-        self.node.append({
-            'type': 'node',
-            'data': {
-                'id': message_id
-            }
-        })
+        self.node.append({'type': 'node', 'data': {'id': message_id}})
 
     async def send(self):
         chain = Chain()
@@ -81,7 +59,7 @@ class CQHTTPForwardMessage:
         async with self.data.bot.processing_context(chain, self.data.factory_name):
             callback = CQHttpMessageCallback(
                 self.data.instance,
-                await self.api.send_group_forward_msg(self.data.channel_id, self.node)
+                await self.api.send_group_forward_msg(self.data.channel_id, self.node),
             )
 
         return callback

@@ -117,12 +117,7 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem], wai
     candidate: List[Tuple[Verify, ChoiceRes]] = []
 
     if waiter:
-        candidate.append(
-            (
-                Verify(True, waiter.level),
-                waiter
-            )
-        )
+        candidate.append((Verify(True, waiter.level), waiter))
 
     for item in handlers:
         check = await item.verify(data)

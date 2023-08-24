@@ -42,6 +42,4 @@ def text_convert(message: Message, text: str, original: str):
 
 
 def cut_by_jieba(text: str):
-    return jieba.lcut(
-        text.lower().replace(' ', '')
-    )
+    return jieba.lcut(text.lower().replace(' ', ''))

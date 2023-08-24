@@ -69,7 +69,7 @@ class MessageStructure:
                 'admin': '(admin)' if self.is_admin else '',
                 'direct': '(direct)' if self.is_direct else '',
                 'nickname': self.nickname,
-                'message': text + face + image
+                'message': text + face + image,
             }
         )
 
@@ -82,22 +82,26 @@ class MessageStructure:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def wait(self,
-                   reply: T_Chain = None,
-                   force: bool = False,
-                   max_time: int = 30,
-                   data_filter: Callable = None,
-                   level: int = 0):
+    async def wait(
+        self,
+        reply: T_Chain = None,
+        force: bool = False,
+        max_time: int = 30,
+        data_filter: Callable = None,
+        level: int = 0,
+    ):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def wait_channel(self,
-                           reply: T_Chain = None,
-                           force: bool = False,
-                           clean: bool = True,
-                           max_time: int = 30,
-                           data_filter: Callable = None,
-                           level: int = 0):
+    async def wait_channel(
+        self,
+        reply: T_Chain = None,
+        force: bool = False,
+        clean: bool = True,
+        max_time: int = 30,
+        data_filter: Callable = None,
+        level: int = 0,
+    ):
         raise NotImplementedError
 
 

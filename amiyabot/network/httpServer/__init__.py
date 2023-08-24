@@ -11,20 +11,18 @@ from .serverBase import *
 
 
 class HttpServer(metaclass=ServerMeta):
-    def __init__(self,
-                 host: str,
-                 port: int,
-                 title: str = 'AmiyaBot',
-                 description: str = '<a href="https://www.amiyabot.com" target="__blank">https://www.amiyabot.com</a>',
-                 auth_key: str = None,
-                 fastapi_options: dict = None,
-                 uvicorn_options: dict = None):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        title: str = 'AmiyaBot',
+        description: str = '<a href="https://www.amiyabot.com" target="__blank">https://www.amiyabot.com</a>',
+        auth_key: str = None,
+        fastapi_options: dict = None,
+        uvicorn_options: dict = None,
+    ):
         self.app = FastAPI(title=title, description=description, **(fastapi_options or {}))
-        self.server = self.__load_server(options={
-            'host': host,
-            'port': port,
-            **(uvicorn_options or {})
-        })
+        self.server = self.__load_server(options={'host': host, 'port': port, **(uvicorn_options or {})})
         self.router = InferringRouter()
         self.controller = cbv(self.router)
 
@@ -41,7 +39,7 @@ class HttpServer(metaclass=ServerMeta):
                 '/favicon.ico',
                 '/openapi.json',
                 *self.__allow_path,
-                *self.__static_folders
+                *self.__static_folders,
             ]:
                 if not request.scope['path'].startswith(allow_path):
                     if auth_key and request.headers.get('authKey') != auth_key:
@@ -62,16 +60,15 @@ class HttpServer(metaclass=ServerMeta):
         self.__allow_path += paths
 
     def __load_server(self, options):
-        return uvicorn.Server(
-            config=uvicorn.Config(
-                self.app,
-                loop='asyncio',
-                log_config=LOG_CONFIG,
-                **options
-            )
-        )
+        return uvicorn.Server(config=uvicorn.Config(self.app, loop='asyncio', log_config=LOG_CONFIG, **options))
 
-    def route(self, router_path: str = None, method: str = 'post', allow_unauthorized: bool = False, **kwargs):
+    def route(
+        self,
+        router_path: str = None,
+        method: str = 'post',
+        allow_unauthorized: bool = False,
+        **kwargs,
+    ):
         def decorator(fn):
             nonlocal router_path
 
@@ -86,7 +83,7 @@ class HttpServer(metaclass=ServerMeta):
             arguments = {
                 'path': router_path,
                 'tags': [c_name.title()] if len(path) > 1 else ['Alone'],
-                **kwargs
+                **kwargs,
             }
 
             router_builder = getattr(self.router, method)
@@ -106,11 +103,7 @@ class HttpServer(metaclass=ServerMeta):
 
     @staticmethod
     def response(data: Any = None, code: int = 200, message: str = ''):
-        return {
-            'data': data,
-            'code': code,
-            'message': message
-        }
+        return {'data': data, 'code': code, 'message': message}
 
     async def serve(self):
         async with ServerLog.logger.catch('Http server Error:'):
@@ -119,7 +112,7 @@ class HttpServer(metaclass=ServerMeta):
                 allow_origins=['*'],
                 allow_methods=['*'],
                 allow_headers=['*'],
-                allow_credentials=True
+                allow_credentials=True,
             )
             self.app.include_router(self.router)
 

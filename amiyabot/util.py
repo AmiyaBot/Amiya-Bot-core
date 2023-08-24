@@ -127,7 +127,7 @@ def chinese_to_digits(text: str):
         '百': 100,
         '千': 1000,
         '万': 10000,
-        '亿': 100000000
+        '亿': 100000000,
     }
     start_symbol = ['一', '二', '两', '三', '四', '五', '六', '七', '八', '九', '十']
     more_symbol = list(character_relation.keys())

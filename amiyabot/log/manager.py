@@ -14,13 +14,14 @@ class UserLogger:
 
 
 class LoggerManager:
-    def __init__(self,
-                 name: str,
-                 level: int = None,
-                 formatter: str = '%(asctime)s [%(name)8s][%(levelname)8s]%(message)s',
-                 save_path: str = 'log',
-                 save_filename: str = 'running'):
-
+    def __init__(
+        self,
+        name: str,
+        level: int = None,
+        formatter: str = '%(asctime)s [%(name)8s][%(levelname)8s]%(message)s',
+        save_path: str = 'log',
+        save_filename: str = 'running',
+    ):
         self.handlers: Dict[str, logging.Logger] = {}
 
         self.name = name
@@ -45,7 +46,7 @@ class LoggerManager:
                 filename=f'{self.save_path}/{self.save_filename}.log',
                 encoding='utf-8',
                 maxBytes=512 * 1024,
-                backupCount=10
+                backupCount=10,
             )
             file_handler.setFormatter(formatter)
             file_handler.setLevel(self.level)
@@ -109,10 +110,12 @@ class LoggerManager:
         self.__handler.critical(self.__print_text(text))
 
     @asynccontextmanager
-    async def catch(self,
-                    desc: str = None,
-                    ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
-                    handler: Callable[[Exception], Awaitable[None]] = None):
+    async def catch(
+        self,
+        desc: str = None,
+        ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
+        handler: Callable[[Exception], Awaitable[None]] = None,
+    ):
         try:
             yield
         except Exception as err:
@@ -125,10 +128,12 @@ class LoggerManager:
                 await handler(err)
 
     @contextmanager
-    def sync_catch(self,
-                   desc: str = None,
-                   ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
-                   handler: Callable[[Exception], None] = None):
+    def sync_catch(
+        self,
+        desc: str = None,
+        ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
+        handler: Callable[[Exception], None] = None,
+    ):
         try:
             yield
         except Exception as err:

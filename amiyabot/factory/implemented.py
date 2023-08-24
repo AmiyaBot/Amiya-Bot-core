@@ -11,7 +11,7 @@ class MessageHandlerItemImpl(MessageHandlerItem):
         methods = {
             str: MessageMatch.check_str,
             Equal: MessageMatch.check_equal,
-            re.Pattern: MessageMatch.check_reg
+            re.Pattern: MessageMatch.check_reg,
         }
         t = type(obj)
 
@@ -90,7 +90,7 @@ class MessageHandlerItemImpl(MessageHandlerItem):
 
             elif isinstance(result, tuple):
                 contrast = bool(result[0]), int(bool(result[0])), None
-                result = (result + contrast[len(result):])[:3]
+                result = (result + contrast[len(result) :])[:3]
 
             return Verify(*result)
 
