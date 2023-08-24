@@ -15,7 +15,7 @@ from .waitEvent import (
     WaitEventOutOfFocus,
     ChannelWaitEvent,
     ChannelMessagesItem,
-    wait_events_bucket
+    wait_events_bucket,
 )
 
 SendReturn = Optional[MessageCallbackType]
@@ -41,14 +41,12 @@ class EventList:
         return iter(self.events)
 
     def append(self, instance, event_name, data):
-        self.events.append(
-            Event(instance, event_name, data)
-        )
+        self.events.append(Event(instance, event_name, data))
 
 
 class Message(MessageStructure):
     async def send(self, reply: T_Chain) -> SendReturn:
-        async with self.bot.processing_context(reply):
+        async with self.bot.processing_context(reply, self.factory_name):
             callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, is_sync=True)
 
         if not callbacks:
@@ -60,11 +58,14 @@ class Message(MessageStructure):
         if self.message_id:
             await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
 
-    async def wait(self, reply=None,
-                   force: bool = False,
-                   max_time: int = 30,
-                   data_filter: Callable = None,
-                   level: int = 0) -> WaitReturn:
+    async def wait(
+        self,
+        reply=None,
+        force: bool = False,
+        max_time: int = 30,
+        data_filter: Callable = None,
+        level: int = 0,
+    ) -> WaitReturn:
         if self.is_direct:
             target_id = f'{self.instance.appid}_{self.guild_id}_{self.user_id}'
         else:
@@ -94,13 +95,15 @@ class Message(MessageStructure):
 
         return None
 
-    async def wait_channel(self,
-                           reply=None,
-                           force: bool = False,
-                           clean: bool = True,
-                           max_time: int = 30,
-                           data_filter: Callable = None,
-                           level: int = 0) -> WaitChannelReturn:
+    async def wait_channel(
+        self,
+        reply=None,
+        force: bool = False,
+        clean: bool = True,
+        max_time: int = 30,
+        data_filter: Callable = None,
+        level: int = 0,
+    ) -> WaitChannelReturn:
         if self.is_direct:
             raise WaitEventException('direct message not support "wait_channel"')
 
@@ -163,7 +166,11 @@ class MessageMatch:
     def check_reg(data: Message, reg: re.Pattern, level: int = None) -> MatchReturn:
         r = re.search(reg, data.text)
         if r:
-            return True, level if level is not None else (r.re.groups or 1), list(r.groups())
+            return (
+                True,
+                level if level is not None else (r.re.groups or 1),
+                list(r.groups()),
+            )
         return False, 0, None
 
 

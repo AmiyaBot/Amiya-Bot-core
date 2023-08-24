@@ -37,9 +37,7 @@ class HttpRequests:
                 log.error(e)
 
     @classmethod
-    async def get(
-        cls, interface: str, params: Optional[Union[dict, list]] = None, **kwargs
-    ):
+    async def get(cls, interface: str, params: Optional[Union[dict, list]] = None, **kwargs):
         return await cls.request(interface, 'get', params=params, **kwargs)
 
     @classmethod
@@ -73,9 +71,7 @@ class HttpRequests:
 
         data = cls.__build_form_data(payload)
 
-        return await cls.request(
-            interface, 'post', 'post-form', data=data, headers=_headers, **kwargs
-        )
+        return await cls.request(interface, 'post', 'post-form', data=data, headers=_headers, **kwargs)
 
     @classmethod
     async def post_upload(
@@ -92,9 +88,7 @@ class HttpRequests:
         data = cls.__build_form_data(payload)
         data.add_field(file_field, file, content_type='application/octet-stream')
 
-        return await cls.request(
-            interface, 'post', 'post-upload', data=data, headers=_headers, **kwargs
-        )
+        return await cls.request(interface, 'post', 'post-upload', data=data, headers=_headers, **kwargs)
 
     @classmethod
     def __build_form_data(cls, payload: Optional[dict]):

@@ -108,11 +108,7 @@ class MiraiBotInstance(BotAdapterProtocol):
 
         return [MiraiMessageCallback(chain.data.channel_id or chain.data.user_id, self, item) for item in res]
 
-    async def build_active_message_chain(self,
-                                         chain: Chain,
-                                         user_id: str,
-                                         channel_id: str,
-                                         direct_src_guild_id: str):
+    async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
 
         data.user_id = user_id

@@ -33,12 +33,7 @@ class TencentBotInstance(TencentAPI):
     def __create_heartbeat(self, websocket, interval: int, record: ShardsRecord):
         heartbeat_key = random_code(10)
         record.heartbeat_key = heartbeat_key
-        asyncio.create_task(
-            self.heartbeat_interval(websocket,
-                                    interval,
-                                    record.shards_index,
-                                    heartbeat_key)
-        )
+        asyncio.create_task(self.heartbeat_interval(websocket, interval, record.shards_index, heartbeat_key))
 
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
@@ -66,8 +61,10 @@ class TencentBotInstance(TencentAPI):
                 if payload.op == 0:
                     if payload.t == 'READY':
                         log.info(
-                            f'connected({sign}): %s(%s)' % (
-                                payload.d['user']['username'], 'private' if handler.private else 'public'
+                            f'connected({sign}): %s(%s)'
+                            % (
+                                payload.d['user']['username'],
+                                'private' if handler.private else 'public',
                             )
                         )
                         self.shards_record[shards_index].session_id = payload.d['session_id']
@@ -86,14 +83,16 @@ class TencentBotInstance(TencentAPI):
                         'properties': {
                             '$os': sys.platform,
                             '$browser': '',
-                            '$device': ''
-                        }
+                            '$device': '',
+                        },
                     }
                     await websocket.send(Payload(op=2, d=create_token).to_json())
 
-                    self.__create_heartbeat(websocket,
-                                            payload.d['heartbeat_interval'],
-                                            self.shards_record[shards_index])
+                    self.__create_heartbeat(
+                        websocket,
+                        payload.d['heartbeat_interval'],
+                        self.shards_record[shards_index],
+                    )
 
                 if payload.s:
                     self.shards_record[shards_index].last_s = payload.s
@@ -123,13 +122,11 @@ class TencentBotInstance(TencentAPI):
                     reconnect_token = {
                         'token': f'Bot {self.appid}.{self.token}',
                         'session_id': record.session_id,
-                        'seq': record.last_s
+                        'seq': record.last_s,
                     }
                     await websocket.send(Payload(op=6, d=reconnect_token).to_json())
 
-                    self.__create_heartbeat(websocket,
-                                            payload.d['heartbeat_interval'],
-                                            record)
+                    self.__create_heartbeat(websocket, payload.d['heartbeat_interval'], record)
 
                     record.reconnect_limit = 3
 
@@ -138,11 +135,13 @@ class TencentBotInstance(TencentAPI):
 
         record.reconnect_limit -= 1
 
-    async def heartbeat_interval(self,
-                                 websocket: websockets.WebSocketClientProtocol,
-                                 interval: int,
-                                 shards_index: int,
-                                 heartbeat_key: str):
+    async def heartbeat_interval(
+        self,
+        websocket: websockets.WebSocketClientProtocol,
+        interval: int,
+        shards_index: int,
+        heartbeat_key: str,
+    ):
         sec = 0
         while self.keep_run and self.shards_record[shards_index].heartbeat_key == heartbeat_key:
             await asyncio.sleep(1)
@@ -157,18 +156,18 @@ class TencentBotInstance(TencentAPI):
 
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                res.append(await self.post_message(chain.data.guild_id,
-                                                   chain.data.src_guild_id,
-                                                   chain.data.channel_id,
-                                                   req))
+                res.append(
+                    await self.post_message(
+                        chain.data.guild_id,
+                        chain.data.src_guild_id,
+                        chain.data.channel_id,
+                        req,
+                    )
+                )
 
         return [TencentMessageCallback(self, item) for item in res]
 
-    async def build_active_message_chain(self,
-                                         chain: Chain,
-                                         user_id: str,
-                                         channel_id: str,
-                                         direct_src_guild_id: str):
+    async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
 
         data.user_id = user_id

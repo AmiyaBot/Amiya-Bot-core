@@ -14,10 +14,12 @@ from .factoryCore import FactoryCore
 
 
 class BotHandlerFactory(FactoryCore):
-    def __init__(self,
-                 appid: Optional[str] = None,
-                 token: Optional[str] = None,
-                 adapter: Optional[Type[BotAdapterProtocol]] = None):
+    def __init__(
+        self,
+        appid: Optional[str] = None,
+        token: Optional[str] = None,
+        adapter: Optional[Type[BotAdapterProtocol]] = None,
+    ):
         super().__init__()
 
         # override FactoryCore.plugins
@@ -54,25 +56,27 @@ class BotHandlerFactory(FactoryCore):
         return self.get_with_plugins()
 
     @contextlib.asynccontextmanager
-    async def processing_context(self, reply: Chain):
+    async def processing_context(self, reply: Chain, factory_name: Optional[str] = None):
         # todo 生命周期 - message_before_send
         for method in self.process_message_before_send:
-            reply = await method(reply, self.factory_name, self.instance) or reply
+            reply = await method(reply, factory_name or self.factory_name, self.instance) or reply
 
         yield
 
         # todo 生命周期 - message_after_send
         for method in self.process_message_after_send:
-            await method(reply, self.factory_name, self.instance)
+            await method(reply, factory_name or self.factory_name, self.instance)
 
-    def on_message(self,
-                   group_id: Union[GroupConfig, str] = None,
-                   keywords: KeywordsType = None,
-                   verify: VerifyMethodType = None,
-                   check_prefix: CheckPrefixType = None,
-                   allow_direct: Optional[bool] = None,
-                   direct_only: bool = False,
-                   level: int = None):
+    def on_message(
+        self,
+        group_id: Union[GroupConfig, str] = None,
+        keywords: KeywordsType = None,
+        verify: VerifyMethodType = None,
+        check_prefix: CheckPrefixType = None,
+        allow_direct: Optional[bool] = None,
+        direct_only: bool = False,
+        level: int = None,
+    ):
         """
         注册消息处理器
 
@@ -87,14 +91,16 @@ class BotHandlerFactory(FactoryCore):
         """
 
         def register(func: FunctionType):
-            handler = MessageHandlerItemImpl(func,
-                                             group_id=str(group_id),
-                                             group_config=self.group_config.get(str(group_id)),
-                                             level=level,
-                                             direct_only=direct_only,
-                                             allow_direct=allow_direct,
-                                             check_prefix=check_prefix,
-                                             prefix_keywords=self.__get_prefix_keywords)
+            handler = MessageHandlerItemImpl(
+                func,
+                group_id=str(group_id),
+                group_config=self.group_config.get(str(group_id)),
+                level=level,
+                direct_only=direct_only,
+                allow_direct=allow_direct,
+                check_prefix=check_prefix,
+                prefix_keywords=self.__get_prefix_keywords,
+            )
             if verify:
                 handler.custom_verify = verify
             else:
@@ -159,7 +165,12 @@ class BotHandlerFactory(FactoryCore):
 
         return handler
 
-    def timed_task(self, each: int = None, custom: CUSTOM_CHECK = None, sub_tag: str = 'default_tag'):
+    def timed_task(
+        self,
+        each: int = None,
+        custom: CUSTOM_CHECK = None,
+        sub_tag: str = 'default_tag',
+    ):
         def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
             @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)
             async def _():
@@ -185,10 +196,12 @@ class BotHandlerFactory(FactoryCore):
 
 class BotInstance(BotHandlerFactory):
     @classmethod
-    def load_plugin(cls,
-                    plugin: Union[str, os.PathLike, "PluginInstance"],
-                    extract_plugin: bool = False,
-                    extract_plugin_dest: Optional[str] = None):
+    def load_plugin(
+        cls,
+        plugin: Union[str, os.PathLike, "PluginInstance"],
+        extract_plugin: bool = False,
+        extract_plugin_dest: Optional[str] = None,
+    ):
         if isinstance(plugin, str):
             dest = ''
 
@@ -222,10 +235,12 @@ class BotInstance(BotHandlerFactory):
 
         return instance
 
-    def install_plugin(self,
-                       plugin: Union[str, os.PathLike, "PluginInstance"],
-                       extract_plugin: bool = False,
-                       extract_plugin_dest: str = None):
+    def install_plugin(
+        self,
+        plugin: Union[str, os.PathLike, "PluginInstance"],
+        extract_plugin: bool = False,
+        extract_plugin_dest: str = None,
+    ):
         with log.sync_catch('plugin install error:'):
             instance = self.load_plugin(plugin, extract_plugin, extract_plugin_dest)
             if not instance:
@@ -280,14 +295,16 @@ class BotInstance(BotHandlerFactory):
 
 
 class PluginInstance(BotHandlerFactory):
-    def __init__(self,
-                 name: str,
-                 version: str,
-                 plugin_id: str,
-                 plugin_type: str = None,
-                 description: str = None,
-                 document: str = None,
-                 priority: int = 1):
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        plugin_id: str,
+        plugin_type: str = None,
+        description: str = None,
+        document: str = None,
+        priority: int = 1,
+    ):
         super().__init__()
 
         self.name = name
@@ -302,6 +319,8 @@ class PluginInstance(BotHandlerFactory):
 
         self.factory_name = plugin_id
 
-    def install(self): ...
+    def install(self):
+        ...
 
-    def uninstall(self): ...
+    def uninstall(self):
+        ...

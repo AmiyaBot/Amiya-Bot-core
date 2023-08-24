@@ -35,17 +35,14 @@ class BotAdapterProtocol:
     def set_alive(self, status: bool):
         self.alive = status
 
-    async def send_message(self,
-                           chain: Chain,
-                           user_id: str = '',
-                           channel_id: str = '',
-                           direct_src_guild_id: str = ''):
-        chain = await self.build_active_message_chain(
-            chain,
-            user_id,
-            channel_id,
-            direct_src_guild_id
-        )
+    async def send_message(
+        self,
+        chain: Chain,
+        user_id: str = '',
+        channel_id: str = '',
+        direct_src_guild_id: str = '',
+    ):
+        chain = await self.build_active_message_chain(chain, user_id, channel_id, direct_src_guild_id)
 
         async with self.bot.processing_context(chain):
             callback = await self.send_chain_message(chain, is_sync=True)
@@ -54,11 +51,15 @@ class BotAdapterProtocol:
 
     @asynccontextmanager
     async def get_websocket_connection(self, mark: str, url: str):
-        async with self.log.catch(f'websocket connection({mark}) error:',
-                                  ignore=[asyncio.CancelledError,
-                                          websockets.ConnectionClosedError,
-                                          websockets.ConnectionClosedOK,
-                                          ManualCloseException]):
+        async with self.log.catch(
+            f'websocket connection({mark}) error:',
+            ignore=[
+                asyncio.CancelledError,
+                websockets.ConnectionClosedError,
+                websockets.ConnectionClosedOK,
+                ManualCloseException,
+            ],
+        ):
             self.set_alive(True)
             async with websockets.connect(url) as websocket:
                 yield websocket
@@ -95,11 +96,9 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def build_active_message_chain(self,
-                                         chain: Chain,
-                                         user_id: str,
-                                         channel_id: str,
-                                         direct_src_guild_id: str) -> Chain:
+    async def build_active_message_chain(
+        self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str
+    ) -> Chain:
         """
         构建主动消息的 Chain 对象
 

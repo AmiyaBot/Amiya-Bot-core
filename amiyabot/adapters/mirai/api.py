@@ -55,9 +55,7 @@ class MiraiAPI(BotAdapterAPI):
             return res['voiceId']
 
     async def send_group_message(self, group_id: str, chain_list: list):
-        res = await self.post(
-            *HttpAdapter.group_message(self.session, group_id, chain_list)
-        )
+        res = await self.post(*HttpAdapter.group_message(self.session, group_id, chain_list))
         return res.origin
 
     async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:

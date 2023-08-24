@@ -21,9 +21,7 @@ class TencentAPI(BotAdapterProtocol):
         self.appid = appid
         self.token = token
 
-        self.headers = {
-            'Authorization': f'Bot {appid}.{token}'
-        }
+        self.headers = {'Authorization': f'Bot {appid}.{token}'}
 
     async def connect(self, private: bool, handler: HANDLER_TYPE):
         log.info(f'requesting appid {self.appid} gateway')
@@ -38,32 +36,23 @@ class TencentAPI(BotAdapterProtocol):
 
         gateway = GateWay(**resp)
 
-        log.info(f'appid {self.appid} gateway resp: shards {gateway.shards}, remaining %d/%d' % (
-            gateway.session_start_limit['remaining'],
-            gateway.session_start_limit['total']
-        ))
-
-        await self.create_connection(
-            ConnectionHandler(
-                private=private,
-                gateway=gateway,
-                message_handler=handler
+        log.info(
+            f'appid {self.appid} gateway resp: shards {gateway.shards}, remaining %d/%d'
+            % (
+                gateway.session_start_limit['remaining'],
+                gateway.session_start_limit['total'],
             )
         )
 
+        await self.create_connection(ConnectionHandler(private=private, gateway=gateway, message_handler=handler))
+
     async def get_request(self, url: str):
-        return self.__check_response(
-            await http_requests.get(get_url(url), headers=self.headers)
-        )
+        return self.__check_response(await http_requests.get(get_url(url), headers=self.headers))
 
     async def post_request(self, url: str, payload: dict = None, is_form_data: bool = False):
         if is_form_data:
-            return self.__check_response(
-                await http_requests.post_form(get_url(url), payload, headers=self.headers)
-            )
-        return self.__check_response(
-            await http_requests.post(get_url(url), payload, headers=self.headers)
-        )
+            return self.__check_response(await http_requests.post_form(get_url(url), payload, headers=self.headers))
+        return self.__check_response(await http_requests.post(get_url(url), payload, headers=self.headers))
 
     async def get_me(self):
         return await self.get_request(APIConstant.userMeURI)
@@ -80,10 +69,10 @@ class TencentAPI(BotAdapterProtocol):
     async def post_message(self, guild_id: str, src_guild_id: str, channel_id: str, req: MessageSendRequest):
         if req.direct:
             if not guild_id or not req.data['msg_id']:
-                create_direct = await self.post_request(APIConstant.userMeDMURI, {
-                    'recipient_id': req.user_id,
-                    'source_guild_id': src_guild_id
-                })
+                create_direct = await self.post_request(
+                    APIConstant.userMeDMURI,
+                    {'recipient_id': req.user_id, 'source_guild_id': src_guild_id},
+                )
                 guild_id = create_direct['guild_id']
 
             api = APIConstant.dmsURI.format(guild_id=guild_id)
@@ -108,7 +97,7 @@ class TencentAPI(BotAdapterProtocol):
         await http_requests.request(
             get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
             method='delete',
-            headers=self.headers
+            headers=self.headers,
         )
 
     @abc.abstractmethod

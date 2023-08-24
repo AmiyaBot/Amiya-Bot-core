@@ -10,21 +10,16 @@ class MiraiForwardMessage:
     def __init__(self, data: Message):
         self.data = data
         self.api: MiraiAPI = data.instance.api
-        self.node = {
-            'type': 'Forward',
-            'nodeList': []
-        }
+        self.node = {'type': 'Forward', 'nodeList': []}
 
-    async def add_message(self,
-                          chain: Union[Chain, dict],
-                          user_id: int = None,
-                          nickname: str = None,
-                          time: int = 0):
-        node = {
-            'time': time,
-            'senderId': user_id,
-            'senderName': nickname
-        }
+    async def add_message(
+        self,
+        chain: Union[Chain, dict],
+        user_id: int = None,
+        nickname: str = None,
+        time: int = 0,
+    ):
+        node = {'time': time, 'senderId': user_id, 'senderName': nickname}
 
         if isinstance(chain, Chain):
             if not chain.data:
@@ -42,37 +37,25 @@ class MiraiForwardMessage:
 
             self.node['nodeList'].append({**node, 'messageChain': chain_data})
             for _ in voice_list:
-                self.node['nodeList'].append({**node, 'messageChain': [
-                    {
-                        'type': 'Plain',
-                        'text': '[语音]'
-                    }
-                ]})
+                self.node['nodeList'].append({**node, 'messageChain': [{'type': 'Plain', 'text': '[语音]'}]})
         else:
             self.node['nodeList'].append({**node, 'messageChain': [chain]})
 
     async def add_message_by_id(self, message_id: int):
-        self.node['nodeList'].append({
-            'messageId': message_id
-        })
+        self.node['nodeList'].append({'messageId': message_id})
 
     async def add_message_by_ref(self, message_id: int, target: int):
-        self.node['nodeList'].append({
-            'messageRef': {
-                'messageId': message_id,
-                'target': target
-            }
-        })
+        self.node['nodeList'].append({'messageRef': {'messageId': message_id, 'target': target}})
 
     async def send(self):
         chain = Chain()
         chain.raw_chain = [self.node]
 
-        async with self.data.bot.processing_context(chain):
+        async with self.data.bot.processing_context(chain, self.data.factory_name):
             callback = MiraiMessageCallback(
                 self.data.channel_id,
                 self.data.instance,
-                await self.api.send_group_message(self.data.channel_id, [self.node])
+                await self.api.send_group_message(self.data.channel_id, [self.node]),
             )
 
         return callback

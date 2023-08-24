@@ -20,9 +20,7 @@ class KOOKBotInstance(BotAdapterProtocol):
 
         self.ws_url = ''
         self.base_url = 'https://www.kookapp.cn/api/v3'
-        self.headers = {
-            'Authorization': f'Bot {token}'
-        }
+        self.headers = {'Authorization': f'Bot {token}'}
         self.connection = None
 
         self.pong = 0
@@ -172,22 +170,16 @@ class KOOKBotInstance(BotAdapterProtocol):
         for item in [message]:
             payload = {
                 'target_id': chain.data.user_id if chain.data.is_direct else chain.data.channel_id,
-                **item
+                **item,
             }
             if chain.reference:
                 payload['quote'] = chain.data.message_id
 
-            callback.append(
-                KOOKMessageCallback(self, await self.post_request(url, payload))
-            )
+            callback.append(KOOKMessageCallback(self, await self.post_request(url, payload)))
 
         return callback
 
-    async def build_active_message_chain(self,
-                                         chain: Chain,
-                                         user_id: str,
-                                         channel_id: str,
-                                         direct_src_guild_id: str):
+    async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
 
         data.user_id = user_id

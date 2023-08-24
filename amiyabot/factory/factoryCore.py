@@ -9,15 +9,12 @@ class FactoryCore:
         self.__container: Dict[str, Union[dict, list]] = {
             # 触发词
             'prefix_keywords': list(),
-
             # 响应器
             'event_handlers': dict(),
             'message_handlers': list(),
             'exception_handlers': dict(),
-
             # 消息响应器 ID 字典
             'message_handler_id_map': dict(),
-
             # 生命周期
             'process_event_created': list(),
             'process_message_created': list(),
@@ -26,13 +23,11 @@ class FactoryCore:
             'process_message_before_send': list(),
             'process_message_after_send': list(),
             'process_message_after_handle': list(),
-
             # 组设置
             'group_config': dict(),
         }
 
         self.plugins: Dict[str, FactoryCore] = dict()
-
         self.factory_name = 'default_factory'
 
     def get_container(self, key: str) -> Union[dict, list]:
@@ -46,11 +41,7 @@ class FactoryCore:
         attr_type = type(self_attr)
 
         if attr_type is list:
-            return self_attr + list(
-                chain(
-                    *(getattr(plugin, attr_name) for _, plugin in self.plugins.items())
-                )
-            )
+            return self_attr + list(chain(*(getattr(plugin, attr_name) for _, plugin in self.plugins.items())))
 
         if attr_type is dict:
             value = {**self_attr}

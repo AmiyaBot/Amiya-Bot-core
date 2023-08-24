@@ -26,18 +26,18 @@ class CQHttpAPI(BotAdapterAPI):
         return data
 
     async def send_cq_code(self, user_id: str, group_id: str = '', code: str = ''):
-        await self.post('/send_msg', {
-            'message_type': 'group' if group_id else 'private',
-            'user_id': user_id,
-            'group_id': group_id,
-            'message': code
-        })
+        await self.post(
+            '/send_msg',
+            {
+                'message_type': 'group' if group_id else 'private',
+                'user_id': user_id,
+                'group_id': group_id,
+                'message': code,
+            },
+        )
 
     async def send_group_forward_msg(self, group_id: str, forward_node: list):
-        res = await self.post('/send_group_forward_msg', {
-            'group_id': group_id,
-            'messages': forward_node
-        })
+        res = await self.post('/send_group_forward_msg', {'group_id': group_id, 'messages': forward_node})
         return res.origin
 
     async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:

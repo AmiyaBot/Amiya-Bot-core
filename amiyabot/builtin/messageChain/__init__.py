@@ -21,11 +21,13 @@ class ChainConfig:
 
 
 class Chain:
-    def __init__(self,
-                 data: MessageStructure = None,
-                 at: bool = True,
-                 reference: bool = False,
-                 chain_builder: ChainBuilder = ChainBuilder()):
+    def __init__(
+        self,
+        data: MessageStructure = None,
+        at: bool = True,
+        reference: bool = False,
+        chain_builder: ChainBuilder = ChainBuilder(),
+    ):
         """
         创建回复消息
 
@@ -101,19 +103,25 @@ class Chain:
 
         return self
 
-    def text_image(self,
-                   text: str,
-                   images: IMAGES_TYPE = None,
-                   width: int = None,
-                   height: int = None,
-                   bgcolor: str = '#F5F5F5'):
-        return self.image(target=create_image(text,
-                                              images=(images or []),
-                                              width=width,
-                                              height=height,
-                                              padding=PADDING,
-                                              max_seat=MAX_SEAT,
-                                              bgcolor=bgcolor))
+    def text_image(
+        self,
+        text: str,
+        images: IMAGES_TYPE = None,
+        width: int = None,
+        height: int = None,
+        bgcolor: str = '#F5F5F5',
+    ):
+        return self.image(
+            target=create_image(
+                text,
+                images=(images or []),
+                width=width,
+                height=height,
+                padding=PADDING,
+                max_seat=MAX_SEAT,
+                bgcolor=bgcolor,
+            )
+        )
 
     def image(self, target: Union[str, bytes, List[Union[str, bytes]]] = None, url: str = None):
         if url:
@@ -136,29 +144,40 @@ class Chain:
         self.chain.append(Voice(file, title))
         return self
 
-    def markdown(self, content: str, render_time: int = DEFAULT_RENDER_TIME, is_dark: bool = False):
-        return self.html(ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
-                         width=50,
-                         height=50,
-                         data={'content': content},
-                         render_time=render_time)
-
-    def html(self,
-             path: str,
-             data: Union[dict, list] = None,
-             width: int = DEFAULT_WIDTH,
-             height: int = DEFAULT_HEIGHT,
-             is_template: bool = True,
-             render_time: int = DEFAULT_RENDER_TIME):
-        self.chain.append(Html(
-            url=path,
-            data=data,
-            width=width,
-            height=height,
-            is_file=is_template,
+    def markdown(
+        self,
+        content: str,
+        render_time: int = DEFAULT_RENDER_TIME,
+        is_dark: bool = False,
+    ):
+        return self.html(
+            ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
+            width=50,
+            height=50,
+            data={'content': content},
             render_time=render_time,
-            builder=self.builder
-        ))
+        )
+
+    def html(
+        self,
+        path: str,
+        data: Union[dict, list] = None,
+        width: int = DEFAULT_WIDTH,
+        height: int = DEFAULT_HEIGHT,
+        is_template: bool = True,
+        render_time: int = DEFAULT_RENDER_TIME,
+    ):
+        self.chain.append(
+            Html(
+                url=path,
+                data=data,
+                width=width,
+                height=height,
+                is_file=is_template,
+                render_time=render_time,
+                builder=self.builder,
+            )
+        )
         return self
 
     def extend(self, data: Any):

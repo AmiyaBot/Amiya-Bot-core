@@ -25,19 +25,31 @@ from amiyabot.handler.messageHandler import message_handler
 # lib
 from amiyabot.builtin.lib.eventBus import event_bus
 from amiyabot.builtin.lib.timedTask import tasks_control
-from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
+from amiyabot.builtin.lib.browserService import (
+    BrowserLaunchConfig,
+    basic_browser_service,
+)
 
 # message
-from amiyabot.builtin.message import Event, Message, Waiter, WaitEventCancel, WaitEventOutOfFocus, Equal
+from amiyabot.builtin.message import (
+    Event,
+    Message,
+    Waiter,
+    WaitEventCancel,
+    WaitEventOutOfFocus,
+    Equal,
+)
 from amiyabot.builtin.messageChain import Chain, ChainBuilder
 
 
 class AmiyaBot(BotInstance):
-    def __init__(self,
-                 appid: Optional[str] = None,
-                 token: Optional[str] = None,
-                 private: bool = False,
-                 adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance):
+    def __init__(
+        self,
+        appid: Optional[str] = None,
+        token: Optional[str] = None,
+        private: bool = False,
+        adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance,
+    ):
         super().__init__(appid, token, adapter)
 
         self.private = private
@@ -67,9 +79,11 @@ class AmiyaBot(BotInstance):
             if not data:
                 return False
 
-            async with log.catch(desc='handler error:',
-                                 ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
-                                 handler=self.__exception_handler(data)):
+            async with log.catch(
+                desc='handler error:',
+                ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
+                handler=self.__exception_handler(data),
+            ):
                 await message_handler(self, data)
 
     def __exception_handler(self, data: Union[Message, Event]):
@@ -91,9 +105,7 @@ class MultipleAccounts(BotInstance):
         super().__init__()
 
         self.__ready = False
-        self.__instances: typing.Dict[str, AmiyaBot] = {
-            str(item.appid): item for item in bots
-        }
+        self.__instances: typing.Dict[str, AmiyaBot] = {str(item.appid): item for item in bots}
         self.__keep_alive = True
 
         ServerEventHandler.on_shutdown.append(self.close)
@@ -118,18 +130,18 @@ class MultipleAccounts(BotInstance):
 
         if self.__instances:
             await asyncio.wait(
-                [
-                    self.append(item, start_up=False).start(launch_browser) for _, item in self.__instances.items()
-                ]
+                [self.append(item, start_up=False).start(launch_browser) for _, item in self.__instances.items()]
             )
 
         while self.__keep_alive:
             await asyncio.sleep(1)
 
-    def append(self,
-               item: AmiyaBot,
-               launch_browser: typing.Union[bool, BrowserLaunchConfig] = False,
-               start_up: bool = True):
+    def append(
+        self,
+        item: AmiyaBot,
+        launch_browser: typing.Union[bool, BrowserLaunchConfig] = False,
+        start_up: bool = True,
+    ):
         assert self.__ready, 'MultipleAccounts not started'
 
         item.combine_factory(self)

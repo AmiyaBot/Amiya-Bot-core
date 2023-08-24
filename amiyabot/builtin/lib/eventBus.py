@@ -10,21 +10,13 @@ EventName = str
 
 class EventBus:
     def __init__(self):
-        self.__subscriber: Dict[
-            EventName,
-            Dict[
-                SubscriberID,
-                Subscriber
-            ]
-        ] = dict()
+        self.__subscriber: Dict[EventName, Dict[SubscriberID, Subscriber]] = dict()
 
     def publish(self, event_name: EventName, data: Optional[Any] = None):
         if event_name in self.__subscriber:
             for _, method in self.__subscriber[event_name].items():
                 if inspect.iscoroutinefunction(method):
-                    asyncio.create_task(
-                        method(data)
-                    )
+                    asyncio.create_task(method(data))
                 else:
                     method(data)
 

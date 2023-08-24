@@ -74,10 +74,7 @@ class Html:
     async def create_html_image(self):
         async with log.catch('html convert error:'):
             page: Optional[Page] = await basic_browser_service.open_page(
-                self.url,
-                is_file=self.is_file,
-                width=self.width,
-                height=self.height
+                self.url, is_file=self.is_file, width=self.width, height=self.height
             )
 
             if not page:
@@ -90,7 +87,9 @@ class Html:
                     } else {
                         console.warn('Can not execute "window.init(data)" because this function does not exist.')
                     }
-                ''' % json.dumps(self.data)
+                ''' % json.dumps(
+                    self.data
+                )
 
                 await page.evaluate(injected)
 
@@ -125,8 +124,4 @@ class Extend:
         return self.data
 
 
-CHAIN_LIST = List[
-    Union[
-        At, Face, Text, Image, Voice, Html, Extend
-    ]
-]
+CHAIN_LIST = List[Union[At, Face, Text, Image, Voice, Html, Extend]]
