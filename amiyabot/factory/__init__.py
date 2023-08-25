@@ -6,7 +6,7 @@ import contextlib
 
 from amiyabot import log
 from amiyabot.util import temp_sys_path, extract_zip, import_module
-from amiyabot.builtin.lib.timedTask import TasksControl
+from amiyabot.builtin.lib.timedTask import TasksControl, Task
 
 from .factoryTyping import *
 from .implemented import MessageHandlerItemImpl
@@ -165,32 +165,36 @@ class BotHandlerFactory(FactoryCore):
 
         return handler
 
-    def timed_task(self, each: Optional[int] = None, sub_tag: str = 'default_tag', **kwargs):
+    def timed_task(
+        self, each: Optional[int] = None, sub_tag: str = 'default_tag', run_when_added: bool = False, **kwargs
+    ):
         """
         注册定时任务
 
-        :param each:    循环执行间隔时间，单位（秒），如果使用其他触发方式，请使用 kwargs 形式的 scheduler.add_job 参数
-        :param sub_tag: 子标签
-        :param kwargs:  scheduler.add_job 参数
+        :param each:           循环执行间隔时间，单位（秒），如果使用其他触发方式，请使用 kwargs 形式的 scheduler.add_job 参数
+        :param sub_tag:        子标签
+        :param run_when_added: 添加时立即运行任务
+        :param kwargs:         scheduler.add_job 参数
         :return:
         """
-        if each is not None and int(each) == 0:
-            raise ValueError('param "each" can not be "0"')
 
         def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
-            async def _task():
+            async def func():
                 async with log.catch('timed task error:'):
                     await task(self)
 
-            timed_task_options = self.get_container('timed_task_options')
+            timed_task_options = self.get_container('timed_tasks')
             timed_task_options.append(
-                {
-                    'task': _task,
-                    'each': each,
-                    'tag': self.factory_name,
-                    'sub_tag': f'{sub_tag}.key{len(timed_task_options)}',
-                    **kwargs,
-                }
+                Task(
+                    **{
+                        'func': func,
+                        'each': each,
+                        'tag': self.factory_name,
+                        'sub_tag': f'{sub_tag}.key{len(timed_task_options)}',
+                        'run_when_added': run_when_added,
+                        'kwargs': kwargs,
+                    }
+                )
             )
 
             return task
@@ -198,11 +202,11 @@ class BotHandlerFactory(FactoryCore):
         return register
 
     def remove_timed_task(self, sub_tag: str):
-        TasksControl.remove_tag(self.factory_name, sub_tag)
+        TasksControl.remove_task(self.factory_name, sub_tag)
 
     def run_timed_tasks(self):
-        for options in self.get_container('timed_task_options'):
-            TasksControl.add_timed_task(**options)
+        for task in self.get_container('timed_tasks'):
+            TasksControl.add_timed_task(task)
 
     def set_group_config(self, config: GroupConfig):
         self.get_container('group_config')[config.group_id] = config
@@ -285,7 +289,7 @@ class BotInstance(BotHandlerFactory):
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
 
-        TasksControl.remove_tag(plugin_id)
+        TasksControl.remove_task(plugin_id)
 
         self.plugins[plugin_id].uninstall()
 
