@@ -25,6 +25,8 @@ class FactoryCore:
             'process_message_after_handle': list(),
             # 组设置
             'group_config': dict(),
+            # 定时任务
+            'timed_task_options': list(),
         }
 
         self.plugins: Dict[str, FactoryCore] = dict()

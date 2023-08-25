@@ -24,7 +24,7 @@ from amiyabot.handler.messageHandler import message_handler
 
 # lib
 from amiyabot.builtin.lib.eventBus import event_bus
-from amiyabot.builtin.lib.timedTask import tasks_control
+from amiyabot.builtin.lib.timedTask import TasksControl
 from amiyabot.builtin.lib.browserService import (
     BrowserLaunchConfig,
     basic_browser_service,
@@ -60,11 +60,12 @@ class AmiyaBot(BotInstance):
         ServerEventHandler.on_shutdown.append(self.close)
 
     async def start(self, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False):
-        tasks_control.start()
+        TasksControl.start()
 
         if launch_browser:
             await basic_browser_service.launch(BrowserLaunchConfig() if launch_browser is True else launch_browser)
 
+        self.run_timed_tasks()
         await self.instance.connect(self.private, self.__message_handler)
 
     async def close(self):

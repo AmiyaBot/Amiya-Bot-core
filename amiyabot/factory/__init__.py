@@ -6,7 +6,7 @@ import contextlib
 
 from amiyabot import log
 from amiyabot.util import temp_sys_path, extract_zip, import_module
-from amiyabot.builtin.lib.timedTask import tasks_control
+from amiyabot.builtin.lib.timedTask import TasksControl
 
 from .factoryTyping import *
 from .implemented import MessageHandlerItemImpl
@@ -169,23 +169,40 @@ class BotHandlerFactory(FactoryCore):
         """
         注册定时任务
 
-        :param each:    循环执行间隔时间，单位（秒）
+        :param each:    循环执行间隔时间，单位（秒），如果使用其他触发方式，请使用 kwargs 形式的 scheduler.add_job 参数
         :param sub_tag: 子标签
         :param kwargs:  scheduler.add_job 参数
         :return:
         """
+        if each is not None and int(each) == 0:
+            raise ValueError('param "each" can not be "0"')
 
         def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
-            @tasks_control.timed_task(each, self.factory_name, sub_tag, **kwargs)
-            async def _():
-                await task(self)
+            async def _task():
+                async with log.catch('timed task error:'):
+                    await task(self)
+
+            timed_task_options = self.get_container('timed_task_options')
+            timed_task_options.append(
+                {
+                    'task': _task,
+                    'each': each,
+                    'tag': self.factory_name,
+                    'sub_tag': f'{sub_tag}.key{len(timed_task_options)}',
+                    **kwargs,
+                }
+            )
 
             return task
 
         return register
 
     def remove_timed_task(self, sub_tag: str):
-        tasks_control.remove_tag(self.factory_name, sub_tag)
+        TasksControl.remove_tag(self.factory_name, sub_tag)
+
+    def run_timed_tasks(self):
+        for options in self.get_container('timed_task_options'):
+            TasksControl.add_timed_task(**options)
 
     def set_group_config(self, config: GroupConfig):
         self.get_container('group_config')[config.group_id] = config
@@ -257,6 +274,7 @@ class BotInstance(BotHandlerFactory):
             # 安装插件
             instance.set_prefix_keywords(self.prefix_keywords)
             instance.install()
+            instance.run_timed_tasks()
 
             self.plugins[plugin_id] = instance
 
@@ -267,7 +285,7 @@ class BotInstance(BotHandlerFactory):
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
 
-        tasks_control.remove_tag(plugin_id)
+        TasksControl.remove_tag(plugin_id)
 
         self.plugins[plugin_id].uninstall()
 

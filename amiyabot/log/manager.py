@@ -18,7 +18,7 @@ class LoggerManager:
         self,
         name: str,
         level: Optional[int] = None,
-        formatter: str = '%(asctime)s [%(name)10s][%(levelname)9s]%(message)s',
+        formatter: str = '%(asctime)s [%(name)9s][%(levelname)9s]%(message)s',
         save_path: str = 'log',
         save_filename: str = 'running',
     ):
