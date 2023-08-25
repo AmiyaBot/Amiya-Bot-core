@@ -23,7 +23,7 @@ class ChainConfig:
 class Chain:
     def __init__(
         self,
-        data: MessageStructure = None,
+        data: Optional[MessageStructure] = None,
         at: bool = True,
         reference: bool = False,
         chain_builder: ChainBuilder = ChainBuilder(),
@@ -39,7 +39,7 @@ class Chain:
         self.reference = reference
 
         self.chain: CHAIN_LIST = []
-        self.raw_chain: Any = None
+        self.raw_chain: Optional[Any] = None
 
         if data and at and not data.is_direct:
             self.at(enter=True)
@@ -58,7 +58,7 @@ class Chain:
             if isinstance(item, (Html, Image)):
                 item.builder = value
 
-    def at(self, user: str = None, enter: bool = False):
+    def at(self, user: Optional[str] = None, enter: bool = False):
         if self.data and self.data.is_direct:
             return self
 
@@ -106,9 +106,9 @@ class Chain:
     def text_image(
         self,
         text: str,
-        images: IMAGES_TYPE = None,
-        width: int = None,
-        height: int = None,
+        images: Optional[IMAGES_TYPE] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
         bgcolor: str = '#F5F5F5',
     ):
         return self.image(
@@ -123,7 +123,7 @@ class Chain:
             )
         )
 
-    def image(self, target: Union[str, bytes, List[Union[str, bytes]]] = None, url: str = None):
+    def image(self, target: Optional[Union[str, bytes, List[Union[str, bytes]]]] = None, url: Optional[str] = None):
         if url:
             self.chain.append(Image(url=url, builder=self.builder))
         else:
@@ -161,7 +161,7 @@ class Chain:
     def html(
         self,
         path: str,
-        data: Union[dict, list] = None,
+        data: Optional[Union[dict, list]] = None,
         width: int = DEFAULT_WIDTH,
         height: int = DEFAULT_HEIGHT,
         is_template: bool = True,

@@ -1,6 +1,6 @@
 import copy
 
-from typing import Union
+from typing import Union, Optional
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
@@ -14,7 +14,9 @@ class CQHTTPForwardMessage:
         self.api: CQHttpAPI = data.instance.api
         self.node = []
 
-    async def add_message(self, chain: Union[Chain, list], user_id: int = None, nickname: str = None):
+    async def add_message(
+        self, chain: Union[Chain, list], user_id: Optional[int] = None, nickname: Optional[str] = None
+    ):
         node = {
             'type': 'node',
             'data': {

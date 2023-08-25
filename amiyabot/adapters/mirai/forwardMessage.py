@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
@@ -15,8 +15,8 @@ class MiraiForwardMessage:
     async def add_message(
         self,
         chain: Union[Chain, dict],
-        user_id: int = None,
-        nickname: str = None,
+        user_id: Optional[int] = None,
+        nickname: Optional[str] = None,
         time: int = 0,
     ):
         node = {'time': time, 'senderId': user_id, 'senderName': nickname}

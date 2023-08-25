@@ -32,7 +32,7 @@ with open('README.md', mode='r', encoding='utf-8') as md:
     description = md.read()
 
 with open('requirements.txt', mode='r', encoding='utf-8') as req:
-    requirements = sorted(req.read().strip('\n').split('\n'))
+    requirements = sorted(req.read().lower().strip('\n').split('\n'))
 
 with open('requirements.txt', mode='w', encoding='utf-8') as req:
     req.write('\n'.join(requirements))

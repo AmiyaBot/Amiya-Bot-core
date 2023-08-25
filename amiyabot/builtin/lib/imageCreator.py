@@ -4,7 +4,7 @@ import math
 
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-from typing import List, Dict, Tuple, Union, Any
+from typing import List, Dict, Tuple, Union, Any, Optional
 from dataclasses import dataclass
 
 cur_file_path = os.path.abspath(__file__)
@@ -110,14 +110,14 @@ IMAGES_TYPE = List[Union[ImageElem, Dict[str, Any]]]
 def create_image(
     text: str = '',
     width: int = 0,
-    height: int = None,
+    height: Optional[int] = None,
     padding: int = 10,
-    max_seat: int = None,
+    max_seat: Optional[int] = None,
     font_size: int = FontStyle.font_size,
     line_height: int = FontStyle.line_height,
     color: str = FontStyle.color,
     bgcolor: str = FontStyle.bgcolor,
-    images: IMAGES_TYPE = None,
+    images: Optional[IMAGES_TYPE] = None,
 ):
     """
     文字转图片

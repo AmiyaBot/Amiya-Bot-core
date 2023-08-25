@@ -6,7 +6,7 @@ from amiyabot.builtin.messageChain.element import *
 from amiyabot import log
 
 
-async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
+async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
     chain_list = custom_chain or chain.chain
     chain_data = []
     voice_list = []

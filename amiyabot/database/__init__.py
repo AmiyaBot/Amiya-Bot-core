@@ -2,7 +2,7 @@ import peewee
 import pymysql
 
 from abc import ABC
-from typing import List, Any
+from typing import List, Any, Optional
 from dataclasses import dataclass
 from playhouse.migrate import *
 from playhouse.shortcuts import ReconnectMixin, model_to_dict
@@ -42,9 +42,9 @@ class ModelClass(Model):
     def insert_or_update(
         cls,
         insert: dict,
-        update: dict = None,
-        conflict_target: list = None,
-        preserve: list = None,
+        update: Optional[dict] = None,
+        conflict_target: Optional[list] = None,
+        preserve: Optional[list] = None,
     ):
         conflict = {'update': update, 'preserve': preserve}
         if isinstance(cls._meta.database, ReconnectMySQLDatabase):
@@ -91,7 +91,7 @@ def table(cls: ModelClass) -> Any:
     return cls
 
 
-def connect_database(database: str, is_mysql: bool = False, config: MysqlConfig = None):
+def connect_database(database: str, is_mysql: bool = False, config: Optional[MysqlConfig] = None):
     if is_mysql:
         if not isinstance(config, MysqlConfig):
             raise DatabaseConfigError(config)
@@ -108,7 +108,7 @@ def connect_database(database: str, is_mysql: bool = False, config: MysqlConfig 
     return SqliteDatabase(database, pragmas={'timeout': 30})
 
 
-def convert_model(model, select_model: peewee.Select = None) -> dict:
+def convert_model(model, select_model: Optional[peewee.Select] = None) -> dict:
     data = {**model_to_dict(model)}
     if select_model:
         for field in select_model._returning:
@@ -118,7 +118,7 @@ def convert_model(model, select_model: peewee.Select = None) -> dict:
     return data
 
 
-def query_to_list(query, select_model: peewee.Select = None) -> List[dict]:
+def query_to_list(query, select_model: Optional[peewee.Select] = None) -> List[dict]:
     return [convert_model(item, select_model) for item in query]
 
 

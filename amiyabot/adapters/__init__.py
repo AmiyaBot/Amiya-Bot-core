@@ -122,7 +122,7 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
+    async def recall_message(self, message_id: Union[str, int], target_id: Optional[Union[str, int]] = None):
         """
         撤回消息
 

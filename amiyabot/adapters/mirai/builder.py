@@ -31,7 +31,7 @@ class MiraiMessageCallback(MessageCallback):
 async def build_message_send(
     api: MiraiAPI,
     chain: Chain,
-    custom_chain: CHAIN_LIST = None,
+    custom_chain: Optional[CHAIN_LIST] = None,
     chain_only: bool = False,
     use_http: bool = False,
 ):

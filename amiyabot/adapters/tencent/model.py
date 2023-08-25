@@ -2,7 +2,7 @@ import json
 import websockets
 import dataclasses
 
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 from dataclasses import dataclass
 
 
@@ -23,20 +23,20 @@ class ConnectionHandler:
 @dataclass
 class ShardsRecord:
     shards_index: int
-    session_id: str = None
-    last_s: int = None
+    session_id: Optional[str] = None
+    last_s: Optional[int] = None
     reconnect_limit: int = 3
-    connection: websockets.WebSocketClientProtocol = None
-    heartbeat_key: str = None
+    connection: Optional[websockets.WebSocketClientProtocol] = None
+    heartbeat_key: Optional[str] = None
 
 
 @dataclass
 class Payload:
     op: int
-    id: str = None
-    d: Any = None
-    s: int = None
-    t: str = None
+    id: Optional[str] = None
+    d: Optional[Any] = None
+    s: Optional[int] = None
+    t: Optional[str] = None
 
     def to_json(self):
         return json.dumps(dataclasses.asdict(self), ensure_ascii=False)

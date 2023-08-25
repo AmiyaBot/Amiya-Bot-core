@@ -6,7 +6,7 @@ import contextlib
 
 from amiyabot import log
 from amiyabot.util import temp_sys_path, extract_zip, import_module
-from amiyabot.builtin.lib.timedTask import tasks_control, CUSTOM_CHECK
+from amiyabot.builtin.lib.timedTask import TasksControl
 
 from .factoryTyping import *
 from .implemented import MessageHandlerItemImpl
@@ -69,13 +69,13 @@ class BotHandlerFactory(FactoryCore):
 
     def on_message(
         self,
-        group_id: Union[GroupConfig, str] = None,
-        keywords: KeywordsType = None,
-        verify: VerifyMethodType = None,
-        check_prefix: CheckPrefixType = None,
+        group_id: Optional[Union[GroupConfig, str]] = None,
+        keywords: Optional[KeywordsType] = None,
+        verify: Optional[VerifyMethodType] = None,
+        check_prefix: Optional[CheckPrefixType] = None,
         allow_direct: Optional[bool] = None,
         direct_only: bool = False,
-        level: int = None,
+        level: Optional[int] = None,
     ):
         """
         注册消息处理器
@@ -165,23 +165,44 @@ class BotHandlerFactory(FactoryCore):
 
         return handler
 
-    def timed_task(
-        self,
-        each: int = None,
-        custom: CUSTOM_CHECK = None,
-        sub_tag: str = 'default_tag',
-    ):
+    def timed_task(self, each: Optional[int] = None, sub_tag: str = 'default_tag', **kwargs):
+        """
+        注册定时任务
+
+        :param each:    循环执行间隔时间，单位（秒），如果使用其他触发方式，请使用 kwargs 形式的 scheduler.add_job 参数
+        :param sub_tag: 子标签
+        :param kwargs:  scheduler.add_job 参数
+        :return:
+        """
+        if each is not None and int(each) == 0:
+            raise ValueError('param "each" can not be "0"')
+
         def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
-            @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)
-            async def _():
-                await task(self)
+            async def _task():
+                async with log.catch('timed task error:'):
+                    await task(self)
+
+            timed_task_options = self.get_container('timed_task_options')
+            timed_task_options.append(
+                {
+                    'task': _task,
+                    'each': each,
+                    'tag': self.factory_name,
+                    'sub_tag': f'{sub_tag}.key{len(timed_task_options)}',
+                    **kwargs,
+                }
+            )
 
             return task
 
         return register
 
     def remove_timed_task(self, sub_tag: str):
-        tasks_control.remove_tag(self.factory_name, sub_tag)
+        TasksControl.remove_tag(self.factory_name, sub_tag)
+
+    def run_timed_tasks(self):
+        for options in self.get_container('timed_task_options'):
+            TasksControl.add_timed_task(**options)
 
     def set_group_config(self, config: GroupConfig):
         self.get_container('group_config')[config.group_id] = config
@@ -239,7 +260,7 @@ class BotInstance(BotHandlerFactory):
         self,
         plugin: Union[str, os.PathLike, "PluginInstance"],
         extract_plugin: bool = False,
-        extract_plugin_dest: str = None,
+        extract_plugin_dest: Optional[str] = None,
     ):
         with log.sync_catch('plugin install error:'):
             instance = self.load_plugin(plugin, extract_plugin, extract_plugin_dest)
@@ -253,6 +274,7 @@ class BotInstance(BotHandlerFactory):
             # 安装插件
             instance.set_prefix_keywords(self.prefix_keywords)
             instance.install()
+            instance.run_timed_tasks()
 
             self.plugins[plugin_id] = instance
 
@@ -263,7 +285,7 @@ class BotInstance(BotHandlerFactory):
     def uninstall_plugin(self, plugin_id: str, remove: bool = False):
         assert plugin_id != '__factory__' and plugin_id in self.plugins
 
-        tasks_control.remove_tag(plugin_id)
+        TasksControl.remove_tag(plugin_id)
 
         self.plugins[plugin_id].uninstall()
 
@@ -300,9 +322,9 @@ class PluginInstance(BotHandlerFactory):
         name: str,
         version: str,
         plugin_id: str,
-        plugin_type: str = None,
-        description: str = None,
-        document: str = None,
+        plugin_type: Optional[str] = None,
+        description: Optional[str] = None,
+        document: Optional[str] = None,
         priority: int = 1,
     ):
         super().__init__()

@@ -2,7 +2,7 @@ import json
 import asyncio
 import websockets
 
-from typing import Callable
+from typing import Callable, Optional
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
@@ -26,7 +26,7 @@ class MiraiBotInstance(BotAdapterProtocol):
 
         self.url = f'ws://{host}:{ws_port}/all?verifyKey={token}&&qq={appid}'
 
-        self.connection: websockets.WebSocketClientProtocol = None
+        self.connection: Optional[websockets.WebSocketClientProtocol] = None
 
         self.host = host
         self.ws_port = ws_port
@@ -131,5 +131,5 @@ class MiraiBotInstance(BotAdapterProtocol):
     async def package_message(self, event: str, message: dict):
         return package_mirai_message(self, self.appid, message)
 
-    async def recall_message(self, message_id: str, target_id: str = None):
+    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
         await self.api.delete_message(message_id, target_id)

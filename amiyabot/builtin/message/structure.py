@@ -17,7 +17,7 @@ class EventStructure:
 
 
 class MessageStructure:
-    def __init__(self, instance: T_BotAdapterProtocol, message: dict = None):
+    def __init__(self, instance: T_BotAdapterProtocol, message: Optional[dict] = None):
         self.bot: Optional[T_BotHandlerFactory] = None
         self.instance = instance
 
@@ -27,8 +27,8 @@ class MessageStructure:
         self.message_id = ''
         self.message_type = ''
 
-        self.face = []
-        self.image = []
+        self.face: List[int] = []
+        self.image: List[str] = []
 
         self.files: List[File] = []
         self.video = ''
@@ -37,9 +37,9 @@ class MessageStructure:
         self.text_digits = ''
         self.text_unsigned = ''
         self.text_original = ''
-        self.text_words = []
+        self.text_words: List[str] = []
 
-        self.at_target = []
+        self.at_target: List[str] = []
 
         self.is_at = False
         self.is_at_all = False
@@ -84,10 +84,10 @@ class MessageStructure:
     @abc.abstractmethod
     async def wait(
         self,
-        reply: T_Chain = None,
+        reply: Optional[T_Chain] = None,
         force: bool = False,
         max_time: int = 30,
-        data_filter: Callable = None,
+        data_filter: Optional[Callable] = None,
         level: int = 0,
     ):
         raise NotImplementedError
@@ -95,18 +95,18 @@ class MessageStructure:
     @abc.abstractmethod
     async def wait_channel(
         self,
-        reply: T_Chain = None,
+        reply: Optional[T_Chain] = None,
         force: bool = False,
         clean: bool = True,
         max_time: int = 30,
-        data_filter: Callable = None,
+        data_filter: Optional[Callable] = None,
         level: int = 0,
     ):
         raise NotImplementedError
 
 
 class Verify:
-    def __init__(self, result: bool, weight: Union[int, float] = 0, keypoint: Any = None):
+    def __init__(self, result: bool, weight: Union[int, float] = 0, keypoint: Optional[Any] = None):
         self.result = result
         self.weight = weight
         self.keypoint = keypoint
