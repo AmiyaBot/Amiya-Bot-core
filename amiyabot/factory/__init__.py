@@ -6,7 +6,7 @@ import contextlib
 
 from amiyabot import log
 from amiyabot.util import temp_sys_path, extract_zip, import_module
-from amiyabot.builtin.lib.timedTask import tasks_control, CUSTOM_CHECK
+from amiyabot.builtin.lib.timedTask import tasks_control
 
 from .factoryTyping import *
 from .implemented import MessageHandlerItemImpl
@@ -69,13 +69,13 @@ class BotHandlerFactory(FactoryCore):
 
     def on_message(
         self,
-        group_id: Union[GroupConfig, str] = None,
-        keywords: KeywordsType = None,
-        verify: VerifyMethodType = None,
-        check_prefix: CheckPrefixType = None,
+        group_id: Optional[Union[GroupConfig, str]] = None,
+        keywords: Optional[KeywordsType] = None,
+        verify: Optional[VerifyMethodType] = None,
+        check_prefix: Optional[CheckPrefixType] = None,
         allow_direct: Optional[bool] = None,
         direct_only: bool = False,
-        level: int = None,
+        level: Optional[int] = None,
     ):
         """
         注册消息处理器
@@ -165,14 +165,9 @@ class BotHandlerFactory(FactoryCore):
 
         return handler
 
-    def timed_task(
-        self,
-        each: int = None,
-        custom: CUSTOM_CHECK = None,
-        sub_tag: str = 'default_tag',
-    ):
+    def timed_task(self, each: int = None, sub_tag: str = 'default_tag', **kwargs):
         def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
-            @tasks_control.timed_task(each, custom, self.factory_name, sub_tag)
+            @tasks_control.timed_task(each, self.factory_name, sub_tag, **kwargs)
             async def _():
                 await task(self)
 

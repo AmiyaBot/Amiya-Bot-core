@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import uvicorn
 
 from typing import List, Callable
@@ -38,7 +39,10 @@ class ServerMeta(type):
                     item.should_exit = True
 
             for action in ServerEventHandler.on_shutdown:
-                asyncio.create_task(action())
+                if inspect.iscoroutinefunction(action):
+                    asyncio.create_task(action())
+                else:
+                    action()
 
 
 LOG_CONFIG = {

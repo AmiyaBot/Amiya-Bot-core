@@ -60,8 +60,6 @@ class AmiyaBot(BotInstance):
         ServerEventHandler.on_shutdown.append(self.close)
 
     async def start(self, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False):
-        asyncio.create_task(tasks_control.run_tasks())
-
         if launch_browser:
             await basic_browser_service.launch(BrowserLaunchConfig() if launch_browser is True else launch_browser)
 

@@ -47,14 +47,14 @@ class MessageHandlerItem:
     function: FunctionType
     prefix_keywords: Callable[[], List[str]]
 
-    group_id: str = None
-    group_config: GroupConfig = None
-    keywords: KeywordsType = None
+    group_id: Optional[str] = None
+    group_config: Optional[GroupConfig] = None
+    keywords: Optional[KeywordsType] = None
     allow_direct: Optional[bool] = None
     direct_only: bool = False
-    check_prefix: CheckPrefixType = None
-    custom_verify: VerifyMethodType = None
-    level: int = None
+    check_prefix: Optional[CheckPrefixType] = None
+    custom_verify: Optional[VerifyMethodType] = None
+    level: Optional[int] = None
 
     def __repr__(self):
         return f'<MessageHandlerItem, {self.custom_verify or self.keywords}>'

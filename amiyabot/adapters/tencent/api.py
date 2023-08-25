@@ -49,7 +49,7 @@ class TencentAPI(BotAdapterProtocol):
     async def get_request(self, url: str):
         return self.__check_response(await http_requests.get(get_url(url), headers=self.headers))
 
-    async def post_request(self, url: str, payload: dict = None, is_form_data: bool = False):
+    async def post_request(self, url: str, payload: Optional[dict] = None, is_form_data: bool = False):
         if is_form_data:
             return self.__check_response(await http_requests.post_form(get_url(url), payload, headers=self.headers))
         return self.__check_response(await http_requests.post(get_url(url), payload, headers=self.headers))
@@ -93,7 +93,7 @@ class TencentAPI(BotAdapterProtocol):
 
         return complete
 
-    async def recall_message(self, message_id: str, target_id: str = None):
+    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
         await http_requests.request(
             get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
             method='delete',

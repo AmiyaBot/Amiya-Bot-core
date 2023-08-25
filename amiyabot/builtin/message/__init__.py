@@ -34,7 +34,7 @@ class Event(EventStructure):
 
 
 class EventList:
-    def __init__(self, events: list = None):
+    def __init__(self, events: Optional[list] = None):
         self.events: List[Event] = events or list()
 
     def __iter__(self):
@@ -63,7 +63,7 @@ class Message(MessageStructure):
         reply=None,
         force: bool = False,
         max_time: int = 30,
-        data_filter: Callable = None,
+        data_filter: Optional[Callable] = None,
         level: int = 0,
     ) -> WaitReturn:
         if self.is_direct:
@@ -101,7 +101,7 @@ class Message(MessageStructure):
         force: bool = False,
         clean: bool = True,
         max_time: int = 30,
-        data_filter: Callable = None,
+        data_filter: Optional[Callable] = None,
         level: int = 0,
     ) -> WaitChannelReturn:
         if self.is_direct:
@@ -151,19 +151,19 @@ class Message(MessageStructure):
 
 class MessageMatch:
     @staticmethod
-    def check_str(data: Message, text: str, level: int = None) -> MatchReturn:
+    def check_str(data: Message, text: str, level: Optional[int] = None) -> MatchReturn:
         if text.lower() in data.text.lower():
             return True, level if level is not None else 1, text
         return False, 0, None
 
     @staticmethod
-    def check_equal(data: Message, text: Equal, level: int = None) -> MatchReturn:
+    def check_equal(data: Message, text: Equal, level: Optional[int] = None) -> MatchReturn:
         if text.content == data.text:
             return True, level if level is not None else float('inf'), text
         return False, 0, None
 
     @staticmethod
-    def check_reg(data: Message, reg: re.Pattern, level: int = None) -> MatchReturn:
+    def check_reg(data: Message, reg: re.Pattern, level: Optional[int] = None) -> MatchReturn:
         r = re.search(reg, data.text)
         if r:
             return (

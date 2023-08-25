@@ -105,7 +105,7 @@ class HttpRequests:
 
 
 class ResponseException(Exception):
-    def __init__(self, code: int, message: str, data: Any = None):
+    def __init__(self, code: int, message: str, data: Optional[Any] = None):
         self.code = code
         self.message = message
         self.data = data

@@ -29,7 +29,7 @@ class MessageSendRequestGroup:
         self.reference: bool = reference
         self.direct: bool = direct
 
-    def __insert_req(self, content: str = '', image: Union[str, bytes] = None):
+    def __insert_req(self, content: str = '', image: Optional[Union[str, bytes]] = None):
         # noinspection PyArgumentList
         req = MessageSendRequest(data={'msg_id': self.message_id}, direct=self.direct, user_id=self.user_id)
 
@@ -72,7 +72,7 @@ class MessageSendRequestGroup:
             self.__insert_req(content=self.text)
 
 
-async def build_message_send(chain: Chain, custom_chain: CHAIN_LIST = None):
+async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
     chain_list = custom_chain or chain.chain
 
     messages = MessageSendRequestGroup(chain.data.user_id, chain.data.message_id, chain.reference, chain.data.is_direct)

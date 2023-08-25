@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_utils.cbv import cbv
@@ -17,9 +17,9 @@ class HttpServer(metaclass=ServerMeta):
         port: int,
         title: str = 'AmiyaBot',
         description: str = '<a href="https://www.amiyabot.com" target="__blank">https://www.amiyabot.com</a>',
-        auth_key: str = None,
-        fastapi_options: dict = None,
-        uvicorn_options: dict = None,
+        auth_key: Optional[str] = None,
+        fastapi_options: Optional[dict] = None,
+        uvicorn_options: Optional[dict] = None,
     ):
         self.app = FastAPI(title=title, description=description, **(fastapi_options or {}))
         self.server = self.__load_server(options={'host': host, 'port': port, **(uvicorn_options or {})})
@@ -64,7 +64,7 @@ class HttpServer(metaclass=ServerMeta):
 
     def route(
         self,
-        router_path: str = None,
+        router_path: Optional[str] = None,
         method: str = 'post',
         allow_unauthorized: bool = False,
         **kwargs,
@@ -102,7 +102,7 @@ class HttpServer(metaclass=ServerMeta):
         self.__static_folders.append('/' + directory)
 
     @staticmethod
-    def response(data: Any = None, code: int = 200, message: str = ''):
+    def response(data: Optional[Any] = None, code: int = 200, message: str = ''):
         return {'data': data, 'code': code, 'message': message}
 
     async def serve(self):

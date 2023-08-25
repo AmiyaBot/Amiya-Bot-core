@@ -44,8 +44,8 @@ class Text:
 class Image:
     url: Optional[str] = None
     content: Optional[bytes] = None
-    builder: ChainBuilder = None
-    dhash: int = None
+    builder: Optional[ChainBuilder] = None
+    dhash: Optional[int] = None
 
     async def get(self):
         if self.builder:
@@ -69,7 +69,7 @@ class Html:
     render_time: int = DEFAULT_RENDER_TIME
     width: int = DEFAULT_WIDTH
     height: int = DEFAULT_HEIGHT
-    builder: ChainBuilder = None
+    builder: Optional[ChainBuilder] = None
 
     async def create_html_image(self):
         async with log.catch('html convert error:'):

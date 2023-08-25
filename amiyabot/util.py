@@ -10,7 +10,7 @@ import inspect
 import importlib
 
 from io import BytesIO
-from typing import List, Callable
+from typing import List, Callable, Optional
 from string import punctuation
 from functools import partial
 from contextlib import contextmanager
@@ -200,7 +200,7 @@ def support_gbk_zip(zip_file: zipfile.ZipFile):
     return zip_file
 
 
-def extract_zip(file: str, dest: str, overwrite: bool = False, ignore: List[re.Pattern] = None):
+def extract_zip(file: str, dest: str, overwrite: bool = False, ignore: Optional[List[re.Pattern]] = None):
     create_dir(dest)
     with zipfile.ZipFile(file) as pack:
         for pack_file in support_gbk_zip(pack).namelist():

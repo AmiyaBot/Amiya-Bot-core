@@ -3,22 +3,22 @@ import sys
 import logging
 import traceback
 
-from typing import Union, Dict, List, Type, Any, Callable, Awaitable
+from typing import Union, Dict, List, Type, Any, Callable, Optional, Awaitable
 from contextlib import asynccontextmanager, contextmanager
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 from amiyabot.util import argv
 
 
 class UserLogger:
-    logger: Any = None
+    logger: Optional[Any] = None
 
 
 class LoggerManager:
     def __init__(
         self,
         name: str,
-        level: int = None,
-        formatter: str = '%(asctime)s [%(name)8s][%(levelname)8s]%(message)s',
+        level: Optional[int] = None,
+        formatter: str = '%(asctime)s [%(name)10s][%(levelname)9s]%(message)s',
         save_path: str = 'log',
         save_filename: str = 'running',
     ):
@@ -88,7 +88,7 @@ class LoggerManager:
     def warning(self, message: str):
         self.__handler.warning(self.__print_text(message))
 
-    def error(self, message: Union[str, Exception], desc: str = None):
+    def error(self, message: Union[str, Exception], desc: Optional[str] = None):
         text = message
 
         if isinstance(message, Exception):
@@ -112,9 +112,9 @@ class LoggerManager:
     @asynccontextmanager
     async def catch(
         self,
-        desc: str = None,
-        ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
-        handler: Callable[[Exception], Awaitable[None]] = None,
+        desc: Optional[str] = None,
+        ignore: Optional[List[Union[Type[Exception], Type[BaseException]]]] = None,
+        handler: Optional[Callable[[Exception], Awaitable[None]]] = None,
     ):
         try:
             yield
@@ -130,9 +130,9 @@ class LoggerManager:
     @contextmanager
     def sync_catch(
         self,
-        desc: str = None,
-        ignore: List[Union[Type[Exception], Type[BaseException]]] = None,
-        handler: Callable[[Exception], None] = None,
+        desc: Optional[str] = None,
+        ignore: Optional[List[Union[Type[Exception], Type[BaseException]]]] = None,
+        handler: Optional[Callable[[Exception], None]] = None,
     ):
         try:
             yield

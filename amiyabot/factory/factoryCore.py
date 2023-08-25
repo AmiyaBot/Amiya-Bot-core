@@ -33,7 +33,7 @@ class FactoryCore:
     def get_container(self, key: str) -> Union[dict, list]:
         return self.__container[key]
 
-    def get_with_plugins(self, attr_name: str = None):
+    def get_with_plugins(self, attr_name: Optional[str] = None):
         if not attr_name:
             attr_name = inspect.getframeinfo(inspect.currentframe().f_back)[2]
 
