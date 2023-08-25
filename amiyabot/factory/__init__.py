@@ -165,7 +165,16 @@ class BotHandlerFactory(FactoryCore):
 
         return handler
 
-    def timed_task(self, each: int = None, sub_tag: str = 'default_tag', **kwargs):
+    def timed_task(self, each: Optional[int] = None, sub_tag: str = 'default_tag', **kwargs):
+        """
+        注册定时任务
+
+        :param each:    循环执行间隔时间，单位（秒）
+        :param sub_tag: 子标签
+        :param kwargs:  scheduler.add_job 参数
+        :return:
+        """
+
         def register(task: Callable[[BotHandlerFactory], Awaitable[None]]):
             @tasks_control.timed_task(each, self.factory_name, sub_tag, **kwargs)
             async def _():
@@ -234,7 +243,7 @@ class BotInstance(BotHandlerFactory):
         self,
         plugin: Union[str, os.PathLike, "PluginInstance"],
         extract_plugin: bool = False,
-        extract_plugin_dest: str = None,
+        extract_plugin_dest: Optional[str] = None,
     ):
         with log.sync_catch('plugin install error:'):
             instance = self.load_plugin(plugin, extract_plugin, extract_plugin_dest)
@@ -295,9 +304,9 @@ class PluginInstance(BotHandlerFactory):
         name: str,
         version: str,
         plugin_id: str,
-        plugin_type: str = None,
-        description: str = None,
-        document: str = None,
+        plugin_type: Optional[str] = None,
+        description: Optional[str] = None,
+        document: Optional[str] = None,
         priority: int = 1,
     ):
         super().__init__()

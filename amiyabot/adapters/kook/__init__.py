@@ -200,12 +200,12 @@ class KOOKBotInstance(BotAdapterProtocol):
     async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
         await self.post_request('/message/delete', {'msg_id': message_id})
 
-    async def get_request(self, url: str, params: dict = None, **kwargs):
+    async def get_request(self, url: str, params: Optional[dict] = None, **kwargs):
         return self.__check_response(
             await http_requests.get(self.base_url + url, params, headers=self.headers, **kwargs)
         )
 
-    async def post_request(self, url: str, payload: dict = None, **kwargs):
+    async def post_request(self, url: str, payload: Optional[dict] = None, **kwargs):
         return self.__check_response(
             await http_requests.post(self.base_url + url, payload, headers=self.headers, **kwargs)
         )
