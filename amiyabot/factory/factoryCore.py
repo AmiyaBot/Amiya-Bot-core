@@ -26,7 +26,7 @@ class FactoryCore:
             # 组设置
             'group_config': dict(),
             # 定时任务
-            'timed_task_options': list(),
+            'timed_tasks': list(),
         }
 
         self.plugins: Dict[str, FactoryCore] = dict()

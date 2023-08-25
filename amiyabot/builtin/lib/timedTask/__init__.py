@@ -1,7 +1,20 @@
+import asyncio
+
 from typing import Optional, Callable
+from dataclasses import dataclass
 from amiyabot.network.httpServer import ServerEventHandler
 
 from .scheduler import scheduler
+
+
+@dataclass
+class Task:
+    func: Callable
+    each: Optional[int]
+    tag: str
+    sub_tag: str
+    run_when_added: bool
+    kwargs: dict
 
 
 class TasksControl:
@@ -12,33 +25,19 @@ class TasksControl:
             ServerEventHandler.on_shutdown.append(scheduler.shutdown)
 
     @classmethod
-    def add_timed_task(
-        cls, task: Callable, each: Optional[int] = None, tag: str = '__default__', sub_tag: str = '__sub__', **kwargs
-    ):
-        """
-        注册定时任务
+    def add_timed_task(cls, task: Task):
+        if task.run_when_added:
+            asyncio.create_task(task.func())
 
-        :param task:    任务函数
-        :param each:    循环执行间隔时间，单位（秒）
-        :param tag:     标签
-        :param sub_tag: 子标签
-        :param kwargs:  scheduler.add_job 参数
-        :return:
-        """
-        if each:
-            scheduler.add_job(task, id=f'{tag}.{sub_tag}', trigger='interval', seconds=each, **kwargs)
+        if task.each is not None:
+            scheduler.add_job(
+                task.func, id=f'{task.tag}.{task.sub_tag}', trigger='interval', seconds=task.each, **task.kwargs
+            )
         else:
-            scheduler.add_job(task, id=f'{tag}.{sub_tag}', **kwargs)
+            scheduler.add_job(task.func, id=f'{task.tag}.{task.sub_tag}', **task.kwargs)
 
     @classmethod
-    def remove_tag(cls, tag: str, sub_tag: Optional[str] = None):
-        """
-        取消定时任务
-
-        :param tag:     标签
-        :param sub_tag: 子标签
-        :return:
-        """
+    def remove_task(cls, tag: str, sub_tag: Optional[str] = None):
         for job in scheduler.get_jobs():
             job_id: str = job.id
 
