@@ -68,6 +68,14 @@ class Chain:
 
         return self
 
+    def at_all(self):
+        self.chain.append(AtAll())
+        return self
+
+    def tag(self, target: Union[str, int]):
+        self.chain.append(Tag(target))
+        return self
+
     def face(self, face_id: Union[str, int]):
         self.chain.append(Face(face_id))
         return self

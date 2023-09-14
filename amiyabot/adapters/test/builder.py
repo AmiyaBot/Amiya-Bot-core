@@ -17,6 +17,10 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
             if isinstance(item, At):
                 chain_data.append({'type': 'text', 'data': f'@{chain.data.nickname}'})
 
+            # AtAll
+            if isinstance(item, AtAll):
+                chain_data.append({'type': 'text', 'data': '@All'})
+
             # Face
             if isinstance(item, Face):
                 chain_data.append({'type': 'text', 'data': f'[{item.face_id}]'})

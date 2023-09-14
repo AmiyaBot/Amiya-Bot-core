@@ -1,19 +1,7 @@
-import json
-from typing import Optional
-
 from amiyabot.adapters import MessageCallback
-from amiyabot.builtin.messageChain.element import (
-    CHAIN_LIST,
-    Image,
-    Html,
-    Extend,
-    At,
-    Face,
-    Text,
-    Voice,
-)
 from amiyabot.network.httpRequests import http_requests
 from amiyabot.builtin.messageChain import Chain
+from amiyabot.builtin.messageChain.element import *
 from amiyabot.log import LoggerManager
 
 log = LoggerManager('KOOK')
@@ -62,6 +50,10 @@ async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAI
         # At
         if isinstance(item, At):
             await make_text_message(f'(met){item.target}(met)')
+
+        # AtAll
+        if isinstance(item, AtAll):
+            await make_text_message('(met)all(met)')
 
         # Face
         if isinstance(item, Face):

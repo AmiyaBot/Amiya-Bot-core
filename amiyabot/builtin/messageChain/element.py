@@ -31,6 +31,16 @@ class At:
 
 
 @dataclass
+class AtAll:
+    ...
+
+
+@dataclass
+class Tag:
+    target: Union[str, int]
+
+
+@dataclass
 class Face:
     face_id: Union[str, int]
 
@@ -124,4 +134,4 @@ class Extend:
         return self.data
 
 
-CHAIN_LIST = List[Union[At, Face, Text, Image, Voice, Html, Extend]]
+CHAIN_LIST = List[Union[At, AtAll, Tag, Face, Text, Image, Voice, Html, Extend]]
