@@ -36,6 +36,10 @@ async def build_message_send(chain: Chain, chain_only: bool = False):
             if isinstance(item, At):
                 chain_data.append({'type': 'at', 'data': {'qq': item.target or chain.data.user_id}})
 
+            # AtAll
+            if isinstance(item, AtAll):
+                chain_data.append({'type': 'at', 'data': {'qq': 'all'}})
+
             # Face
             if isinstance(item, Face):
                 chain_data.append({'type': 'face', 'data': {'id': item.face_id}})

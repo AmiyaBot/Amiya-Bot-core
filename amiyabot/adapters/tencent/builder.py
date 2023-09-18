@@ -82,6 +82,14 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
         if isinstance(item, At):
             messages.add_text(f'<@{item.target}>')
 
+        # AtAll
+        if isinstance(item, AtAll):
+            messages.add_text('<@everyone>')
+
+        # Tag
+        if isinstance(item, Tag):
+            messages.add_text(f'<#{item.target}>')
+
         # Face
         if isinstance(item, Face):
             messages.add_text(f'<emoji:{item.face_id}>')
