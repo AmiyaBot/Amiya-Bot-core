@@ -10,6 +10,7 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 
 from .api import TencentAPI
+from .api_extra import TencentAPIExtra
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
 from .package import package_tencent_message
@@ -26,6 +27,8 @@ class TencentBotInstance(TencentAPI):
         self.token = token
 
         self.shards_record: Dict[int, ShardsRecord] = {}
+
+        self.api = TencentAPIExtra(self)
 
     def __str__(self):
         return 'Tencent'

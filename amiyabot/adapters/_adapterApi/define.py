@@ -11,6 +11,7 @@ class BotAdapterType(Enum):
     CQHTTP = 1
     MIRAI = 2
     KOOK = 3
+    TENCENT = 4
 
 
 class UserPermission(Enum):
