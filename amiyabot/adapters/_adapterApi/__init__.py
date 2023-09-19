@@ -15,7 +15,9 @@ class APIResponse:
         GET = 0
         POST = 1
         PUT = 2
-        UNKNOWN = 3
+        PATCH = 3
+        DELETE = 4
+        UNKNOWN = 5
 
         @classmethod
         def from_str(cls, value: str):
@@ -25,6 +27,10 @@ class APIResponse:
                 return cls.POST
             if value.lower() == 'put':
                 return cls.PUT
+            if value.lower() == 'patch':
+                return cls.PATCH
+            if value.lower() == 'delete':
+                return cls.DELETE
             return cls.UNKNOWN
 
     # 响应数据
@@ -90,6 +96,10 @@ class APIResponse:
                 res = await http_requests.post(self.path, self.params, self.headers, **self.kwargs)
             elif self.method == self.RequestType.PUT:
                 res = await http_requests.request(self.path, 'put', **self.kwargs)
+            elif self.method == self.RequestType.PATCH:
+                res = await http_requests.request(self.path, 'patch', **self.kwargs)
+            elif self.method == self.RequestType.DELETE:
+                res = await http_requests.request(self.path, 'delete', **self.kwargs)
             else:
                 res = None
 
