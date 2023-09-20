@@ -14,7 +14,10 @@ class APIResponse:
     class RequestType(Enum):
         GET = 0
         POST = 1
-        UNKNOWN = 2
+        PUT = 2
+        PATCH = 3
+        DELETE = 4
+        UNKNOWN = 5
 
         @classmethod
         def from_str(cls, value: str):
@@ -22,6 +25,12 @@ class APIResponse:
                 return cls.GET
             if value.lower() == 'post':
                 return cls.POST
+            if value.lower() == 'put':
+                return cls.PUT
+            if value.lower() == 'patch':
+                return cls.PATCH
+            if value.lower() == 'delete':
+                return cls.DELETE
             return cls.UNKNOWN
 
     # 响应数据
@@ -85,6 +94,12 @@ class APIResponse:
                 res = await http_requests.get(self.path, self.params, **self.kwargs)
             elif self.method == self.RequestType.POST:
                 res = await http_requests.post(self.path, self.params, self.headers, **self.kwargs)
+            elif self.method == self.RequestType.PUT:
+                res = await http_requests.request(self.path, 'put', **self.kwargs)
+            elif self.method == self.RequestType.PATCH:
+                res = await http_requests.request(self.path, 'patch', **self.kwargs)
+            elif self.method == self.RequestType.DELETE:
+                res = await http_requests.request(self.path, 'delete', **self.kwargs)
             else:
                 res = None
 
@@ -106,9 +121,11 @@ class BotAdapterAPI:
             self.url = f'http://{instance.host}:{instance.http_port}'
         elif adapter_type == BotAdapterType.KOOK:
             self.url = 'https://www.kookapp.cn/api/v3'
+        elif adapter_type == BotAdapterType.TENCENT:
+            self.url = 'https://api.sgroup.qq.com'
 
     @property
-    def session(self) -> str:
+    def __session(self) -> str:
         if self.adapter_type == BotAdapterType.MIRAI and self.instance.session:
             return self.instance.session
         return ''
@@ -146,7 +163,7 @@ class BotAdapterAPI:
         if self.adapter_type == BotAdapterType.MIRAI:
             if not params:
                 params = {}
-            params['sessionKey'] = self.session
+            params['sessionKey'] = self.__session
             res = await http_requests.get(self.url + path, params=params, **kwargs)
             if kwargs.get('headers'):
                 headers = kwargs.pop('headers')
@@ -159,6 +176,18 @@ class BotAdapterAPI:
                 kwargs['headers'].update({'Authorization': f'Bot {self.token}'})
             else:
                 kwargs['headers'] = {'Authorization': f'Bot {self.token}'}
+            res = await http_requests.get(self.url + path, params, **kwargs)
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse('GET', path, params, headers, res, **kwargs)
+
+        if self.adapter_type == BotAdapterType.TENCENT:
+            if kwargs.get('headers'):
+                kwargs['headers'].update(self.instance.headers)
+            else:
+                kwargs['headers'] = self.instance.headers
             res = await http_requests.get(self.url + path, params, **kwargs)
             if kwargs.get('headers'):
                 headers = kwargs.pop('headers')
@@ -204,7 +233,7 @@ class BotAdapterAPI:
         if self.adapter_type == BotAdapterType.MIRAI:
             if not params:
                 params = {}
-            params['sessionKey'] = self.session
+            params['sessionKey'] = self.__session
             res = await http_requests.post(self.url + path, params, headers, **kwargs)
             return APIResponse('POST', path, params, headers, res, **kwargs)
 
@@ -216,7 +245,85 @@ class BotAdapterAPI:
             res = await http_requests.post(self.url + path, params, headers, **kwargs)
             return APIResponse('POST', path, params, headers, res, **kwargs)
 
+        if self.adapter_type == BotAdapterType.TENCENT:
+            if headers:
+                headers.update(self.instance.headers)
+            else:
+                headers = self.instance.headers
+            res = await http_requests.post(self.url + path, params, headers, **kwargs)
+            return APIResponse('POST', path, params, headers, res, **kwargs)
+
         return APIResponse('POST', path, params, headers, None, **kwargs)
+
+    async def request(self, path: str, method: str, headers: Optional[dict] = None, **kwargs):
+        """其他 请求
+
+        Args:
+            path (str): 接口路径
+            method (str): 请求方法
+            headers (dict, optional): 请求头. 默认为 None
+            **kwargs: 其他参数
+
+        Returns:
+            HTTPResponse: HTTP 响应
+        """
+        if not path.startswith('/'):
+            path = '/' + path
+
+        if self.adapter_type == BotAdapterType.CQHTTP:
+            if kwargs.get('headers'):
+                kwargs['headers'].update({'Authorization': self.token})
+            else:
+                kwargs['headers'] = {'Authorization': self.token}
+            res = await http_requests.request(
+                self.url + path,
+                method,
+                **kwargs,
+            )
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse(method, path, None, headers, res, **kwargs)
+
+        if self.adapter_type == BotAdapterType.MIRAI:
+            kwargs['params']['sessionKey'] = self.__session
+            res = await http_requests.request(self.url + path, method, **kwargs)
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse(method, path, None, headers, res, **kwargs)
+
+        if self.adapter_type == BotAdapterType.KOOK:
+            if kwargs.get('headers'):
+                kwargs['headers'].update({'Authorization': f'Bot {self.token}'})
+            else:
+                kwargs['headers'] = {'Authorization': f'Bot {self.token}'}
+            res = await http_requests.request(self.url + path, method, **kwargs)
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse(method, path, None, headers, res, **kwargs)
+
+        if self.adapter_type == BotAdapterType.TENCENT:
+            if kwargs.get('headers'):
+                kwargs['headers'].update(self.instance.headers)
+            else:
+                kwargs['headers'] = self.instance.headers
+            res = await http_requests.request(self.url + path, method, **kwargs)
+            if kwargs.get('headers'):
+                headers = kwargs.pop('headers')
+            else:
+                headers = None
+            return APIResponse(method, path, None, headers, res, **kwargs)
+
+        if kwargs.get('headers'):
+            headers = kwargs.pop('headers')
+        else:
+            headers = None
+        return APIResponse(method, path, None, headers, None, **kwargs)
 
     # 缓存操作
 
@@ -263,7 +370,7 @@ class BotAdapterAPI:
             res = await self.post(
                 '/recall',
                 {
-                    'sessionKey': self.session,
+                    'sessionKey': self.__session,
                     'messageId': message_id,
                     'target': target_id,
                 },
