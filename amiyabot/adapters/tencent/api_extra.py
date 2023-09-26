@@ -29,9 +29,7 @@ class TencentAPIExtra(BotAdapterAPI):
     async def set_user_role(self, guild_id: GroupId, user_id: UserId, role_id: str, channel_id: Optional[str] = None):
         if role_id == '5':
             res = await self.request(
-                f'/guilds/{guild_id}/members/{user_id}/roles/{role_id}',
-                method='put',
-                json={'channel_id': channel_id}
+                f'/guilds/{guild_id}/members/{user_id}/roles/{role_id}', method='put', json={'channel_id': channel_id}
             )
         else:
             res = await self.request(f'/guilds/{guild_id}/members/{user_id}/roles/{role_id}', method='put')
@@ -51,9 +49,7 @@ class TencentAPIExtra(BotAdapterAPI):
         if not color:
             color = 4285110493
         res = await self.request(
-            f'/guilds/{guild_id}/roles',
-            method='post',
-            json={'name': name, 'color': color, 'hoist': hoist}
+            f'/guilds/{guild_id}/roles', method='post', json={'name': name, 'color': color, 'hoist': hoist}
         )
         if res.status != 200:
             return None
@@ -61,17 +57,10 @@ class TencentAPIExtra(BotAdapterAPI):
             return res.data
 
     async def update_role(
-        self,
-        guild_id: GroupId,
-        role_id: str,
-        name: str,
-        color: Optional[int] = None,
-        hoist: int = 0
+        self, guild_id: GroupId, role_id: str, name: str, color: Optional[int] = None, hoist: int = 0
     ):
         res = await self.request(
-            f'/guilds/{guild_id}/roles/{role_id}',
-            method='patch',
-            json={'name': name, 'color': color, 'hoist': hoist}
+            f'/guilds/{guild_id}/roles/{role_id}', method='patch', json={'name': name, 'color': color, 'hoist': hoist}
         )
         if res.status != 200:
             return None
