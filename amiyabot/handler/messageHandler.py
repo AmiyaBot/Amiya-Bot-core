@@ -34,13 +34,13 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
     # todo 生命周期 - message_created
     for method in bot.process_message_created:
         method_ret = await method(data, instance)
-        
+
         if method_ret is False:
             return None
-    
+
         if method_ret is not None:
             data = method_ret
-    
+
     # 检查是否存在等待事件
     waiter = await find_wait_event(data)
 
