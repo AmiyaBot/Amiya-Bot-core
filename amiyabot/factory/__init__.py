@@ -271,7 +271,10 @@ class BotInstance(BotHandlerFactory):
             if not instance:
                 return None
 
+            version = instance.version
             plugin_id = instance.plugin_id
+
+            log.info(f'installing plugin: {plugin_id}@{version}')
 
             assert plugin_id not in self.plugins, f'plugin id {plugin_id} already exists.'
 
@@ -281,8 +284,6 @@ class BotInstance(BotHandlerFactory):
             instance.run_timed_tasks()
 
             self.plugins[plugin_id] = instance
-
-            log.info(f'plugin installed: {plugin_id}')
 
             return instance
 
