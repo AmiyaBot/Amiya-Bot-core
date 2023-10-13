@@ -119,12 +119,12 @@ class BotAdapterAPI:
         self.adapter_type = adapter_type
         self.token = instance.token
 
-        if adapter_type in [BotAdapterType.CQHTTP, BotAdapterType.MIRAI]:
-            self.url = f'http://{instance.host}:{instance.http_port}'
+        if adapter_type == BotAdapterType.TENCENT:
+            self.url = 'https://api.sgroup.qq.com'
         elif adapter_type == BotAdapterType.KOOK:
             self.url = 'https://www.kookapp.cn/api/v3'
-        elif adapter_type == BotAdapterType.TENCENT:
-            self.url = 'https://api.sgroup.qq.com'
+        else:
+            self.url = f'http://{instance.host}:{instance.http_port}'
 
     @property
     def __session(self) -> str:
@@ -146,7 +146,7 @@ class BotAdapterAPI:
         if not path.startswith('/'):
             path = '/' + path
 
-        if self.adapter_type == BotAdapterType.CQHTTP:
+        if self.adapter_type in [BotAdapterType.CQHTTP, BotAdapterType.ONEBOT11]:
             if kwargs.get('headers'):
                 kwargs['headers'].update({'Authorization': self.token})
             else:
@@ -224,7 +224,7 @@ class BotAdapterAPI:
         if not path.startswith('/'):
             path = '/' + path
 
-        if self.adapter_type == BotAdapterType.CQHTTP:
+        if self.adapter_type in [BotAdapterType.CQHTTP, BotAdapterType.ONEBOT11]:
             if headers:
                 headers.update({'Authorization': self.token})
             else:
@@ -272,7 +272,7 @@ class BotAdapterAPI:
         if not path.startswith('/'):
             path = '/' + path
 
-        if self.adapter_type == BotAdapterType.CQHTTP:
+        if self.adapter_type in [BotAdapterType.CQHTTP, BotAdapterType.ONEBOT11]:
             if kwargs.get('headers'):
                 kwargs['headers'].update({'Authorization': self.token})
             else:
