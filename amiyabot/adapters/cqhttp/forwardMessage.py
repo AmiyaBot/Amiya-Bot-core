@@ -3,9 +3,9 @@ import copy
 from typing import Union, Optional
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
+from amiyabot.adapters.onebot11.builder import build_message_send, OneBot11MessageCallback
 
 from .api import CQHttpAPI
-from .builder import build_message_send, CQHttpMessageCallback
 
 
 class CQHTTPForwardMessage:
@@ -59,7 +59,7 @@ class CQHTTPForwardMessage:
         chain.raw_chain = self.node
 
         async with self.data.bot.processing_context(chain, self.data.factory_name):
-            callback = CQHttpMessageCallback(
+            callback = OneBot11MessageCallback(
                 self.data.instance,
                 await self.api.send_group_forward_msg(self.data.channel_id, self.node),
             )

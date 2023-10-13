@@ -25,6 +25,7 @@ class BotAdapterProtocol:
         self.ws_port: Optional[int] = None
         self.http_port: Optional[int] = None
         self.session: Optional[str] = None
+        self.headers: Optional[dict] = None
 
         self.log = LoggerManager(self.__str__())
         self.bot: Optional[T_BotHandlerFactory] = None
@@ -48,6 +49,9 @@ class BotAdapterProtocol:
             callback = await self.send_chain_message(chain, is_sync=True)
 
         return callback
+
+    def get_user_avatar(self, message: dict):
+        return ''
 
     @asynccontextmanager
     async def get_websocket_connection(self, mark: str, url: str):

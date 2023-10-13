@@ -1,6 +1,7 @@
 import abc
 import asyncio
 import json
+from abc import ABC
 
 from typing import Optional
 
@@ -117,6 +118,7 @@ class BotAdapterAPI:
         self.instance = instance
         self.adapter_type = adapter_type
         self.token = instance.token
+
         if adapter_type in [BotAdapterType.CQHTTP, BotAdapterType.MIRAI]:
             self.url = f'http://{instance.host}:{instance.http_port}'
         elif adapter_type == BotAdapterType.KOOK:
@@ -325,6 +327,18 @@ class BotAdapterAPI:
             headers = None
         return APIResponse(method, path, None, headers, None, **kwargs)
 
+    @abc.abstractmethod
+    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def send_group_notice(self, group_id: GroupId, content: str, **kwargs) -> Optional[bool]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def send_nudge(self, user_id: UserId, group_id: GroupId):
+        raise NotImplementedError
+
     # 缓存操作
 
     async def get_message(
@@ -360,12 +374,6 @@ class BotAdapterAPI:
                 return await self.instance.package_message('', res.data['data'])
 
     async def delete_message(self, message_id: str, target_id: Optional[str] = None) -> Optional[bool]:
-        if self.adapter_type == BotAdapterType.CQHTTP:
-            res = await self.post('/delete_msg', {'message_id': message_id})
-            if res.data and res.data['status'] == 'ok':
-                return True
-            return False
-
         if self.adapter_type == BotAdapterType.MIRAI:
             res = await self.post(
                 '/recall',
@@ -627,10 +635,6 @@ class BotAdapterAPI:
                     result['gender'] = UserGender.from_str(result.pop('sex'))
             return result
 
-    @abc.abstractmethod
-    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
-        raise NotImplementedError
-
     # 账号管理
 
     async def delete_friend(self, user_id: UserId) -> Optional[bool]:
@@ -858,14 +862,6 @@ class BotAdapterAPI:
             return False
 
         return None
-
-    @abc.abstractmethod
-    async def send_group_notice(self, group_id: GroupId, content: str, **kwargs) -> Optional[bool]:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def send_nudge(self, user_id: UserId, group_id: GroupId):
-        raise NotImplementedError
 
     async def set_member_info(
         self,

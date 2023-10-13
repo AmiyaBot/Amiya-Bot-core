@@ -1,5 +1,4 @@
 import os
-import json
 import base64
 
 from graiax import silkcoder
@@ -10,7 +9,7 @@ from amiyabot.util import is_valid_url
 from amiyabot import log
 
 
-class CQHttpMessageCallback(MessageCallback):
+class OneBot11MessageCallback(MessageCallback):
     async def recall(self):
         if not self.response:
             log.warning('can not recall message because the response is None.')

@@ -12,6 +12,7 @@ class BotAdapterType(Enum):
     MIRAI = 2
     KOOK = 3
     TENCENT = 4
+    ONEBOT11 = 5
 
 
 class UserPermission(Enum):
