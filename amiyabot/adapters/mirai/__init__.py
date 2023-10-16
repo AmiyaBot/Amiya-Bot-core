@@ -6,11 +6,14 @@ from typing import Callable, Optional
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
+from amiyabot.log import LoggerManager
 
 from .forwardMessage import MiraiForwardMessage
 from .package import package_mirai_message
 from .builder import build_message_send, MiraiMessageCallback
-from .api import MiraiAPI, log
+from .api import MiraiAPI
+
+log = LoggerManager('Mirai')
 
 
 def mirai_api_http(host: str, ws_port: int, http_port: int):
@@ -34,10 +37,12 @@ class MiraiBotInstance(BotAdapterProtocol):
 
         self.session = None
 
-        self.api = MiraiAPI(self)
-
     def __str__(self):
         return 'Mirai'
+
+    @property
+    def api(self):
+        return MiraiAPI(self.host, self.http_port, self.session)
 
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')

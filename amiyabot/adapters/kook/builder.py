@@ -2,9 +2,6 @@ from amiyabot.adapters import MessageCallback
 from amiyabot.network.httpRequests import http_requests
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
-from amiyabot.log import LoggerManager
-
-log = LoggerManager('KOOK')
 
 
 class KOOKMessageCallback(MessageCallback):

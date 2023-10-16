@@ -42,10 +42,12 @@ class OneBot11Instance(BotAdapterProtocol):
         self.ws_port = ws_port
         self.http_port = http_port
 
-        self.api = OneBot11API(self)
-
     def __str__(self):
         return 'OneBot11'
+
+    @property
+    def api(self):
+        return OneBot11API(self.host, self.http_port, self.token)
 
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
@@ -103,7 +105,7 @@ class OneBot11Instance(BotAdapterProtocol):
             for item in reply_list:
                 if is_sync:
                     request = await self.api.post('/send_msg', item)
-                    res.append(request.origin)
+                    res.append(request)
                 else:
                     await self.connection.send(json.dumps({'action': 'send_msg', 'params': item}))
 

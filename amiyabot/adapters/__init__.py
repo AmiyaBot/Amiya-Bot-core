@@ -9,6 +9,8 @@ from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
+from .api import BotInstanceAPIProtocol
+
 HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
 PACKAGE_RESULT = Union[Message, Event, EventList]
 
@@ -70,6 +72,10 @@ class BotAdapterProtocol:
 
         self.set_alive(False)
         self.log.info(f'websocket connection({mark}) closed.')
+
+    @property
+    def api(self):
+        return BotInstanceAPIProtocol()
 
     @abc.abstractmethod
     async def close(self):

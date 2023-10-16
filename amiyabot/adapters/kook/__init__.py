@@ -9,9 +9,13 @@ from amiyabot.network.httpRequests import http_requests, ResponseException
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, ManualCloseException, HANDLER_TYPE
+from amiyabot.log import LoggerManager
 
 from .package import package_kook_message, RolePermissionCache
-from .builder import build_message_send, KOOKMessageCallback, log
+from .builder import build_message_send, KOOKMessageCallback
+from .api import KOOKAPI
+
+log = LoggerManager('KOOK')
 
 
 class KOOKBotInstance(BotAdapterProtocol):
@@ -30,6 +34,10 @@ class KOOKBotInstance(BotAdapterProtocol):
 
     def __str__(self):
         return 'KOOK'
+
+    @property
+    def api(self):
+        return KOOKAPI(self.token)
 
     @property
     def __still_alive(self):

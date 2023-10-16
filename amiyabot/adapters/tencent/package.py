@@ -1,14 +1,15 @@
 import re
 
 from amiyabot.builtin.message import Event, Message
-from amiyabot.adapters.tencent.api import TencentAPI
+from amiyabot.adapters import BotAdapterProtocol
+
 
 from ..common import text_convert
 
 ADMIN = ['2', '4', '5']
 
 
-async def package_tencent_message(instance: TencentAPI, event: str, message: dict, is_reference: bool = False):
+async def package_tencent_message(instance: BotAdapterProtocol, event: str, message: dict, is_reference: bool = False):
     message_created = ['MESSAGE_CREATE', 'AT_MESSAGE_CREATE', 'DIRECT_MESSAGE_CREATE']
     if event in message_created:
         if 'bot' in message['author'] and message['author']['bot'] and not is_reference:
@@ -17,10 +18,10 @@ async def package_tencent_message(instance: TencentAPI, event: str, message: dic
         data = get_info(Message(instance, message), message)
         data.is_direct = 'direct_message' in message and message['direct_message']
 
-        bot = await instance.get_me()
+        bot = await instance.api.get_me()
 
         if not data.is_direct:
-            channel = await instance.get_channel(data.channel_id)
+            channel = await instance.api.get_channel(data.channel_id)
             if not channel:
                 return None
 
@@ -56,7 +57,9 @@ async def package_tencent_message(instance: TencentAPI, event: str, message: dic
             data = text_convert(data, text.strip(), message['content'])
 
         if 'message_reference' in message:
-            reference = await instance.get_message(message['channel_id'], message['message_reference']['message_id'])
+            reference = await instance.api.get_message(
+                message['channel_id'], message['message_reference']['message_id']
+            )
             if reference:
                 reference_data = await package_tencent_message(instance, event, reference['message'], True)
                 if reference_data:

@@ -12,10 +12,9 @@ def cq_http(host: str, ws_port: int, http_port: int):
 
 
 class CQHttpBotInstance(OneBot11Instance):
-    def __init__(self, appid: str, token: str, host: str, ws_port: int, http_port: int):
-        super().__init__(appid, token, host, ws_port, http_port)
-
-        self.api = CQHttpAPI(self)
+    @property
+    def api(self):
+        return CQHttpAPI(self.host, self.http_port, self.token)
 
     def get_user_avatar(self, message: dict):
         return f'https://q.qlogo.cn/headimg_dl?dst_uin=%s&spec=100' % str(message['sender']['user_id'])

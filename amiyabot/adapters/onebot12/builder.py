@@ -1,10 +1,10 @@
 import base64
 
 from amiyabot.adapters import MessageCallback
-from amiyabot.adapters._adapterApi import BotAdapterAPI
+from amiyabot.adapters.api import BotInstanceAPIProtocol
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
-from amiyabot.util import is_valid_url
+from amiyabot.util import is_valid_url, random_code
 from amiyabot import log
 
 
@@ -20,7 +20,7 @@ class OneBot12MessageCallback(MessageCallback):
             await self.instance.recall_message(response['data']['message_id'])
 
 
-async def build_message_send(api: BotAdapterAPI, chain: Chain, chain_only: bool = False):
+async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain, chain_only: bool = False):
     chain_list = chain.chain
     chain_data = []
 
@@ -78,7 +78,7 @@ async def build_message_send(api: BotAdapterAPI, chain: Chain, chain_only: bool 
     }
 
 
-async def append_image(api: BotAdapterAPI, img_data: Union[bytes, str]):
+async def append_image(api: BotInstanceAPIProtocol, img_data: Union[bytes, str]):
     if isinstance(img_data, bytes):
         data = {'type': 'data', 'data': 'base64://' + base64.b64encode(img_data).decode()}
     elif is_valid_url(img_data):
@@ -86,6 +86,6 @@ async def append_image(api: BotAdapterAPI, img_data: Union[bytes, str]):
     else:
         return None
 
-    res = await api.post('/upload_file', data)
+    res = await api.post('/', {'action': 'upload_file', 'params': {'name': f'{random_code(20)}.png', **data}})
     if res:
-        return {'type': 'image', 'data': {'file_id': res.data['file_id']}}
+        return {'type': 'image', 'data': {'file_id': json.loads(res)['data']['file_id']}}

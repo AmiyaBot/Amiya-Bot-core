@@ -3,14 +3,16 @@ import json
 import asyncio
 import websockets
 
-from typing import Dict
+from typing import Dict, Optional
 from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
+from amiyabot.network.httpRequests import http_requests
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
+from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
+from .url import APIConstant, get_url
 from .api import TencentAPI
-from .api_extra import TencentAPIExtra
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
 from .package import package_tencent_message
@@ -19,7 +21,7 @@ from .builder import build_message_send, TencentMessageCallback
 log = LoggerManager('Tencent')
 
 
-class TencentBotInstance(TencentAPI):
+class TencentBotInstance(BotAdapterProtocol):
     def __init__(self, appid: str, token: str):
         super().__init__(appid, token)
 
@@ -28,10 +30,12 @@ class TencentBotInstance(TencentAPI):
 
         self.shards_record: Dict[int, ShardsRecord] = {}
 
-        self.api = TencentAPIExtra(self)
-
     def __str__(self):
         return 'Tencent'
+
+    @property
+    def api(self):
+        return TencentAPI(self.appid, self.token)
 
     def __create_heartbeat(self, websocket, interval: int, record: ShardsRecord):
         heartbeat_key = random_code(10)
@@ -45,6 +49,29 @@ class TencentBotInstance(TencentAPI):
         for _, item in self.shards_record.items():
             if item.connection:
                 await item.connection.close()
+
+    async def connect(self, private: bool, handler: HANDLER_TYPE):
+        log.info(f'requesting appid {self.appid} gateway')
+
+        resp = await self.api.get(APIConstant.gatewayBotURI)
+
+        if not resp:
+            if self.keep_run:
+                await asyncio.sleep(10)
+                asyncio.create_task(self.connect(private, handler))
+            return False
+
+        gateway = GateWay(**resp)
+
+        log.info(
+            f'appid {self.appid} gateway resp: shards {gateway.shards}, remaining %d/%d'
+            % (
+                gateway.session_start_limit['remaining'],
+                gateway.session_start_limit['total'],
+            )
+        )
+
+        await self.create_connection(ConnectionHandler(private=private, gateway=gateway, message_handler=handler))
 
     async def create_connection(self, handler: ConnectionHandler, shards_index: int = 0):
         gateway = handler.gateway
@@ -194,3 +221,10 @@ class TencentBotInstance(TencentAPI):
 
     async def package_message(self, event: str, message: dict):
         return await package_tencent_message(self, event, message)
+
+    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
+        await http_requests.request(
+            get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
+            method='delete',
+            headers=self.headers,
+        )

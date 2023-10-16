@@ -1,32 +1,50 @@
 from typing import Optional
-from amiyabot.log import LoggerManager
-from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.network.httpRequests import http_requests
 from amiyabot.network.download import download_async
 
-from .._adapterApi import BotAdapterAPI, BotAdapterType, RelationType, UserId
-from .._adapterApi.define import GroupId
 
-log = LoggerManager('KOOK')
+class KOOKAPI(BotInstanceAPIProtocol):
+    def __init__(self, token):
+        self.host = 'https://www.kookapp.cn/api/v3'
+        self.token = token
 
+    @property
+    def headers(self):
+        return {'Authorization': f'Bot {self.token}'}
 
-class KOOKAPI(BotAdapterAPI):
-    def __init__(self, instance: BotAdapterProtocol):
-        super().__init__(instance, BotAdapterType.KOOK)
+    async def get(self, url: str, *args, **kwargs):
+        return await http_requests.get(
+            self.host + url,
+            headers=self.headers,
+            **kwargs,
+        )
+
+    async def post(self, url: str, data: Optional[dict] = None, *args, **kwargs):
+        return await http_requests.post(
+            self.host + url,
+            data,
+            headers=self.headers,
+            **kwargs,
+        )
+
+    async def request(self, url: str, method: str, *args, **kwargs):
+        return await http_requests.request(
+            self.host + url,
+            headers=self.headers,
+            **kwargs,
+        )
 
     async def get_user_info(
         self,
-        user_id: UserId,
-        relation_type: RelationType = RelationType.STRANGER,
-        group_id: Optional[GroupId] = None,
-        no_cache: bool = False,
+        user_id: str,
+        group_id: Optional[str] = None,
     ) -> Optional[dict]:
         """获取用户信息
 
         Args:
             user_id (UserId): 用户ID
-            relation_type (RelationType, optional): 不需要
             group_id (GroupId, optional): 群组ID. Defaults to None.
-            no_cache (bool, optional): 不需要
 
         Returns:
             Optional[dict]: 用户信息
@@ -39,7 +57,7 @@ class KOOKAPI(BotAdapterAPI):
             return res.data.get('data')
         return None
 
-    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
+    async def get_user_avatar(self, user_id: str, **kwargs) -> Optional[bytes]:
         """获取用户头像
 
         Args:
@@ -58,10 +76,4 @@ class KOOKAPI(BotAdapterAPI):
             url = res.data['data']['avatar']
             data = await download_async(url)
             return data
-        return None
-
-    async def send_group_notice(self, group_id: GroupId, content: str, **kwargs) -> Optional[bool]:
-        return None
-
-    async def send_nudge(self, user_id: UserId, group_id: GroupId) -> Optional[bool]:
         return None

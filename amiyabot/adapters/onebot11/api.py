@@ -1,20 +1,38 @@
 from typing import Optional
-from amiyabot.adapters import BotAdapterProtocol
-from .._adapterApi import BotAdapterAPI, BotAdapterType, GroupId, UserId
+from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.network.httpRequests import http_requests
 
 
-class OneBot11API(BotAdapterAPI):
-    def __init__(self, instance: BotAdapterProtocol):
-        super().__init__(instance, BotAdapterType.ONEBOT11)
+class OneBot11API(BotInstanceAPIProtocol):
+    def __init__(self, host: str, port: int, token: str):
+        self.token = token
+        self.host = f'http://{host}:{port}'
 
-    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
-        return None
+    @property
+    def headers(self):
+        return {'Authorization': self.token}
 
-    async def send_group_notice(self, group_id: GroupId, content: str, **kwargs) -> Optional[bool]:
-        return None
+    async def get(self, url: str, *args, **kwargs):
+        return await http_requests.get(
+            self.host + url,
+            headers=self.headers,
+            **kwargs,
+        )
 
-    async def send_nudge(self, user_id: UserId, group_id: GroupId):
-        return None
+    async def post(self, url: str, data: Optional[dict] = None, *args, **kwargs):
+        return await http_requests.post(
+            self.host + url,
+            data,
+            headers=self.headers,
+            **kwargs,
+        )
+
+    async def request(self, url: str, method: str, *args, **kwargs):
+        return await http_requests.request(
+            self.host + url,
+            headers=self.headers,
+            **kwargs,
+        )
 
     async def send_private_msg(self, *args, **kwargs):
         ...

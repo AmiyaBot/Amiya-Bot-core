@@ -63,10 +63,9 @@ def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
 
         return text_convert(msg, text, text)
 
-    else:
-        event_list = EventList([Event(instance, message_type, data)])
+    event_list = EventList([Event(instance, message_type, data)])
 
-        if data['detail_type']:
-            event_list.append(instance, '{type}.{detail_type}'.format(**data), data)
+    if data['detail_type']:
+        event_list.append(instance, '{type}.{detail_type}'.format(**data), data)
 
-        return event_list
+    return event_list

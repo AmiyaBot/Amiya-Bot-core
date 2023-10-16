@@ -42,10 +42,12 @@ class OneBot12Instance(BotAdapterProtocol):
         self.ws_port = ws_port
         self.http_port = http_port
 
-        self.api = OneBot12API(self)
-
     def __str__(self):
         return 'OneBot12'
+
+    @property
+    def api(self):
+        return OneBot12API(self.host, self.http_port, self.token)
 
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
@@ -99,9 +101,8 @@ class OneBot12Instance(BotAdapterProtocol):
 
         res = []
         request = await self.api.post('/', {'action': 'send_message', 'params': reply})
-
         if request:
-            res.append(request.origin)
+            res.append(request)
 
         return [OneBot12MessageCallback(self, item) for item in res]
 
