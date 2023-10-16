@@ -31,6 +31,8 @@ class MessageStructure:
         self.image: List[str] = []
 
         self.files: List[File] = []
+        self.voice = ''
+        self.audio = ''
         self.video = ''
 
         self.text = ''
