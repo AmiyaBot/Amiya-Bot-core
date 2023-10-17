@@ -16,4 +16,4 @@ async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain):
         if isinstance(item, Face):
             return {'type': 'wx.emoji', 'data': {'file_id': item.face_id}}
 
-    return build_ob12(api, chain, handle_item)
+    return await build_ob12(api, chain, handle_item)

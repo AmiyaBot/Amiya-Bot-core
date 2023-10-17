@@ -86,7 +86,7 @@ async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain, custom: 
 
 async def append_image(api: BotInstanceAPIProtocol, img_data: Union[bytes, str]):
     if isinstance(img_data, bytes):
-        data = {'type': 'data', 'data': 'base64://' + base64.b64encode(img_data).decode()}
+        data = {'type': 'data', 'data': base64.b64encode(img_data).decode()}
     elif is_valid_url(img_data):
         data = {'type': 'url', 'url': img_data}
     else:
