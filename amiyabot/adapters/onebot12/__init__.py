@@ -66,10 +66,9 @@ class OneBot12Instance(BotAdapterProtocol):
 
         log.info(f'connecting {mark}...')
         try:
-            async with websockets.connect(self.url, extra_headers=self.headers) as websocket:
+            async with self.get_websocket_connection(mark, self.url, self.headers) as websocket:
                 log.info(f'{mark} connect successful.')
                 self.connection = websocket
-                self.set_alive(True)
 
                 while self.keep_run:
                     message = await websocket.recv()
@@ -83,9 +82,6 @@ class OneBot12Instance(BotAdapterProtocol):
                         asyncio.create_task(handler('', json.loads(message)))
 
                 await websocket.close()
-
-                self.set_alive(False)
-                log.info(f'{mark} closed.')
 
         except (
             websockets.ConnectionClosedOK,

@@ -1,11 +1,14 @@
 import base64
 
+from typing import Callable, Awaitable
 from amiyabot.adapters import MessageCallback
 from amiyabot.adapters.api import BotInstanceAPIProtocol
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 from amiyabot.util import is_valid_url, random_code
 from amiyabot import log
+
+CUSTOM_CHAIN_ITEM = Callable[[CHAIN_ITEM], Awaitable[dict]]
 
 
 class OneBot12MessageCallback(MessageCallback):
@@ -20,12 +23,18 @@ class OneBot12MessageCallback(MessageCallback):
             await self.instance.recall_message(response['data']['message_id'])
 
 
-async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain, chain_only: bool = False):
+async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain, custom: Optional[CUSTOM_CHAIN_ITEM] = None):
     chain_list = chain.chain
     chain_data = []
 
     if chain_list:
         for item in chain_list:
+            if custom:
+                res = await custom(item)
+                if res:
+                    chain_data.append(res)
+                    continue
+
             # At
             if isinstance(item, At):
                 chain_data.append({'type': 'mention', 'data': {'user_id': item.target or chain.data.user_id}})
@@ -66,9 +75,6 @@ async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain, chain_on
             # Extend
             if isinstance(item, Extend):
                 chain_data.append(item.get())
-
-    if chain_only:
-        return chain_data
 
     return {
         'detail_type': chain.data.message_type,

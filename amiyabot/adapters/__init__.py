@@ -56,7 +56,7 @@ class BotAdapterProtocol:
         return ''
 
     @asynccontextmanager
-    async def get_websocket_connection(self, mark: str, url: str):
+    async def get_websocket_connection(self, mark: str, url: str, headers: Optional[dict] = None):
         async with self.log.catch(
             f'websocket connection({mark}) error:',
             ignore=[
@@ -67,7 +67,7 @@ class BotAdapterProtocol:
             ],
         ):
             self.set_alive(True)
-            async with websockets.connect(url) as websocket:
+            async with websockets.connect(url, extra_headers=(headers or {})) as websocket:
                 yield websocket
 
         self.set_alive(False)
