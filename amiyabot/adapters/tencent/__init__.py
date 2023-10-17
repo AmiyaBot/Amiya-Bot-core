@@ -77,55 +77,54 @@ class TencentBotInstance(BotAdapterProtocol):
         gateway = handler.gateway
         sign = f'{self.appid} {shards_index + 1}/{gateway.shards}'
 
-        log.info(f'connecting({sign})...')
-
         async with self.get_websocket_connection(sign, gateway.url) as websocket:
-            self.shards_record[shards_index] = ShardsRecord(shards_index, connection=websocket)
+            if websocket:
+                self.shards_record[shards_index] = ShardsRecord(shards_index, connection=websocket)
 
-            while self.keep_run:
-                await asyncio.sleep(0)
+                while self.keep_run:
+                    await asyncio.sleep(0)
 
-                recv = await websocket.recv()
-                payload = Payload(**json.loads(recv))
+                    recv = await websocket.recv()
+                    payload = Payload(**json.loads(recv))
 
-                if payload.op == 0:
-                    if payload.t == 'READY':
-                        log.info(
-                            f'connected({sign}): %s(%s)'
-                            % (
-                                payload.d['user']['username'],
-                                'private' if handler.private else 'public',
+                    if payload.op == 0:
+                        if payload.t == 'READY':
+                            log.info(
+                                f'connected({sign}): %s(%s)'
+                                % (
+                                    payload.d['user']['username'],
+                                    'private' if handler.private else 'public',
+                                )
                             )
+                            self.shards_record[shards_index].session_id = payload.d['session_id']
+
+                            if shards_index == 0 and gateway.shards > 1:
+                                for n in range(gateway.shards - 1):
+                                    asyncio.create_task(self.create_connection(handler, n + 1))
+                        else:
+                            asyncio.create_task(handler.message_handler(payload.t, payload.d))
+
+                    if payload.op == 10:
+                        create_token = {
+                            'token': f'Bot {self.appid}.{self.token}',
+                            'intents': Intents(handler.private).intents.get_all_intents(),
+                            'shard': [shards_index, gateway.shards],
+                            'properties': {
+                                '$os': sys.platform,
+                                '$browser': '',
+                                '$device': '',
+                            },
+                        }
+                        await websocket.send(Payload(op=2, d=create_token).to_json())
+
+                        self.__create_heartbeat(
+                            websocket,
+                            payload.d['heartbeat_interval'],
+                            self.shards_record[shards_index],
                         )
-                        self.shards_record[shards_index].session_id = payload.d['session_id']
 
-                        if shards_index == 0 and gateway.shards > 1:
-                            for n in range(gateway.shards - 1):
-                                asyncio.create_task(self.create_connection(handler, n + 1))
-                    else:
-                        asyncio.create_task(handler.message_handler(payload.t, payload.d))
-
-                if payload.op == 10:
-                    create_token = {
-                        'token': f'Bot {self.appid}.{self.token}',
-                        'intents': Intents(handler.private).intents.get_all_intents(),
-                        'shard': [shards_index, gateway.shards],
-                        'properties': {
-                            '$os': sys.platform,
-                            '$browser': '',
-                            '$device': '',
-                        },
-                    }
-                    await websocket.send(Payload(op=2, d=create_token).to_json())
-
-                    self.__create_heartbeat(
-                        websocket,
-                        payload.d['heartbeat_interval'],
-                        self.shards_record[shards_index],
-                    )
-
-                if payload.s:
-                    self.shards_record[shards_index].last_s = payload.s
+                    if payload.s:
+                        self.shards_record[shards_index].last_s = payload.s
 
         while self.keep_run and self.shards_record[shards_index].reconnect_limit > 0:
             await self.reconnect(handler, self.shards_record[shards_index], sign)

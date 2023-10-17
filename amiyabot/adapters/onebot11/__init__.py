@@ -64,9 +64,8 @@ class OneBot11Instance(BotAdapterProtocol):
     async def keep_connect(self, handler: Callable):
         mark = f'websocket({self.appid})'
 
-        log.info(f'connecting {mark}...')
-        try:
-            async with self.get_websocket_connection(mark, self.url, self.headers) as websocket:
+        async with self.get_websocket_connection(mark, self.url, self.headers) as websocket:
+            if websocket:
                 log.info(f'{mark} connect successful.')
                 self.connection = websocket
 
@@ -82,15 +81,6 @@ class OneBot11Instance(BotAdapterProtocol):
                         asyncio.create_task(handler('', json.loads(message)))
 
                 await websocket.close()
-
-        except (
-            websockets.ConnectionClosedOK,
-            websockets.ConnectionClosedError,
-            websockets.InvalidStatusCode,
-        ) as e:
-            log.error(f'{mark} connection closed. {e}')
-        except ConnectionRefusedError:
-            log.error(f'cannot connect to server: {mark}.')
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reply, voice_list, cq_codes = await build_message_send(chain)
