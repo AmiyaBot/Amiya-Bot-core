@@ -2,12 +2,14 @@ import abc
 import asyncio
 import websockets
 
+from websockets.legacy.client import WebSocketClientProtocol
 from typing import Any, List, Union, Callable, Coroutine, Optional
-from contextlib import asynccontextmanager
 from amiyabot.typeIndexes import T_BotHandlerFactory
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
+
+from .api import BotInstanceAPIProtocol
 
 HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
 PACKAGE_RESULT = Union[Message, Event, EventList]
@@ -25,6 +27,7 @@ class BotAdapterProtocol:
         self.ws_port: Optional[int] = None
         self.http_port: Optional[int] = None
         self.session: Optional[str] = None
+        self.headers: Optional[dict] = None
 
         self.log = LoggerManager(self.__str__())
         self.bot: Optional[T_BotHandlerFactory] = None
@@ -49,23 +52,15 @@ class BotAdapterProtocol:
 
         return callback
 
-    @asynccontextmanager
-    async def get_websocket_connection(self, mark: str, url: str):
-        async with self.log.catch(
-            f'websocket connection({mark}) error:',
-            ignore=[
-                asyncio.CancelledError,
-                websockets.ConnectionClosedError,
-                websockets.ConnectionClosedOK,
-                ManualCloseException,
-            ],
-        ):
-            self.set_alive(True)
-            async with websockets.connect(url) as websocket:
-                yield websocket
+    def get_user_avatar(self, message: dict):
+        return ''
 
-        self.set_alive(False)
-        self.log.info(f'websocket connection({mark}) closed.')
+    def get_websocket_connection(self, mark: str, url: str, headers: Optional[dict] = None):
+        return WebSocketConnect(self, mark, url, headers)
+
+    @property
+    def api(self):
+        return BotInstanceAPIProtocol()
 
     @abc.abstractmethod
     async def close(self):
@@ -132,5 +127,45 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
 
+class WebSocketConnect:
+    def __init__(self, instance: BotAdapterProtocol, mark: str, url: str, headers: Optional[dict] = None):
+        self.mark = mark
+        self.url = url
+        self.log = instance.log
+        self.instance = instance
+        self.headers = headers or {}
+
+        self.connection: Optional[WebSocketClientProtocol] = None
+
+    async def __aenter__(self) -> Optional[WebSocketClientProtocol]:
+        self.log.info(f'connecting {self.mark}...')
+
+        try:
+            self.connection = await websockets.connect(self.url, extra_headers=self.headers)
+            self.instance.set_alive(True)
+        except (
+            asyncio.CancelledError,
+            asyncio.exceptions.TimeoutError,
+            websockets.ConnectionClosedError,
+            websockets.ConnectionClosedOK,
+            websockets.InvalidStatusCode,
+            ManualCloseException,
+        ) as e:
+            self.log.error(f'websocket connection({self.mark}) error: {repr(e)}')
+        except ConnectionRefusedError:
+            self.log.error(f'cannot connect to server.')
+
+        return self.connection
+
+    async def __aexit__(self, *args, **kwargs):
+        if self.connection:
+            await self.connection.close()
+
+        if self.instance.alive:
+            self.instance.set_alive(False)
+            self.log.info(f'websocket connection({self.mark}) closed.')
+
+
 class ManualCloseException(Exception):
-    ...
+    def __str__(self):
+        return 'ManualCloseException'

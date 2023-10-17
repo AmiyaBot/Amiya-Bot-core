@@ -8,26 +8,33 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
-from .forwardMessage import MiraiForwardMessage
-from .package import package_mirai_message
-from .builder import build_message_send, MiraiMessageCallback
-from .api import MiraiAPI
+from .package import package_onebot11_message
+from .builder import build_message_send, OneBot11MessageCallback
+from .api import OneBot11API
 
-log = LoggerManager('Mirai')
+log = LoggerManager('OneBot11')
 
 
-def mirai_api_http(host: str, ws_port: int, http_port: int):
+def onebot11(host: str, ws_port: int, http_port: int):
     def adapter(appid: str, token: str):
-        return MiraiBotInstance(appid, token, host, ws_port, http_port)
+        return OneBot11Instance(appid, token, host, ws_port, http_port)
 
     return adapter
 
 
-class MiraiBotInstance(BotAdapterProtocol):
-    def __init__(self, appid: str, token: str, host: str, ws_port: int, http_port: int):
+class OneBot11Instance(BotAdapterProtocol):
+    def __init__(
+        self,
+        appid: str,
+        token: str,
+        host: str,
+        ws_port: int,
+        http_port: int,
+    ):
         super().__init__(appid, token)
 
-        self.url = f'ws://{host}:{ws_port}/all?verifyKey={token}&&qq={appid}'
+        self.url = f'ws://{host}:{ws_port}/'
+        self.headers = {'Authorization': f'Bearer {token}'}
 
         self.connection: Optional[websockets.WebSocketClientProtocol] = None
 
@@ -35,14 +42,12 @@ class MiraiBotInstance(BotAdapterProtocol):
         self.ws_port = ws_port
         self.http_port = http_port
 
-        self.session = None
-
     def __str__(self):
-        return 'Mirai'
+        return 'OneBot11'
 
     @property
     def api(self):
-        return MiraiAPI(self.host, self.http_port, self.session)
+        return OneBot11API(self.host, self.http_port, self.token)
 
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
@@ -59,9 +64,9 @@ class MiraiBotInstance(BotAdapterProtocol):
     async def keep_connect(self, handler: Callable):
         mark = f'websocket({self.appid})'
 
-        async with self.get_websocket_connection(mark, self.url) as websocket:
+        async with self.get_websocket_connection(mark, self.url, self.headers) as websocket:
             if websocket:
-                log.info(f'{mark} connect successful. waiting handshake...')
+                log.info(f'{mark} connect successful.')
                 self.connection = websocket
 
                 while self.keep_run:
@@ -69,39 +74,28 @@ class MiraiBotInstance(BotAdapterProtocol):
 
                     if message == b'':
                         await websocket.close()
-                        log.warning(f'{mark} mirai-api-http close the connection.')
+                        log.warning(f'{mark} server already closed this connection.')
                         return None
 
-                    await self.handle_message(str(message), handler)
+                    async with log.catch(ignore=[json.JSONDecodeError]):
+                        asyncio.create_task(handler('', json.loads(message)))
 
                 await websocket.close()
 
-    async def handle_message(self, message: str, handler: Callable):
-        async with log.catch(ignore=[json.JSONDecodeError]):
-            data = json.loads(message)
-            data = data['data']
-
-            if 'session' in data:
-                self.session = data['session']
-                log.info(f'websocket({self.appid}) handshake successful. session: ' + self.session)
-                return None
-
-            asyncio.create_task(handler('', data))
-
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
-        reply, voice_list = await build_message_send(self.api, chain, use_http=is_sync)
+        reply, voice_list, cq_codes = await build_message_send(chain)
 
         res = []
 
-        for reply_list in [[reply], voice_list]:
+        for reply_list in [[reply], cq_codes, voice_list]:
             for item in reply_list:
                 if is_sync:
-                    request = await self.api.post(item[0], item[1])
-                    res.append(request.origin)
+                    request = await self.api.post('/send_msg', item)
+                    res.append(request)
                 else:
-                    await self.connection.send(item[1])
+                    await self.connection.send(json.dumps({'action': 'send_msg', 'params': item}))
 
-        return [MiraiMessageCallback(chain.data.channel_id or chain.data.user_id, self, item) for item in res]
+        return [OneBot11MessageCallback(self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -114,7 +108,7 @@ class MiraiBotInstance(BotAdapterProtocol):
             raise TypeError('send_message() missing argument: "channel_id" or "user_id"')
 
         if not channel_id and user_id:
-            data.message_type = 'friend'
+            data.message_type = 'private'
             data.is_direct = True
 
         message = Chain(data)
@@ -124,7 +118,7 @@ class MiraiBotInstance(BotAdapterProtocol):
         return message
 
     async def package_message(self, event: str, message: dict):
-        return package_mirai_message(self, self.appid, message)
+        return package_onebot11_message(self, self.appid, message)
 
     async def recall_message(self, message_id: str, target_id: Optional[str] = None):
-        await self.api.delete_message(message_id, target_id)
+        await self.api.post('/delete_msg', {'message_id': message_id})

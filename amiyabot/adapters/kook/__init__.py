@@ -9,9 +9,13 @@ from amiyabot.network.httpRequests import http_requests, ResponseException
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, ManualCloseException, HANDLER_TYPE
+from amiyabot.log import LoggerManager
 
 from .package import package_kook_message, RolePermissionCache
-from .builder import build_message_send, KOOKMessageCallback, log
+from .builder import build_message_send, KOOKMessageCallback
+from .api import KOOKAPI
+
+log = LoggerManager('KOOK')
 
 
 class KOOKBotInstance(BotAdapterProtocol):
@@ -30,6 +34,10 @@ class KOOKBotInstance(BotAdapterProtocol):
 
     def __str__(self):
         return 'KOOK'
+
+    @property
+    def api(self):
+        return KOOKAPI(self.token)
 
     @property
     def __still_alive(self):
@@ -56,51 +64,50 @@ class KOOKBotInstance(BotAdapterProtocol):
 
                 self.ws_url = resp['data']['url']
 
-            log.info(f'connecting({self.appid})...')
-
             async with self.get_websocket_connection(self.appid, self.ws_url) as websocket:
-                self.connection = websocket
+                if websocket:
+                    self.connection = websocket
 
-                while self.__still_alive:
-                    await asyncio.sleep(0)
+                    while self.__still_alive:
+                        await asyncio.sleep(0)
 
-                    recv = await websocket.recv()
-                    payload = WSPayload(**json.loads(recv))
+                        recv = await websocket.recv()
+                        payload = WSPayload(**json.loads(recv))
 
-                    if payload.sn is not None:
-                        self.last_sn = payload.sn
+                        if payload.sn is not None:
+                            self.last_sn = payload.sn
 
-                    if payload.s == 0:
-                        asyncio.create_task(handler('event', payload.d))
+                        if payload.s == 0:
+                            asyncio.create_task(handler('event', payload.d))
 
-                    if payload.s == 1:
-                        if payload.d['code'] != 0:
+                        if payload.s == 1:
+                            if payload.d['code'] != 0:
+                                self.ws_url = ''
+                                self.last_sn = 0
+                                raise ManualCloseException
+
+                            log.info(f'connected({self.appid}): {self.bot_name}')
+
+                            if self.last_sn:
+                                log.info(f'resuming({self.appid})...')
+                                await self.connection.send(WSPayload(4, sn=self.last_sn).to_json())
+
+                            self.session = payload.d['session_id']
+                            asyncio.create_task(self.heartbeat_interval())
+
+                        if payload.s == 3:
+                            self.pong = 1
+
+                        if payload.s == 5:
                             self.ws_url = ''
                             self.last_sn = 0
-                            raise ManualCloseException
+                            await self.close_connection()
 
-                        log.info(f'connected({self.appid}): {self.bot_name}')
+                        if payload.s == 6:
+                            log.info(f'resume({self.appid}) done.')
 
-                        if self.last_sn:
-                            log.info(f'resuming({self.appid})...')
-                            await self.connection.send(WSPayload(4, sn=self.last_sn).to_json())
-
-                        self.session = payload.d['session_id']
-                        asyncio.create_task(self.heartbeat_interval())
-
-                    if payload.s == 3:
-                        self.pong = 1
-
-                    if payload.s == 5:
-                        self.ws_url = ''
-                        self.last_sn = 0
-                        await self.close_connection()
-
-                    if payload.s == 6:
-                        log.info(f'resume({self.appid}) done.')
-
-                    if payload.sn:
-                        self.last_sn = payload.sn
+                        if payload.sn:
+                            self.last_sn = payload.sn
 
         finally:
             await self.close_connection()

@@ -134,4 +134,5 @@ class Extend:
         return self.data
 
 
-CHAIN_LIST = List[Union[At, AtAll, Tag, Face, Text, Image, Voice, Html, Extend]]
+CHAIN_ITEM = Union[At, AtAll, Tag, Face, Text, Image, Voice, Html, Extend]
+CHAIN_LIST = List[CHAIN_ITEM]

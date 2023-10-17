@@ -1,32 +1,41 @@
-import hashlib
-import json
 import re
-from typing import Optional
+import json
+import hashlib
 
-from amiyabot.log import LoggerManager
+from typing import Optional
+from amiyabot.adapters.api import BotInstanceAPIProtocol
 from amiyabot.network.download import download_async
 from amiyabot.network.httpRequests import http_requests
-from amiyabot.adapters import BotAdapterProtocol
 
-from .._adapterApi import BotAdapterAPI, BotAdapterType, UserId
 from .payload import HttpAdapter
 
-log = LoggerManager('Mirai')
 
+class MiraiAPI(BotInstanceAPIProtocol):
+    def __init__(self, host: str, port: int, session: str):
+        self.session = session
+        self.host = f'http://{host}:{port}'
 
-class MiraiAPI(BotAdapterAPI):
-    def __init__(self, instance: BotAdapterProtocol):
-        super().__init__(instance, BotAdapterType.MIRAI)
+    async def get(self, url: str, *args, **kwargs):
+        return await http_requests.get(
+            self.host + url,
+            **kwargs,
+        )
 
-    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
-        """获取用户头像
+    async def post(self, url: str, data: Optional[dict] = None, *args, **kwargs):
+        return await http_requests.post(
+            self.host + url,
+            data,
+            **kwargs,
+        )
 
-        Args:
-            user_id (UserId): 用户ID
+    async def request(self, url: str, method: str, *args, **kwargs):
+        return await http_requests.request(
+            self.host + url,
+            **kwargs,
+        )
 
-        Returns:
-            Optional[bytes]: 头像数据
-        """
+    @staticmethod
+    async def get_user_avatar(user_id: str) -> Optional[bytes]:
         url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=640'
         data = await download_async(url)
         if data and hashlib.md5(data).hexdigest() == 'acef72340ac0e914090bd35799f5594e':
@@ -36,7 +45,7 @@ class MiraiAPI(BotAdapterAPI):
 
     async def upload(self, interface: str, field_type: str, file: bytes, msg_type: str):
         res = await http_requests.post_upload(
-            self.url + interface,
+            self.host + interface,
             file,
             file_field=field_type,
             payload={'sessionKey': self.session, 'type': msg_type},
@@ -55,8 +64,7 @@ class MiraiAPI(BotAdapterAPI):
             return res['voiceId']
 
     async def send_group_message(self, group_id: str, chain_list: list):
-        res = await self.post(*HttpAdapter.group_message(self.session, group_id, chain_list))
-        return res.origin
+        return await self.post(*HttpAdapter.group_message(self.session, group_id, chain_list))
 
     async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:
         """发布群公告
@@ -105,10 +113,8 @@ class MiraiAPI(BotAdapterAPI):
             data['showPopup'] = kwargs['show_pop_up']
         if kwargs.get('require_confirm'):
             data['requireConfirmation'] = kwargs['require_confirm']
-        res = await self.post('/anno/publish', data)
-        if res.data and res.data.get('code') == 0:
-            return True
-        return False
+
+        return await self.post('/anno/publish', data)
 
     async def send_nudge(self, user_id: str, group_id: str):
         await self.post(*HttpAdapter.nudge(self.session, user_id, group_id))

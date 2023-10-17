@@ -1,29 +1,11 @@
-import hashlib
 from typing import Optional
-from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.network.download import download_async
-from .._adapterApi import BotAdapterAPI, BotAdapterType, UserId
+
+from amiyabot.adapters.onebot11.api import OneBot11API
+from amiyabot.adapters.mirai.api import MiraiAPI
 
 
-class CQHttpAPI(BotAdapterAPI):
-    def __init__(self, instance: BotAdapterProtocol):
-        super().__init__(instance, BotAdapterType.CQHTTP)
-
-    async def get_user_avatar(self, user_id: UserId, **kwargs) -> Optional[bytes]:
-        """获取用户头像
-
-        Args:
-            user_id (UserId): 用户ID
-
-        Returns:
-            Optional[bytes]: 头像数据
-        """
-        url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=640'
-        data = await download_async(url)
-        if data and hashlib.md5(data).hexdigest() == 'acef72340ac0e914090bd35799f5594e':
-            url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=100'
-            data = await download_async(url)
-        return data
+class CQHttpAPI(OneBot11API):
+    get_user_avatar = MiraiAPI.get_user_avatar
 
     async def send_cq_code(self, user_id: str, group_id: str = '', code: str = ''):
         await self.post(
@@ -37,8 +19,7 @@ class CQHttpAPI(BotAdapterAPI):
         )
 
     async def send_group_forward_msg(self, group_id: str, forward_node: list):
-        res = await self.post('/send_group_forward_msg', {'group_id': group_id, 'messages': forward_node})
-        return res.origin
+        return await self.post('/send_group_forward_msg', {'group_id': group_id, 'messages': forward_node})
 
     async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:
         """发布群公告
@@ -56,10 +37,8 @@ class CQHttpAPI(BotAdapterAPI):
         data = {'group_id': group_id, 'content': content}
         if kwargs.get('image'):
             data['image'] = kwargs['image']
-        res = await self.post('/set_group_notice', data)
-        if res.data and res.data['status'] == 'ok':
-            return True
-        return False
+
+        return await self.post('/set_group_notice', data)
 
     async def send_nudge(self, user_id: str, group_id: str):
         await self.send_cq_code(user_id, group_id, f'[CQ:poke,qq={user_id}]')
