@@ -186,7 +186,7 @@ class TencentBotInstance(BotAdapterProtocol):
         for req in reqs.req_list:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
                 res.append(
-                    await self.post_message(
+                    await self.api.post_message(
                         chain.data.guild_id,
                         chain.data.src_guild_id,
                         chain.data.channel_id,
