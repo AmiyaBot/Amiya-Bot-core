@@ -1,9 +1,9 @@
 import json
-import websockets
 import dataclasses
 
 from typing import Any, Callable, Optional
 from dataclasses import dataclass
+from websockets.legacy.client import WebSocketClientProtocol
 
 
 @dataclass
@@ -26,7 +26,7 @@ class ShardsRecord:
     session_id: Optional[str] = None
     last_s: Optional[int] = None
     reconnect_limit: int = 3
-    connection: Optional[websockets.WebSocketClientProtocol] = None
+    connection: Optional[WebSocketClientProtocol] = None
     heartbeat_key: Optional[str] = None
 
 
