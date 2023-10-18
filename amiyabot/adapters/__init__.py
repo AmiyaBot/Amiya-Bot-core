@@ -1,6 +1,8 @@
 import abc
+import socket
 import asyncio
 import websockets
+import contextlib
 
 from websockets.legacy.client import WebSocketClientProtocol
 from typing import Any, List, Union, Callable, Coroutine, Optional
@@ -55,8 +57,13 @@ class BotAdapterProtocol:
     def get_user_avatar(self, message: dict):
         return ''
 
-    def get_websocket_connection(self, mark: str, url: str, headers: Optional[dict] = None):
-        return WebSocketConnect(self, mark, url, headers)
+    @contextlib.asynccontextmanager
+    async def get_websocket_connection(self, mark: str, url: str, headers: Optional[dict] = None):
+        async with WebSocketConnect(self, mark, url, headers) as ws:
+            try:
+                yield ws
+            except WebSocketConnect.ignore_errors:
+                pass
 
     @property
     def api(self):
@@ -127,7 +134,22 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
 
+class ManualCloseException(Exception):
+    def __str__(self):
+        return 'ManualCloseException'
+
+
 class WebSocketConnect:
+    ignore_errors = (
+        socket.gaierror,
+        asyncio.CancelledError,
+        asyncio.exceptions.TimeoutError,
+        websockets.ConnectionClosedError,
+        websockets.ConnectionClosedOK,
+        websockets.InvalidStatusCode,
+        ManualCloseException,
+    )
+
     def __init__(self, instance: BotAdapterProtocol, mark: str, url: str, headers: Optional[dict] = None):
         self.mark = mark
         self.url = url
@@ -143,14 +165,7 @@ class WebSocketConnect:
         try:
             self.connection = await websockets.connect(self.url, extra_headers=self.headers)
             self.instance.set_alive(True)
-        except (
-            asyncio.CancelledError,
-            asyncio.exceptions.TimeoutError,
-            websockets.ConnectionClosedError,
-            websockets.ConnectionClosedOK,
-            websockets.InvalidStatusCode,
-            ManualCloseException,
-        ) as e:
+        except self.ignore_errors as e:
             self.log.error(f'websocket connection({self.mark}) error: {repr(e)}')
         except ConnectionRefusedError:
             self.log.error(f'cannot connect to server.')
@@ -164,8 +179,3 @@ class WebSocketConnect:
         if self.instance.alive:
             self.instance.set_alive(False)
             self.log.info(f'websocket connection({self.mark}) closed.')
-
-
-class ManualCloseException(Exception):
-    def __str__(self):
-        return 'ManualCloseException'

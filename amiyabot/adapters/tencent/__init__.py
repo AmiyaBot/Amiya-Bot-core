@@ -1,8 +1,8 @@
 import sys
 import json
 import asyncio
-import websockets
 
+from websockets.legacy.client import WebSocketClientProtocol
 from typing import Dict, Optional
 from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
@@ -128,45 +128,47 @@ class TencentBotInstance(BotAdapterProtocol):
 
         while self.keep_run and self.shards_record[shards_index].reconnect_limit > 0:
             await self.reconnect(handler, self.shards_record[shards_index], sign)
+            await asyncio.sleep(1)
 
     async def reconnect(self, handler: ConnectionHandler, record: ShardsRecord, sign: str):
         log.info(f'reconnecting({sign})...')
 
         async with self.get_websocket_connection(sign, handler.gateway.url) as websocket:
-            record.connection = websocket
+            if websocket:
+                record.connection = websocket
 
-            while self.keep_run:
-                await asyncio.sleep(0)
+                while self.keep_run:
+                    await asyncio.sleep(0)
 
-                recv = await websocket.recv()
-                payload = Payload(**json.loads(recv))
+                    recv = await websocket.recv()
+                    payload = Payload(**json.loads(recv))
 
-                if payload.op == 0:
-                    if payload.t == 'RESUMED':
-                        log.info(f'Bot reconnected({sign}).')
-                    else:
-                        asyncio.create_task(handler.message_handler(payload.t, payload.d))
+                    if payload.op == 0:
+                        if payload.t == 'RESUMED':
+                            log.info(f'Bot reconnected({sign}).')
+                        else:
+                            asyncio.create_task(handler.message_handler(payload.t, payload.d))
 
-                if payload.op == 10:
-                    reconnect_token = {
-                        'token': f'Bot {self.appid}.{self.token}',
-                        'session_id': record.session_id,
-                        'seq': record.last_s,
-                    }
-                    await websocket.send(Payload(op=6, d=reconnect_token).to_json())
+                    if payload.op == 10:
+                        reconnect_token = {
+                            'token': f'Bot {self.appid}.{self.token}',
+                            'session_id': record.session_id,
+                            'seq': record.last_s,
+                        }
+                        await websocket.send(Payload(op=6, d=reconnect_token).to_json())
 
-                    self.__create_heartbeat(websocket, payload.d['heartbeat_interval'], record)
+                        self.__create_heartbeat(websocket, payload.d['heartbeat_interval'], record)
 
-                    record.reconnect_limit = 3
+                        record.reconnect_limit = 3
 
-                if payload.s:
-                    record.last_s = payload.s
+                    if payload.s:
+                        record.last_s = payload.s
 
         record.reconnect_limit -= 1
 
     async def heartbeat_interval(
         self,
-        websocket: websockets.WebSocketClientProtocol,
+        websocket: WebSocketClientProtocol,
         interval: int,
         shards_index: int,
         heartbeat_key: str,

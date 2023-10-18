@@ -1,10 +1,11 @@
-import asyncio
-import inspect
 import uvicorn
+import pydantic
 
-from typing import List, Callable
-from pydantic import BaseModel
+from typing import List
 from amiyabot.log import LoggerManager
+from amiyabot.signalHandler import SignalHandler
+
+BaseModel = pydantic.BaseModel
 
 
 class ServerLog:
@@ -13,10 +14,6 @@ class ServerLog:
     @classmethod
     def write(cls, text: str):
         cls.logger.info(text)
-
-
-class ServerEventHandler:
-    on_shutdown: List[Callable] = []
 
 
 class ServerMeta(type):
@@ -38,11 +35,7 @@ class ServerMeta(type):
                 if item != server:
                     item.should_exit = True
 
-            for action in ServerEventHandler.on_shutdown:
-                if inspect.iscoroutinefunction(action):
-                    asyncio.create_task(action())
-                else:
-                    action()
+            SignalHandler.exec_shutdown_handlers()
 
 
 LOG_CONFIG = {
