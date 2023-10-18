@@ -1,8 +1,8 @@
 import sys
 import json
 import asyncio
-import websockets
 
+from websockets.legacy.client import WebSocketClientProtocol
 from typing import Dict, Optional
 from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
@@ -168,7 +168,7 @@ class TencentBotInstance(BotAdapterProtocol):
 
     async def heartbeat_interval(
         self,
-        websocket: websockets.WebSocketClientProtocol,
+        websocket: WebSocketClientProtocol,
         interval: int,
         shards_index: int,
         heartbeat_key: str,

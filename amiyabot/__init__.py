@@ -4,6 +4,7 @@ import asyncio
 from typing import Optional, Union
 
 from amiyabot import log
+from amiyabot.util import random_code
 
 # adapters
 from amiyabot.adapters import BotAdapterProtocol
@@ -14,13 +15,14 @@ from amiyabot.adapters.tencent import TencentBotInstance
 from amiyabot.adapters.common import CQCode
 
 # network
-from amiyabot.network.httpServer import HttpServer, ServerEventHandler
+from amiyabot.network.httpServer import HttpServer
 
 # factory
 from amiyabot.factory import BotInstance, PluginInstance, GroupConfig
 
 # handler
 from amiyabot.handler.messageHandler import message_handler
+from amiyabot.signalHandler import SignalHandler
 
 # lib
 from amiyabot.builtin.lib.eventBus import event_bus
@@ -50,14 +52,17 @@ class AmiyaBot(BotInstance):
         private: bool = False,
         adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance,
     ):
+        if not appid:
+            appid = random_code(10)
+
         super().__init__(appid, token, adapter)
 
         self.private = private
         self.send_message = self.instance.send_message
 
-        self.__allow_close = True
+        self.__closed = False
 
-        ServerEventHandler.on_shutdown.append(self.close)
+        SignalHandler.on_shutdown.append(self.close)
 
     async def start(self, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False):
         TasksControl.start()
@@ -69,8 +74,8 @@ class AmiyaBot(BotInstance):
         await self.instance.connect(self.private, self.__message_handler)
 
     async def close(self):
-        if self.__allow_close:
-            self.__allow_close = False
+        if not self.__closed:
+            self.__closed = True
             await self.instance.close()
 
     async def __message_handler(self, event: str, message: dict):
@@ -109,7 +114,7 @@ class MultipleAccounts(BotInstance):
         self.__instances: typing.Dict[str, AmiyaBot] = {str(item.appid): item for item in bots}
         self.__keep_alive = True
 
-        ServerEventHandler.on_shutdown.append(self.close)
+        SignalHandler.on_shutdown.append(self.close)
 
     def __iter__(self):
         return iter(self.__instances.values())

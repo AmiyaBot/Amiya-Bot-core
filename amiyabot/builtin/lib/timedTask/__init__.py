@@ -2,7 +2,7 @@ import asyncio
 
 from typing import Optional, Callable
 from dataclasses import dataclass
-from amiyabot.network.httpServer import ServerEventHandler
+from amiyabot.signalHandler import SignalHandler
 
 from .scheduler import scheduler
 
@@ -22,7 +22,7 @@ class TasksControl:
     def start(cls):
         if not scheduler.state:
             scheduler.start()
-            ServerEventHandler.on_shutdown.append(scheduler.shutdown)
+            SignalHandler.on_shutdown.append(scheduler.shutdown)
 
     @classmethod
     def add_timed_task(cls, task: Task):
