@@ -12,6 +12,9 @@ def cq_http(host: str, ws_port: int, http_port: int):
 
 
 class CQHttpBotInstance(OneBot11Instance):
+    def __str__(self):
+        return 'CQHttp'
+
     @property
     def api(self):
         return CQHttpAPI(self.host, self.http_port, self.token)

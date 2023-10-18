@@ -13,6 +13,9 @@ def com_wechat(host: str, ws_port: int, http_port: int):
 
 
 class ComWeChatBotInstance(OneBot12Instance):
+    def __str__(self):
+        return 'ComWeChat'
+
     async def package_message(self, event: str, message: dict):
         return package_com_wechat_message(self, message)
 
