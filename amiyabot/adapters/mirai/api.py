@@ -24,7 +24,10 @@ class MiraiAPI(BotInstanceAPIProtocol):
     async def post(self, url: str, data: Optional[dict] = None, *args, **kwargs):
         return await http_requests.post(
             self.host + url,
-            data,
+            {
+                'sessionKey': self.session,
+                **data,
+            },
             **kwargs,
         )
 
