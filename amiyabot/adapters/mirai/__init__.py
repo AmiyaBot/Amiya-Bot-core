@@ -96,7 +96,7 @@ class MiraiBotInstance(BotAdapterProtocol):
         for reply_list in [[reply], voice_list]:
             for item in reply_list:
                 if is_sync:
-                    request = await self.api.post(item[0], item[1])
+                    request = await self.api.post('/' + item[0], item[1])
                     res.append(request.origin)
                 else:
                     await self.connection.send(item[1])
@@ -127,4 +127,10 @@ class MiraiBotInstance(BotAdapterProtocol):
         return package_mirai_message(self, self.appid, message)
 
     async def recall_message(self, message_id: str, target_id: Optional[str] = None):
-        await self.api.delete_message(message_id, target_id)
+        await self.api.post(
+            '/recall',
+            {
+                'messageId': message_id,
+                'target': target_id,
+            },
+        )
