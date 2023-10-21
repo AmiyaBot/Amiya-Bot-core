@@ -46,8 +46,8 @@ class OneBot11API(BotInstanceAPIProtocol):
     async def delete_msg(self, *args, **kwargs):
         ...
 
-    async def get_msg(self, *args, **kwargs):
-        ...
+    async def get_msg(self, message_id: str):
+        return await self.post('/get_msg', data={'message_id': message_id})
 
     async def get_forward_msg(self, *args, **kwargs):
         ...

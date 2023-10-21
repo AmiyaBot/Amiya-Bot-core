@@ -17,7 +17,7 @@ class ComWeChatBotInstance(OneBot12Instance):
         return 'ComWeChat'
 
     async def package_message(self, event: str, message: dict):
-        return package_com_wechat_message(self, message)
+        return await package_com_wechat_message(self, message)
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reply = await build_message_send(self.api, chain)

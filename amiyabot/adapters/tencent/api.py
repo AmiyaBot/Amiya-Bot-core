@@ -2,14 +2,22 @@ import json
 import asyncio
 
 from typing import Optional
+from dataclasses import dataclass
 from amiyabot.network.httpRequests import http_requests, ResponseException
 from amiyabot.adapters.api import BotInstanceAPIProtocol
 from amiyabot.log import LoggerManager
 
 from .url import APIConstant, get_url
-from .builder import MessageSendRequest
 
 log = LoggerManager('Tencent')
+
+
+@dataclass
+class MessageSendRequest:
+    data: dict
+    direct: bool
+    user_id: str
+    upload_image: bool = False
 
 
 class TencentAPI(BotInstanceAPIProtocol):
@@ -22,16 +30,38 @@ class TencentAPI(BotInstanceAPIProtocol):
         return {'Authorization': f'Bot {self.appid}.{self.token}'}
 
     async def get(self, url: str, *args, **kwargs):
-        return self.__check_response(await http_requests.get(get_url(url), headers=self.headers))
+        return self.__check_response(
+            await http_requests.get(
+                get_url(url),
+                headers=self.headers,
+            ),
+        )
 
     async def post(self, url: str, payload: Optional[dict] = None, is_form_data: bool = False, *args, **kwargs):
         if is_form_data:
-            return self.__check_response(await http_requests.post_form(get_url(url), payload, headers=self.headers))
-        return self.__check_response(await http_requests.post(get_url(url), payload, headers=self.headers))
+            return self.__check_response(
+                await http_requests.post_form(
+                    get_url(url),
+                    payload,
+                    headers=self.headers,
+                ),
+            )
+        return self.__check_response(
+            await http_requests.post(
+                get_url(url),
+                payload,
+                headers=self.headers,
+            ),
+        )
 
     async def request(self, url: str, method: str, payload: Optional[dict] = None, *args, **kwargs):
         return self.__check_response(
-            await http_requests.request(get_url(url), method, data=payload, headers=self.headers)
+            await http_requests.request(
+                get_url(url),
+                method,
+                data=payload,
+                headers=self.headers,
+            )
         )
 
     async def get_me(self):

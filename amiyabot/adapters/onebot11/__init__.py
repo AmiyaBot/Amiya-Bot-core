@@ -118,7 +118,7 @@ class OneBot11Instance(BotAdapterProtocol):
         return message
 
     async def package_message(self, event: str, message: dict):
-        return package_onebot11_message(self, self.appid, message)
+        return await package_onebot11_message(self, self.appid, message)
 
     async def recall_message(self, message_id: str, target_id: Optional[str] = None):
         await self.api.post('/delete_msg', {'message_id': message_id})

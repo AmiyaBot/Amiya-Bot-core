@@ -2,21 +2,27 @@ from amiyabot.adapters import MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
+from .api import TencentAPI, MessageSendRequest
+from .package import package_tencent_message
+
 
 class TencentMessageCallback(MessageCallback):
     async def recall(self):
         if not self.response:
             log.warning('can not recall message because the response is None.')
             return False
+
         await self.instance.recall_message(self.response['id'], self.response['channel_id'])
 
+    async def get_message(self):
+        if not self.response:
+            return None
 
-@dataclass
-class MessageSendRequest:
-    data: dict
-    direct: bool
-    user_id: str
-    upload_image: bool = False
+        api: TencentAPI = self.instance.api
+
+        message = await api.get_message(self.response['channel_id'], self.response['id'])
+
+        return await package_tencent_message(self.instance, 'MESSAGE_CREATE', message['message'], True)
 
 
 class MessageSendRequestGroup:

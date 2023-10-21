@@ -1,7 +1,8 @@
+import json
+
 from typing import Optional
 from amiyabot.adapters.api import BotInstanceAPIProtocol
 from amiyabot.network.httpRequests import http_requests
-from amiyabot.network.download import download_async
 
 
 class KOOKAPI(BotInstanceAPIProtocol):
@@ -35,45 +36,15 @@ class KOOKAPI(BotInstanceAPIProtocol):
             **kwargs,
         )
 
-    async def get_user_info(
-        self,
-        user_id: str,
-        group_id: Optional[str] = None,
-    ) -> Optional[dict]:
-        """获取用户信息
-
-        Args:
-            user_id (UserId): 用户ID
-            group_id (GroupId, optional): 群组ID. Defaults to None.
-
-        Returns:
-            Optional[dict]: 用户信息
-        """
+    async def get_user_info(self, user_id: str, group_id: Optional[str] = None):
         params = {'user_id': user_id}
         if group_id:
             params['guild_id'] = group_id
-        res = await self.get('/user/view', params=params)
-        if res.data:
-            return res.data.get('data')
-        return None
 
-    async def get_user_avatar(self, user_id: str, **kwargs) -> Optional[bytes]:
-        """获取用户头像
+        return await self.get('/user/view', params=params)
 
-        Args:
-            user_id (UserId): 用户ID
-            guild_id (str): 服务器ID
-
-        Returns:
-            Optional[bytes]: 头像数据
-        """
-        user_id = int(user_id)
-        params = {'user_id': user_id}
-        if kwargs.get('guild_id'):
-            params['guild_id'] = kwargs['guild_id']
-        res = await self.get('/user/view', params=params)
-        if res.data:
-            url = res.data['data']['avatar']
-            data = await download_async(url)
-            return data
-        return None
+    async def get_user_avatar(self, user_id: str, group_id: Optional[str] = None) -> Optional[str]:
+        res = await self.get_user_info(user_id, group_id)
+        if res:
+            data = json.loads(res)
+            return data['data']['avatar']

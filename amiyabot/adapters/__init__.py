@@ -54,9 +54,6 @@ class BotAdapterProtocol:
 
         return callback
 
-    def get_user_avatar(self, message: dict):
-        return ''
-
     @contextlib.asynccontextmanager
     async def get_websocket_connection(self, mark: str, url: str, headers: Optional[dict] = None):
         async with WebSocketConnect(self, mark, url, headers) as ws:

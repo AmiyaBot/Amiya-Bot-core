@@ -22,6 +22,9 @@ class OneBot12MessageCallback(MessageCallback):
         if isinstance(response['data'], dict):
             await self.instance.recall_message(response['data']['message_id'])
 
+    async def get_message(self):
+        return None
+
 
 async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain, custom: Optional[CUSTOM_CHAIN_ITEM] = None):
     chain_list = chain.chain

@@ -4,7 +4,7 @@ from amiyabot.adapters import BotAdapterProtocol
 from ..common import text_convert
 
 
-def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
+async def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
     message_type = data['type']
 
     if message_type == 'message':
@@ -25,7 +25,7 @@ def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
 
         msg.message_id = str(data['message_id'])
         msg.user_id = str(data['user_id'])
-        msg.avatar = instance.get_user_avatar(data)
+        msg.avatar = await instance.api.get_user_avatar(data)
 
         message_chain = data['message']
         text = ''

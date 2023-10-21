@@ -15,3 +15,6 @@ class BotInstanceAPIProtocol:
     @abc.abstractmethod
     async def request(self, url: str, method: str, *args, **kwargs):
         raise NotImplementedError
+
+    def get_user_avatar(self, *args, **kwargs):
+        return ''

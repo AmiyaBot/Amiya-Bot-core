@@ -1,11 +1,11 @@
 import re
+import abc
 import asyncio
 
 from typing import Callable, Optional, Union, List, Tuple, Any
 from dataclasses import dataclass
-from amiyabot.typeIndexes import T_Chain
+from amiyabot.typeIndexes import T_Chain, T_BotAdapterProtocol
 
-from .callback import MessageCallback, MessageCallbackType
 from .structure import EventStructure, MessageStructure, Verify, File
 from .waitEvent import (
     WaitEvent,
@@ -18,7 +18,6 @@ from .waitEvent import (
     wait_events_bucket,
 )
 
-SendReturn = Optional[MessageCallbackType]
 WaitReturn = Optional[MessageStructure]
 WaitChannelReturn = Optional[ChannelMessagesItem]
 MatchReturn = Tuple[bool, int, Any]
@@ -45,7 +44,7 @@ class EventList:
 
 
 class Message(MessageStructure):
-    async def send(self, reply: T_Chain) -> SendReturn:
+    async def send(self, reply: T_Chain) -> Optional['MessageCallbackType']:
         async with self.bot.processing_context(reply, self.factory_name):
             callbacks: List[MessageCallback] = await self.instance.send_chain_message(reply, is_sync=True)
 
@@ -174,5 +173,30 @@ class MessageMatch:
         return False, 0, None
 
 
+class MessageCallback:
+    def __init__(self, instance: T_BotAdapterProtocol, response: Any):
+        self.instance = instance
+        self.response = response
+
+    @abc.abstractmethod
+    async def recall(self) -> None:
+        """
+        撤回本条消息
+
+        :return:
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_message(self) -> Optional[Message]:
+        """
+        获取本条消息的 Message 对象
+
+        :return:
+        """
+        raise NotImplementedError
+
+
 Waiter = Union[WaitEvent, ChannelWaitEvent, None]
 EventType = Union[Event, EventList]
+MessageCallbackType = Union[MessageCallback, List[MessageCallback]]

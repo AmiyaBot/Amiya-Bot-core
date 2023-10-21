@@ -37,14 +37,13 @@ class MiraiAPI(BotInstanceAPIProtocol):
             **kwargs,
         )
 
-    @staticmethod
-    async def get_user_avatar(user_id: str) -> Optional[bytes]:
+    async def get_user_avatar(self, user_id: str) -> Optional[str]:
         url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=640'
         data = await download_async(url)
         if data and hashlib.md5(data).hexdigest() == 'acef72340ac0e914090bd35799f5594e':
             url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=100'
-            data = await download_async(url)
-        return data
+
+        return url
 
     async def upload(self, interface: str, field_type: str, file: bytes, msg_type: str):
         res = await http_requests.post_upload(

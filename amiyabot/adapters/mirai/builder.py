@@ -26,6 +26,9 @@ class MiraiMessageCallback(MessageCallback):
 
         await self.instance.recall_message(response['messageId'], self.target_id)
 
+    async def get_message(self):
+        return None
+
 
 async def build_message_send(
     api: MiraiAPI,
