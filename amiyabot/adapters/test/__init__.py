@@ -1,5 +1,7 @@
+from typing import Optional
+
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
-from amiyabot.builtin.message import Message, Event
+from amiyabot.builtin.message import Message, Event, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
@@ -15,6 +17,14 @@ def test_instance(host: str, port: int):
         return TestInstance(appid, host, port)
 
     return adapter
+
+
+class TestMessageCallback(MessageCallback):
+    async def recall(self):
+        ...
+
+    async def get_message(self) -> Optional[Message]:
+        ...
 
 
 class TestInstance(BotAdapterProtocol):
@@ -55,6 +65,8 @@ class TestInstance(BotAdapterProtocol):
             for voice in voice_list:
                 await self.server.send(voice)
 
+        return [TestMessageCallback(self, None)]
+
     async def package_message(self, event: str, message: dict):
         if event != 'message':
             return Event(self, event, message)
@@ -71,4 +83,4 @@ class TestInstance(BotAdapterProtocol):
         return text_convert(msg, text, text)
 
     async def recall_message(self, message_id, target_id=None):
-        pass
+        ...
