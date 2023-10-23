@@ -1,10 +1,9 @@
-import json
 import asyncio
 
 from typing import Optional
 from dataclasses import dataclass
-from amiyabot.network.httpRequests import http_requests, ResponseException
-from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.network.httpRequests import http_requests
+from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.log import LoggerManager
 
 from .url import APIConstant, get_url
@@ -30,38 +29,31 @@ class TencentAPI(BotInstanceAPIProtocol):
         return {'Authorization': f'Bot {self.appid}.{self.token}'}
 
     async def get(self, url: str, *args, **kwargs):
-        return self.__check_response(
-            await http_requests.get(
-                get_url(url),
-                headers=self.headers,
-            ),
+        return await http_requests.get(
+            get_url(url),
+            headers=self.headers,
         )
 
     async def post(self, url: str, payload: Optional[dict] = None, is_form_data: bool = False, *args, **kwargs):
         if is_form_data:
-            return self.__check_response(
-                await http_requests.post_form(
-                    get_url(url),
-                    payload,
-                    headers=self.headers,
-                ),
-            )
-        return self.__check_response(
-            await http_requests.post(
+            return await http_requests.post_form(
                 get_url(url),
                 payload,
                 headers=self.headers,
-            ),
+            )
+
+        return await http_requests.post(
+            get_url(url),
+            payload,
+            headers=self.headers,
         )
 
     async def request(self, url: str, method: str, payload: Optional[dict] = None, *args, **kwargs):
-        return self.__check_response(
-            await http_requests.request(
-                get_url(url),
-                method,
-                data=payload,
-                headers=self.headers,
-            )
+        return await http_requests.request(
+            get_url(url),
+            method,
+            data=payload,
+            headers=self.headers,
         )
 
     async def get_me(self):
@@ -126,31 +118,15 @@ class TencentAPI(BotInstanceAPIProtocol):
         else:
             api = APIConstant.messagesURI.format(channel_id=channel_id)
 
-        complete = None
         retry_times = 0
-
-        while complete is None and retry_times < 3:
+        while retry_times < 3:
             retry_times += 1
-            try:
-                complete = await self.post(api, req.data, req.upload_image)
-            except ResponseException:
-                complete = {}
+
+            res = await self.post(api, req.data, req.upload_image)
+            if res:
+                if 'code' in res.json and res.json['code'] != 200:
+                    log.error(res.json['message'], 'message send error by code: %s --' % res.json['code'])
+                else:
+                    return res
 
             await asyncio.sleep(0)
-
-        return complete
-
-    @staticmethod
-    def __check_response(response_text: Optional[str]) -> Optional[dict]:
-        if response_text is None:
-            return None
-
-        try:
-            data = json.loads(response_text)
-        except json.JSONDecodeError as e:
-            raise ResponseException(-1, repr(e)) from e
-
-        if 'code' in data and data['code'] != 200:
-            raise ResponseException(**data)
-
-        return data

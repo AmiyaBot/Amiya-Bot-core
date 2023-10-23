@@ -1,15 +1,15 @@
 import abc
 
-from typing import Optional
+from typing import Optional, Union
 
 
 class BotInstanceAPIProtocol:
     @abc.abstractmethod
-    async def get(self, url: str, *args, **kwargs):
+    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def post(self, url: str, data: Optional, *args, **kwargs):
+    async def post(self, url: str, data: Optional[Union[dict, list]] = None, *args, **kwargs):
         raise NotImplementedError
 
     @abc.abstractmethod

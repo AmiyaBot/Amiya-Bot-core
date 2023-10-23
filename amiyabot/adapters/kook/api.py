@@ -1,7 +1,7 @@
 import json
 
 from typing import Optional
-from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.network.httpRequests import http_requests
 
 
@@ -32,9 +32,13 @@ class KOOKAPI(BotInstanceAPIProtocol):
     async def request(self, url: str, method: str, *args, **kwargs):
         return await http_requests.request(
             self.host + url,
+            method,
             headers=self.headers,
             **kwargs,
         )
+
+    async def get_me(self):
+        return await self.get('/user/me')
 
     async def get_message(self, message_id: str):
         return await self.get('/message/view', params={'msg_id': message_id})

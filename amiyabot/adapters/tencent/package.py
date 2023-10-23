@@ -45,7 +45,7 @@ async def package_tencent_message(instance: BotAdapterProtocol, event: str, mess
                 for user in message['mentions']:
                     text = text.replace('<@!{id}>'.format(**user), '')
 
-                    if bot and user['id'] == bot['id']:
+                    if bot and user['id'] == bot.json['id']:
                         data.is_at = True
                         continue
 
@@ -64,7 +64,7 @@ async def package_tencent_message(instance: BotAdapterProtocol, event: str, mess
         if 'message_reference' in message:
             reference = await api.get_message(message['channel_id'], message['message_reference']['message_id'])
             if reference:
-                reference_data = await package_tencent_message(instance, event, reference['message'], True)
+                reference_data = await package_tencent_message(instance, event, reference.json['message'], True)
                 if reference_data:
                     data.image += reference_data.image
 

@@ -18,32 +18,53 @@ class HttpRequests:
         ignore_error: bool = False,
         **kwargs,
     ):
+        response = Response('')
         try:
             request_name = (request_name or method).upper()
 
             async with aiohttp.ClientSession(trust_env=True) as session:
                 async with session.request(method, url, **kwargs) as res:
-                    if res.status in cls.success:
-                        return await res.text()
-                    if res.status in cls.async_success:
-                        return ''
-                    if not ignore_error:
-                        log.warning(f'Request failed <{url}>[{request_name}]. Got code {res.status} {res.reason}')
-        except aiohttp.ClientConnectorError:
+                    response = Response(await res.text())
+                    response.res = res
+
+                    if res.status not in cls.success + cls.async_success:
+                        if not ignore_error:
+                            log.warning(f'Request failed <{url}>[{request_name}]. Got code {res.status} {res.reason}')
+
+                    return response
+
+        except aiohttp.ClientConnectorError as e:
+            response.error = e
             if not ignore_error:
                 log.error(f'Unable to request <{url}>[{request_name}]')
+
         except Exception as e:
+            response.error = e
             if not ignore_error:
                 log.error(e)
 
+        return response
+
     @classmethod
-    async def get(cls, interface: str, params: Optional[Union[dict, list]] = None, **kwargs):
-        return await cls.request(interface, 'get', params=params, **kwargs)
+    async def get(
+        cls,
+        url: str,
+        params: Optional[dict] = None,
+        headers: Optional[dict] = None,
+        **kwargs,
+    ):
+        return await cls.request(
+            url,
+            'get',
+            params=params,
+            headers=headers,
+            **kwargs,
+        )
 
     @classmethod
     async def post(
         cls,
-        interface: str,
+        url: str,
         payload: Optional[Union[dict, list]] = None,
         headers: Optional[dict] = None,
         **kwargs,
@@ -51,7 +72,7 @@ class HttpRequests:
         _headers = {'Content-Type': 'application/json', **(headers or {})}
         _payload = {**(payload or {})}
         return await cls.request(
-            interface,
+            url,
             'post',
             request_name='post',
             data=json.dumps(_payload),
@@ -62,7 +83,7 @@ class HttpRequests:
     @classmethod
     async def post_form(
         cls,
-        interface: str,
+        url: str,
         payload: Optional[dict] = None,
         headers: Optional[dict] = None,
         **kwargs,
@@ -71,12 +92,19 @@ class HttpRequests:
 
         data = cls.__build_form_data(payload)
 
-        return await cls.request(interface, 'post', 'post-form', data=data, headers=_headers, **kwargs)
+        return await cls.request(
+            url,
+            'post',
+            'post-form',
+            data=data,
+            headers=_headers,
+            **kwargs,
+        )
 
     @classmethod
     async def post_upload(
         cls,
-        interface: str,
+        url: str,
         file: bytes,
         file_field: str = 'file',
         payload: Optional[dict] = None,
@@ -88,7 +116,14 @@ class HttpRequests:
         data = cls.__build_form_data(payload)
         data.add_field(file_field, file, content_type='application/octet-stream')
 
-        return await cls.request(interface, 'post', 'post-upload', data=data, headers=_headers, **kwargs)
+        return await cls.request(
+            url,
+            'post',
+            'post-upload',
+            data=data,
+            headers=_headers,
+            **kwargs,
+        )
 
     @classmethod
     def __build_form_data(cls, payload: Optional[dict]):
@@ -104,11 +139,25 @@ class HttpRequests:
         return data
 
 
+class Response(str):
+    def __init__(self, res_text: str):
+        self.text = res_text
+        self.response: Optional[aiohttp.ClientResponse] = None
+        self.error: Optional[Exception] = None
+
+    @property
+    def json(self):
+        try:
+            return json.loads(self.text)
+        except json.JSONDecodeError:
+            return None
+
+
 class ResponseException(Exception):
     def __init__(self, code: int, message: str, data: Optional[Any] = None):
         self.code = code
-        self.message = message
         self.data = data
+        self.message = message
 
     def __str__(self):
         return f'[{self.code}] {self.message} -- data: {self.data}'

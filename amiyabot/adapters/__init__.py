@@ -11,7 +11,7 @@ from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
-from .api import BotInstanceAPIProtocol
+from .apiProtocol import BotInstanceAPIProtocol
 
 HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
 PACKAGE_RESULT = Union[Message, Event, EventList]

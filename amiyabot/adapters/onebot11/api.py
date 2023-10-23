@@ -1,5 +1,5 @@
 from typing import Optional
-from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.network.httpRequests import http_requests
 
 
@@ -30,6 +30,7 @@ class OneBot11API(BotInstanceAPIProtocol):
     async def request(self, url: str, method: str, *args, **kwargs):
         return await http_requests.request(
             self.host + url,
+            method,
             headers=self.headers,
             **kwargs,
         )

@@ -18,9 +18,7 @@ class OneBot11MessageCallback(MessageCallback):
             log.warning('can not recall message because the response is None.')
             return False
 
-        response = json.loads(self.response)
-
-        await self.instance.recall_message(response['data']['message_id'])
+        await self.instance.recall_message(self.response.json['data']['message_id'])
 
     async def get_message(self):
         if not self.response:
@@ -28,17 +26,17 @@ class OneBot11MessageCallback(MessageCallback):
 
         api: OneBot11API = self.instance.api
 
-        response = json.loads(self.response)
-        message_id = response['data']['message_id']
+        message_id = self.response.json['data']['message_id']
 
         message_res = await api.get_msg(message_id)
-        message_data = json.loads(message_res)
+        message_data = message_res.json
 
-        return await package_onebot11_message(
-            self.instance,
-            '',
-            {'post_type': 'message', **message_data['data']},
-        )
+        if message_data:
+            return await package_onebot11_message(
+                self.instance,
+                '',
+                {'post_type': 'message', **message_data['data']},
+            )
 
 
 async def build_message_send(chain: Chain, chain_only: bool = False):

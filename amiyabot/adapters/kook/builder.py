@@ -21,12 +21,11 @@ class KOOKMessageCallback(MessageCallback):
         api: KOOKAPI = self.instance.api
 
         message = await api.get_message(self.response['data']['msg_id'])
-        res = json.loads(message)
 
-        if res['code'] != 0:
+        if message.json['code'] != 0:
             return None
 
-        message_data = res['data']
+        message_data = message.json['data']
         user = message_data['author']
 
         data = Message(self.instance, message_data)

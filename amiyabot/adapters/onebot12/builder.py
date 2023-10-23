@@ -2,7 +2,7 @@ import base64
 
 from typing import Callable, Awaitable
 from amiyabot.adapters import MessageCallback
-from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 from amiyabot.util import is_valid_url, random_code
@@ -17,7 +17,7 @@ class OneBot12MessageCallback(MessageCallback):
             log.warning('can not recall message because the response is None.')
             return False
 
-        response = json.loads(self.response)
+        response = self.response.json
 
         if isinstance(response['data'], dict):
             await self.instance.recall_message(response['data']['message_id'])
@@ -95,6 +95,15 @@ async def append_image(api: BotInstanceAPIProtocol, img_data: Union[bytes, str])
     else:
         return None
 
-    res = await api.post('/', {'action': 'upload_file', 'params': {'name': f'{random_code(20)}.png', **data}})
+    res = await api.post(
+        '/',
+        {
+            'action': 'upload_file',
+            'params': {
+                'name': f'{random_code(20)}.png',
+                **data,
+            },
+        },
+    )
     if res:
-        return {'type': 'image', 'data': {'file_id': json.loads(res)['data']['file_id']}}
+        return {'type': 'image', 'data': {'file_id': res.json['data']['file_id']}}

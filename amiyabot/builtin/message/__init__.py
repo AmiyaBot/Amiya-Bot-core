@@ -5,6 +5,7 @@ import asyncio
 from typing import Callable, Optional, Union, List, Tuple, Any
 from dataclasses import dataclass
 from amiyabot.typeIndexes import T_Chain, T_BotAdapterProtocol
+from amiyabot.network.httpRequests import Response
 
 from .structure import EventStructure, MessageStructure, Verify, File
 from .waitEvent import (
@@ -174,7 +175,7 @@ class MessageMatch:
 
 
 class MessageCallback:
-    def __init__(self, instance: T_BotAdapterProtocol, response: Any):
+    def __init__(self, instance: T_BotAdapterProtocol, response: Union[Response, Any]):
         self.instance = instance
         self.response = response
 

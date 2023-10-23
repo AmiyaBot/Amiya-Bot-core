@@ -61,7 +61,7 @@ class TencentBotInstance(BotAdapterProtocol):
                 asyncio.create_task(self.connect(private, handler))
             return False
 
-        gateway = GateWay(**resp)
+        gateway = GateWay(**resp.json)
 
         log.info(
             f'appid {self.appid} gateway resp: shards {gateway.shards}, remaining %d/%d'
