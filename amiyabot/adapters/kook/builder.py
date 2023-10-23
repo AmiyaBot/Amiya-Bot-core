@@ -1,7 +1,10 @@
 from amiyabot.adapters import MessageCallback
 from amiyabot.network.httpRequests import http_requests
+from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
+
+from .api import KOOKAPI
 
 
 class KOOKMessageCallback(MessageCallback):
@@ -10,6 +13,39 @@ class KOOKMessageCallback(MessageCallback):
             log.warning('can not recall message because the response is None.')
             return False
         await self.instance.recall_message(self.response['data']['msg_id'])
+
+    async def get_message(self):
+        if not self.response:
+            return None
+
+        api: KOOKAPI = self.instance.api
+
+        message = await api.get_message(self.response['data']['msg_id'])
+        res = json.loads(message)
+
+        if res['code'] != 0:
+            return None
+
+        message_data = res['data']
+        user = message_data['author']
+
+        data = Message(self.instance, message_data)
+
+        data.message_id = message_data['id']
+        data.message_type = 'GROUP'
+
+        data.is_at = bool(message_data['mention'])
+        data.at_target = message_data['mention']
+
+        data.user_id = user['id']
+        data.guild_id = message_data.get('guild_id', '')
+        data.channel_id = message_data['channel_id']
+        data.nickname = user['nickname'] or user['username']
+        data.avatar = user['vip_avatar'] or user['avatar']
+
+        data.text = message_data['content']
+
+        return data
 
 
 async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):

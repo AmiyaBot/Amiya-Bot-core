@@ -97,7 +97,7 @@ class MiraiBotInstance(BotAdapterProtocol):
             for item in reply_list:
                 if is_sync:
                     request = await self.api.post('/' + item[0], item[1])
-                    res.append(request.origin)
+                    res.append(request)
                 else:
                     await self.connection.send(item[1])
 

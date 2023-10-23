@@ -36,6 +36,9 @@ class KOOKAPI(BotInstanceAPIProtocol):
             **kwargs,
         )
 
+    async def get_message(self, message_id: str):
+        return await self.get('/message/view', params={'msg_id': message_id})
+
     async def get_user_info(self, user_id: str, group_id: Optional[str] = None):
         params = {'user_id': user_id}
         if group_id:
@@ -43,7 +46,7 @@ class KOOKAPI(BotInstanceAPIProtocol):
 
         return await self.get('/user/view', params=params)
 
-    async def get_user_avatar(self, user_id: str, group_id: Optional[str] = None) -> Optional[str]:
+    async def get_user_avatar(self, user_id: str, group_id: Optional[str] = None, *args, **kwargs) -> Optional[str]:
         res = await self.get_user_info(user_id, group_id)
         if res:
             data = json.loads(res)
