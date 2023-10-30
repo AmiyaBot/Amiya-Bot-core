@@ -39,8 +39,13 @@ class MessageSendRequestGroup:
         self.direct: bool = direct
 
     def __insert_req(self, content: str = '', image: Optional[Union[str, bytes]] = None):
-        # noinspection PyArgumentList
-        req = MessageSendRequest(data={'msg_id': self.message_id}, direct=self.direct, user_id=self.user_id)
+        req = MessageSendRequest(
+            data={
+                'msg_id': self.message_id,
+            },
+            direct=self.direct,
+            user_id=self.user_id,
+        )
 
         if content:
             req.data['content'] = content
@@ -84,7 +89,12 @@ class MessageSendRequestGroup:
 async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
     chain_list = custom_chain or chain.chain
 
-    messages = MessageSendRequestGroup(chain.data.user_id, chain.data.message_id, chain.reference, chain.data.is_direct)
+    messages = MessageSendRequestGroup(
+        chain.data.user_id,
+        chain.data.message_id,
+        chain.reference,
+        chain.data.is_direct,
+    )
 
     for item in chain_list:
         # At

@@ -6,12 +6,10 @@ from websockets.legacy.client import WebSocketClientProtocol
 from typing import Dict, Optional
 from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
-from amiyabot.network.httpRequests import http_requests
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
-from .url import APIConstant, get_url
 from .api import TencentAPI
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
@@ -53,7 +51,7 @@ class TencentBotInstance(BotAdapterProtocol):
     async def start(self, private: bool, handler: HANDLER_TYPE):
         log.info(f'requesting appid {self.appid} gateway')
 
-        resp = await self.api.get(APIConstant.gatewayBotURI)
+        resp = await self.api.gateway_bot()
 
         if not resp:
             if self.keep_run:
@@ -228,8 +226,13 @@ class TencentBotInstance(BotAdapterProtocol):
         return message
 
     async def recall_message(self, message_id: str, target_id: Optional[str] = None):
-        await http_requests.request(
-            get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
-            method='delete',
-            headers=self.headers,
-        )
+        await self.api.delete_message(message_id, target_id)
+
+
+class TencentSandboxBotInstance(TencentBotInstance):
+    def __init__(self, appid: str, token: str):
+        super().__init__(appid, token)
+
+    @property
+    def api(self):
+        return TencentAPI(self.appid, self.token, True)
