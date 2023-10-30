@@ -40,7 +40,7 @@ class KOOKBotInstance(BotAdapterProtocol):
     def __still_alive(self):
         return self.keep_run and self.connection
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         me_req = await self.api.get_me()
         if me_req:
             self.appid = me_req.json['data']['id']
@@ -75,7 +75,11 @@ class KOOKBotInstance(BotAdapterProtocol):
                             self.last_sn = payload.sn
 
                         if payload.s == 0:
-                            asyncio.create_task(handler('event', payload.d))
+                            asyncio.create_task(
+                                handler(
+                                    await self.package_message(payload.d),
+                                ),
+                            )
 
                         if payload.s == 1:
                             if payload.d['code'] != 0:
@@ -157,7 +161,7 @@ class KOOKBotInstance(BotAdapterProtocol):
         self.keep_run = False
         await self.close_connection()
 
-    async def package_message(self, event: str, message: dict):
+    async def package_message(self, message: dict):
         if message['type'] != 255:
             guild_id = message['extra'].get('guild_id', '')
             if guild_id:

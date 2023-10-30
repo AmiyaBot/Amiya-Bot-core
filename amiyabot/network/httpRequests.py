@@ -25,7 +25,7 @@ class HttpRequests:
             async with aiohttp.ClientSession(trust_env=True) as session:
                 async with session.request(method, url, **kwargs) as res:
                     response = Response(await res.text())
-                    response.res = res
+                    response.response = res
 
                     if res.status not in cls.success + cls.async_success:
                         if not ignore_error:

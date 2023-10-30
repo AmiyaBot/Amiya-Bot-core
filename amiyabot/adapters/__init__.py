@@ -4,8 +4,8 @@ import asyncio
 import websockets
 import contextlib
 
-from websockets.legacy.client import WebSocketClientProtocol
 from typing import Any, List, Union, Callable, Coroutine, Optional
+from websockets.legacy.client import WebSocketClientProtocol
 from amiyabot.typeIndexes import T_BotHandlerFactory
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
@@ -13,8 +13,7 @@ from amiyabot.log import LoggerManager
 
 from .apiProtocol import BotInstanceAPIProtocol
 
-HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
-PACKAGE_RESULT = Union[Message, Event, EventList]
+HANDLER_TYPE = Callable[[Optional[Union[Message, Event, EventList]]], Coroutine[Any, Any, None]]
 
 
 class BotAdapterProtocol:
@@ -74,11 +73,11 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         """
-        连接至服务并启动实例
+        启动实例，执行 handler 方法处理消息
 
-        :param private: 是否私域
+        :param private: 是否私域机器人
         :param handler: 消息处理方法
         """
         raise NotImplementedError
@@ -106,17 +105,6 @@ class BotAdapterProtocol:
         :param channel_id:          子频道 ID
         :param direct_src_guild_id: 来源的频道 ID（私信时需要）
         :return:                    Chain 对象
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def package_message(self, event: str, message: dict) -> PACKAGE_RESULT:
-        """
-        预处理并封装消息对象
-
-        :param event:   事件名
-        :param message: 消息对象
-        :return:        封装结果：Message、Event、EventList
         """
         raise NotImplementedError
 

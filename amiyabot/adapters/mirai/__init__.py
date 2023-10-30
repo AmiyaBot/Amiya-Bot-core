@@ -51,12 +51,12 @@ class MiraiBotInstance(BotAdapterProtocol):
         if self.connection:
             await self.connection.close()
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         while self.keep_run:
             await self.keep_connect(handler)
             await asyncio.sleep(10)
 
-    async def keep_connect(self, handler: Callable):
+    async def keep_connect(self, handler: HANDLER_TYPE):
         mark = f'websocket({self.appid})'
 
         async with self.get_websocket_connection(mark, self.url) as websocket:
@@ -76,7 +76,7 @@ class MiraiBotInstance(BotAdapterProtocol):
 
                 await websocket.close()
 
-    async def handle_message(self, message: str, handler: Callable):
+    async def handle_message(self, message: str, handler: HANDLER_TYPE):
         async with log.catch(ignore=[json.JSONDecodeError]):
             data = json.loads(message)
             data = data['data']
@@ -86,7 +86,11 @@ class MiraiBotInstance(BotAdapterProtocol):
                 log.info(f'websocket({self.appid}) handshake successful. session: ' + self.session)
                 return None
 
-            asyncio.create_task(handler('', data))
+            asyncio.create_task(
+                handler(
+                    package_mirai_message(self, self.appid, data),
+                ),
+            )
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reply, voice_list = await build_message_send(self.api, chain, use_http=is_sync)
@@ -122,9 +126,6 @@ class MiraiBotInstance(BotAdapterProtocol):
         message.builder = chain.builder
 
         return message
-
-    async def package_message(self, event: str, message: dict):
-        return package_mirai_message(self, self.appid, message)
 
     async def recall_message(self, message_id: str, target_id: Optional[str] = None):
         await self.api.post(

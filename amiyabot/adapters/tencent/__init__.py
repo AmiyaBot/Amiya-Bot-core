@@ -50,7 +50,7 @@ class TencentBotInstance(BotAdapterProtocol):
             if item.connection:
                 await item.connection.close()
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         log.info(f'requesting appid {self.appid} gateway')
 
         resp = await self.api.get(APIConstant.gatewayBotURI)
@@ -58,7 +58,7 @@ class TencentBotInstance(BotAdapterProtocol):
         if not resp:
             if self.keep_run:
                 await asyncio.sleep(10)
-                asyncio.create_task(self.connect(private, handler))
+                asyncio.create_task(self.start(private, handler))
             return False
 
         gateway = GateWay(**resp.json)
@@ -102,7 +102,7 @@ class TencentBotInstance(BotAdapterProtocol):
                                 for n in range(gateway.shards - 1):
                                     asyncio.create_task(self.create_connection(handler, n + 1))
                         else:
-                            asyncio.create_task(handler.message_handler(payload.t, payload.d))
+                            await self.create_package_task(handler, payload)
 
                     if payload.op == 10:
                         create_token = {
@@ -147,7 +147,7 @@ class TencentBotInstance(BotAdapterProtocol):
                         if payload.t == 'RESUMED':
                             log.info(f'Bot reconnected({sign}).')
                         else:
-                            asyncio.create_task(handler.message_handler(payload.t, payload.d))
+                            await self.create_package_task(handler, payload)
 
                     if payload.op == 10:
                         reconnect_token = {
@@ -180,6 +180,13 @@ class TencentBotInstance(BotAdapterProtocol):
             if sec >= interval / 1000:
                 sec = 0
                 await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_json())
+
+    async def create_package_task(self, handler: ConnectionHandler, payload: Payload):
+        asyncio.create_task(
+            handler.message_handler(
+                await package_tencent_message(self, payload.t, payload.d),
+            ),
+        )
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reqs = await build_message_send(chain)
@@ -219,9 +226,6 @@ class TencentBotInstance(BotAdapterProtocol):
         message.builder = chain.builder
 
         return message
-
-    async def package_message(self, event: str, message: dict):
-        return await package_tencent_message(self, event, message)
 
     async def recall_message(self, message_id: str, target_id: Optional[str] = None):
         await http_requests.request(

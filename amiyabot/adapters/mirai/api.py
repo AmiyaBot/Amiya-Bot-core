@@ -15,7 +15,7 @@ class MiraiAPI(BotInstanceAPIProtocol):
         self.session = session
         self.host = f'http://{host}:{port}'
 
-    async def get(self, url: str, *args, **kwargs):
+    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         return await http_requests.get(
             self.host + url,
             **kwargs,

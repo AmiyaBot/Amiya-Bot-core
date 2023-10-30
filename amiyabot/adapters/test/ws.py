@@ -7,6 +7,10 @@ from fastapi import WebSocket, WebSocketDisconnect
 from amiyabot.network.httpServer import HttpServer
 from amiyabot import log
 
+from amiyabot.builtin.message import Message, Event
+
+from ..common import text_convert
+
 
 @dataclass
 class ReceivedMessage:
@@ -56,4 +60,23 @@ class TestServer(HttpServer):
     async def __handle_message(self, data: ReceivedMessage):
         async with log.catch(ignore=[json.JSONDecodeError]):
             content = json.loads(data.data)
-            asyncio.create_task(self.handler(content['event'], content['event_data']))
+            asyncio.create_task(
+                self.handler(
+                    self.package_message(content['event'], content['event_data']),
+                ),
+            )
+
+    async def package_message(self, event: str, message: dict):
+        if event != 'message':
+            return Event(self, event, message)
+
+        text = message['message']
+        msg = Message(self, message)
+
+        msg.user_id = message['user_id']
+        msg.channel_id = message['channel_id']
+        msg.message_type = message['message_type']
+        msg.nickname = message['nickname']
+        msg.is_admin = message['is_admin']
+
+        return text_convert(msg, text, text)

@@ -35,6 +35,7 @@ from amiyabot.builtin.lib.browserService import (
 # message
 from amiyabot.builtin.message import (
     Event,
+    EventList,
     Message,
     Waiter,
     WaitEventCancel,
@@ -71,28 +72,25 @@ class AmiyaBot(BotInstance):
             await basic_browser_service.launch(BrowserLaunchConfig() if launch_browser is True else launch_browser)
 
         self.run_timed_tasks()
-        await self.instance.connect(self.private, self.__message_handler)
+        await self.instance.start(self.private, self.__message_handler)
 
     async def close(self):
         if not self.__closed:
             self.__closed = True
             await self.instance.close()
 
-    async def __message_handler(self, event: str, message: dict):
-        async with log.catch(desc='package error:'):
-            data = await self.instance.package_message(event, message)
+    async def __message_handler(self, data: Optional[Union[Message, Event, EventList]]):
+        if not data:
+            return False
 
-            if not data:
-                return False
+        async with log.catch(
+            desc='handler error:',
+            ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
+            handler=self.__exception_handler(data),
+        ):
+            await message_handler(self, data)
 
-            async with log.catch(
-                desc='handler error:',
-                ignore=[asyncio.TimeoutError, WaitEventCancel, WaitEventOutOfFocus],
-                handler=self.__exception_handler(data),
-            ):
-                await message_handler(self, data)
-
-    def __exception_handler(self, data: Union[Message, Event]):
+    def __exception_handler(self, data: Union[Message, Event, EventList]):
         async def handler(err: Exception):
             if self.exception_handlers:
                 subclass = type(err)

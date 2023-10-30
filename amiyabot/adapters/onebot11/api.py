@@ -12,7 +12,7 @@ class OneBot11API(BotInstanceAPIProtocol):
     def headers(self):
         return {'Authorization': self.token}
 
-    async def get(self, url: str, *args, **kwargs):
+    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         return await http_requests.get(
             self.host + url,
             headers=self.headers,

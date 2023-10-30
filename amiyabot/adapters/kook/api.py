@@ -14,7 +14,7 @@ class KOOKAPI(BotInstanceAPIProtocol):
     def headers(self):
         return {'Authorization': f'Bot {self.token}'}
 
-    async def get(self, url: str, *args, **kwargs):
+    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         return await http_requests.get(
             self.host + url,
             headers=self.headers,

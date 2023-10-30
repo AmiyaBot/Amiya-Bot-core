@@ -28,7 +28,7 @@ class TencentAPI(BotInstanceAPIProtocol):
     def headers(self):
         return {'Authorization': f'Bot {self.appid}.{self.token}'}
 
-    async def get(self, url: str, *args, **kwargs):
+    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         return await http_requests.get(
             get_url(url),
             headers=self.headers,

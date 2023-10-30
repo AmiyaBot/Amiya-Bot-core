@@ -1,11 +1,10 @@
 from typing import Optional
 
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
-from amiyabot.builtin.message import Message, Event, MessageCallback
+from amiyabot.builtin.message import Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
-from ..common import text_convert
 from .builder import build_message_send
 from .ws import TestServer
 
@@ -49,7 +48,7 @@ class TestInstance(BotAdapterProtocol):
     async def close(self):
         ...
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         await self.server.run(handler)
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
@@ -66,21 +65,6 @@ class TestInstance(BotAdapterProtocol):
                 await self.server.send(voice)
 
         return [TestMessageCallback(self, None)]
-
-    async def package_message(self, event: str, message: dict):
-        if event != 'message':
-            return Event(self, event, message)
-
-        text = message['message']
-        msg = Message(self, message)
-
-        msg.user_id = message['user_id']
-        msg.channel_id = message['channel_id']
-        msg.message_type = message['message_type']
-        msg.nickname = message['nickname']
-        msg.is_admin = message['is_admin']
-
-        return text_convert(msg, text, text)
 
     async def recall_message(self, message_id, target_id=None):
         ...

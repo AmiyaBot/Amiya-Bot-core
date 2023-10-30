@@ -56,12 +56,12 @@ class OneBot11Instance(BotAdapterProtocol):
         if self.connection:
             await self.connection.close()
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         while self.keep_run:
             await self.keep_connect(handler)
             await asyncio.sleep(10)
 
-    async def keep_connect(self, handler: Callable):
+    async def keep_connect(self, handler: HANDLER_TYPE, package_method: Callable = package_onebot11_message):
         mark = f'websocket({self.appid})'
 
         async with self.get_websocket_connection(mark, self.url, self.headers) as websocket:
@@ -78,7 +78,11 @@ class OneBot11Instance(BotAdapterProtocol):
                         return None
 
                     async with log.catch(ignore=[json.JSONDecodeError]):
-                        asyncio.create_task(handler('', json.loads(message)))
+                        asyncio.create_task(
+                            handler(
+                                await package_method(self, self.appid, json.loads(message)),
+                            ),
+                        )
 
                 await websocket.close()
 
@@ -116,9 +120,6 @@ class OneBot11Instance(BotAdapterProtocol):
         message.builder = chain.builder
 
         return message
-
-    async def package_message(self, event: str, message: dict):
-        return await package_onebot11_message(self, self.appid, message)
 
     async def recall_message(self, message_id: str, target_id: Optional[str] = None):
         await self.api.post('/delete_msg', {'message_id': message_id})
