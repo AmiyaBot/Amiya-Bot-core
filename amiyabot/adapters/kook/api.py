@@ -17,6 +17,7 @@ class KOOKAPI(BotInstanceAPIProtocol):
     async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         return await http_requests.get(
             self.host + url,
+            params,
             headers=self.headers,
             **kwargs,
         )
