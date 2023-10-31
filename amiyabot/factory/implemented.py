@@ -90,7 +90,8 @@ class MessageHandlerItemImpl(MessageHandlerItem):
 
             elif isinstance(result, tuple):
                 contrast = bool(result[0]), int(bool(result[0])), None
-                result = (result + contrast[len(result) :])[:3]
+                result_len = len(result)
+                result = (result + contrast[result_len:])[:3]
 
             return Verify(*result)
 

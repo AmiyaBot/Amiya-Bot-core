@@ -109,12 +109,12 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def recall_message(self, message_id: Union[str, int], target_id: Optional[Union[str, int]] = None):
+    async def recall_message(self, message_id: Union[str, int], data: Optional[Message] = None):
         """
         撤回消息
 
         :param message_id: 消息 ID
-        :param target_id:  目标 ID
+        :param data:       Message 对象，可以是自定义的，仅需赋值属性 is_direct、user_id、guild_id 以及 channel_id
         """
         raise NotImplementedError
 

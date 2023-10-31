@@ -2,7 +2,7 @@ import re
 import json
 import hashlib
 
-from typing import Optional
+from typing import Optional, Union
 from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.network.download import download_async
 from amiyabot.network.httpRequests import http_requests
@@ -70,7 +70,17 @@ class MiraiAPI(BotInstanceAPIProtocol):
     async def send_group_message(self, group_id: str, chain_list: list):
         return await self.post(*HttpAdapter.group_message(self.session, group_id, chain_list))
 
-    async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:
+    async def send_group_notice(
+        self,
+        group_id: str,
+        content: str,
+        send_to_new_member: Optional[bool] = None,
+        pinned: Optional[bool] = None,
+        show_edit_card: Optional[bool] = None,
+        show_pop_up: Optional[bool] = None,
+        require_confirm: Optional[bool] = None,
+        image: Optional[Union[str, bytes]] = None,
+    ) -> Optional[bool]:
         """发布群公告
 
         Args:
@@ -89,8 +99,7 @@ class MiraiAPI(BotInstanceAPIProtocol):
             bool: 是否成功
         """
         data = {'target': group_id, 'content': content}
-        if kwargs.get('image'):
-            image = kwargs['image']
+        if image is not None:
             if isinstance(image, str):
                 regex = re.compile(
                     r'^(?:http|ftp)s?://'  # http:// or https://
@@ -107,16 +116,16 @@ class MiraiAPI(BotInstanceAPIProtocol):
                     data['imagePath'] = image
             elif isinstance(image, bytes):
                 data['imageBase64'] = image
-        if kwargs.get('send_to_new_member'):
-            data['sendToNewMember'] = kwargs['send_to_new_member']
-        if kwargs.get('pinned'):
-            data['pinned'] = kwargs['pinned']
-        if kwargs.get('show_edit_card'):
-            data['showEditCard'] = kwargs['show_edit_card']
-        if kwargs.get('show_pop_up'):
-            data['showPopup'] = kwargs['show_pop_up']
-        if kwargs.get('require_confirm'):
-            data['requireConfirmation'] = kwargs['require_confirm']
+        if send_to_new_member is not None:
+            data['sendToNewMember'] = send_to_new_member
+        if pinned is not None:
+            data['pinned'] = pinned
+        if show_edit_card is not None:
+            data['showEditCard'] = show_edit_card
+        if show_pop_up is not None:
+            data['showPopup'] = show_pop_up
+        if require_confirm is not None:
+            data['requireConfirmation'] = require_confirm
 
         return await self.post('/anno/publish', data)
 

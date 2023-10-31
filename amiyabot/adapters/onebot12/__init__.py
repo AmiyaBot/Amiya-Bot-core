@@ -94,7 +94,7 @@ class OneBot12Instance(BotAdapterProtocol):
         if request:
             res.append(request)
 
-        return [OneBot12MessageCallback(self, item) for item in res]
+        return [OneBot12MessageCallback(chain.data, self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -116,5 +116,5 @@ class OneBot12Instance(BotAdapterProtocol):
 
         return message
 
-    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
+    async def recall_message(self, message_id: str, data: Optional[Message] = None):
         await self.api.post('/', self.api.ob12_action('delete_message', {'message_id': message_id}))

@@ -64,7 +64,7 @@ class TestInstance(BotAdapterProtocol):
             for voice in voice_list:
                 await self.server.send(voice)
 
-        return [TestMessageCallback(self, None)]
+        return [TestMessageCallback(chain.data, self, None)]
 
-    async def recall_message(self, message_id, target_id=None):
+    async def recall_message(self, message_id, data: Optional[Message] = None):
         ...

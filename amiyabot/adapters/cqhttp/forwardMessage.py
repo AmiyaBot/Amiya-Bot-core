@@ -60,6 +60,7 @@ class CQHTTPForwardMessage:
 
         async with self.data.bot.processing_context(chain, self.data.factory_name):
             callback = OneBot11MessageCallback(
+                self.data,
                 self.data.instance,
                 await self.api.send_group_forward_msg(self.data.channel_id, self.node),
             )

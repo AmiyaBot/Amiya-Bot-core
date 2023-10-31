@@ -201,7 +201,7 @@ class TencentBotInstance(BotAdapterProtocol):
                     )
                 )
 
-        return [TencentMessageCallback(self, item) for item in res]
+        return [TencentMessageCallback(chain.data, self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -225,14 +225,11 @@ class TencentBotInstance(BotAdapterProtocol):
 
         return message
 
-    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
-        await self.api.delete_message(message_id, target_id)
+    async def recall_message(self, message_id: str, data: Optional[Message] = None):
+        await self.api.delete_message(message_id, data.guild_id if data.is_direct else data.channel_id, data.is_direct)
 
 
 class TencentSandboxBotInstance(TencentBotInstance):
-    def __init__(self, appid: str, token: str):
-        super().__init__(appid, token)
-
     @property
     def api(self):
         return TencentAPI(self.appid, self.token, True)

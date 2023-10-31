@@ -2,7 +2,7 @@ import json
 import asyncio
 import websockets
 
-from typing import Callable, Optional
+from typing import Optional
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
@@ -105,7 +105,7 @@ class MiraiBotInstance(BotAdapterProtocol):
                 else:
                     await self.connection.send(item[1])
 
-        return [MiraiMessageCallback(chain.data.channel_id or chain.data.user_id, self, item) for item in res]
+        return [MiraiMessageCallback(chain.data, self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -127,11 +127,11 @@ class MiraiBotInstance(BotAdapterProtocol):
 
         return message
 
-    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
+    async def recall_message(self, message_id: str, data: Optional[Message] = None):
         await self.api.post(
             '/recall',
             {
                 'messageId': message_id,
-                'target': target_id,
+                'target': data.channel_id or data.user_id,
             },
         )

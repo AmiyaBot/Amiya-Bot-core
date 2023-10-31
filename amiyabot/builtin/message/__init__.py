@@ -56,7 +56,7 @@ class Message(MessageStructure):
 
     async def recall(self):
         if self.message_id:
-            await self.instance.recall_message(self.message_id, self.channel_id or self.user_id)
+            await self.instance.recall_message(self.message_id, self)
 
     async def wait(
         self,
@@ -175,7 +175,8 @@ class MessageMatch:
 
 
 class MessageCallback:
-    def __init__(self, instance: T_BotAdapterProtocol, response: Union[Response, Any]):
+    def __init__(self, data: MessageStructure, instance: T_BotAdapterProtocol, response: Union[Response, Any]):
+        self.data = data
         self.instance = instance
         self.response = response
 

@@ -99,7 +99,7 @@ class OneBot11Instance(BotAdapterProtocol):
                 else:
                     await self.connection.send(json.dumps({'action': 'send_msg', 'params': item}))
 
-        return [OneBot11MessageCallback(self, item) for item in res]
+        return [OneBot11MessageCallback(chain.data, self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -121,5 +121,5 @@ class OneBot11Instance(BotAdapterProtocol):
 
         return message
 
-    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
+    async def recall_message(self, message_id: str, data: Optional[Message] = None):
         await self.api.post('/delete_msg', {'message_id': message_id})

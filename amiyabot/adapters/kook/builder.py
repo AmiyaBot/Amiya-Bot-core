@@ -12,7 +12,8 @@ class KOOKMessageCallback(MessageCallback):
         if not self.response:
             log.warning('can not recall message because the response is None.')
             return False
-        await self.instance.recall_message(self.response['data']['msg_id'])
+
+        await self.instance.recall_message(self.response.json['data']['msg_id'])
 
     async def get_message(self):
         if not self.response:
@@ -20,7 +21,7 @@ class KOOKMessageCallback(MessageCallback):
 
         api: KOOKAPI = self.instance.api
 
-        message = await api.get_message(self.response['data']['msg_id'])
+        message = await api.get_message(self.response.json['data']['msg_id'])
 
         if message.json['code'] != 0:
             return None

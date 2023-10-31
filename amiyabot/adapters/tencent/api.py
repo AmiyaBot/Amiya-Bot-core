@@ -305,10 +305,14 @@ class TencentAPI(BotInstanceAPIProtocol):
 
             await asyncio.sleep(0)
 
-    async def delete_message(self, message_id: str, target_id: str, hidetip: bool = True):
-        # todo DELETE /dms/{guild_id}/messages/{message_id}?hidetip=false
+    async def delete_message(self, message_id: str, target_id: str, is_direct: bool, hidetip: bool = True):
+        if is_direct:
+            return await self.request(
+                f'/dms/{target_id}/messages/{message_id}?hidetip={json.dumps(hidetip)}',
+                'delete',
+            )
         return await self.request(
-            f'/channels/{channel_id}/messages/{message_id}?hidetip={json.dumps(hidetip)}',
+            f'/channels/{target_id}/messages/{message_id}?hidetip={json.dumps(hidetip)}',
             'delete',
         )
 

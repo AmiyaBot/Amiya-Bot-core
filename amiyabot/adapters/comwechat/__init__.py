@@ -32,4 +32,4 @@ class ComWeChatBotInstance(OneBot12Instance):
         if request:
             res.append(request)
 
-        return [ComWeChatMessageCallback(self, item) for item in res]
+        return [ComWeChatMessageCallback(chain.data, self, item) for item in res]

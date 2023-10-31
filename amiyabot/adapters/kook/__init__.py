@@ -185,7 +185,7 @@ class KOOKBotInstance(BotAdapterProtocol):
 
             res = await self.api.post(url, payload)
             if res:
-                callback.append(KOOKMessageCallback(self, res.json))
+                callback.append(KOOKMessageCallback(chain.data, self, res.json))
 
         return callback
 
@@ -207,7 +207,7 @@ class KOOKBotInstance(BotAdapterProtocol):
 
         return message
 
-    async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
+    async def recall_message(self, message_id: Union[str, int], data: Optional[Message] = None):
         await self.api.post('/message/delete', {'msg_id': message_id})
 
 

@@ -12,19 +12,12 @@ from .api import MiraiAPI
 
 
 class MiraiMessageCallback(MessageCallback):
-    def __init__(self, target_id, instance, response):
-        super().__init__(instance, response)
-
-        self.target_id = target_id
-
     async def recall(self):
         if not self.response:
             log.warning('can not recall message because the response is None.')
             return False
 
-        response = json.loads(self.response)
-
-        await self.instance.recall_message(response['messageId'], self.target_id)
+        await self.instance.recall_message(self.response.json['messageId'], self.data)
 
     async def get_message(self):
         return None

@@ -12,9 +12,7 @@ class TencentMessageCallback(MessageCallback):
             log.warning('can not recall message because the response is None.')
             return False
 
-        response = self.response.json
-
-        await self.instance.recall_message(response['id'], response['channel_id'])
+        await self.instance.recall_message(self.response.json['id'], self.data)
 
     async def get_message(self):
         if not self.response:
@@ -24,8 +22,10 @@ class TencentMessageCallback(MessageCallback):
 
         response = self.response.json
         message = await api.get_message(response['channel_id'], response['id'])
+        data = message.json['message']
 
-        return await package_tencent_message(self.instance, 'MESSAGE_CREATE', message.json['message'], True)
+        if isinstance(data, dict):
+            return await package_tencent_message(self.instance, 'MESSAGE_CREATE', data, True)
 
 
 class MessageSendRequestGroup:
