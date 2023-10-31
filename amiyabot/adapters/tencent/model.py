@@ -1,9 +1,10 @@
 import json
 import dataclasses
 
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 from dataclasses import dataclass
 from websockets.legacy.client import WebSocketClientProtocol
+from amiyabot.adapters import HANDLER_TYPE
 
 
 @dataclass
@@ -17,7 +18,7 @@ class GateWay:
 class ConnectionHandler:
     private: bool
     gateway: GateWay
-    message_handler: Callable
+    message_handler: HANDLER_TYPE
 
 
 @dataclass

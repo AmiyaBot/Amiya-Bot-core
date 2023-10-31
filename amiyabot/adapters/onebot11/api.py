@@ -1,5 +1,5 @@
 from typing import Optional
-from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.network.httpRequests import http_requests
 
 
@@ -12,9 +12,10 @@ class OneBot11API(BotInstanceAPIProtocol):
     def headers(self):
         return {'Authorization': self.token}
 
-    async def get(self, url: str, *args, **kwargs):
+    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         return await http_requests.get(
             self.host + url,
+            params,
             headers=self.headers,
             **kwargs,
         )
@@ -30,6 +31,7 @@ class OneBot11API(BotInstanceAPIProtocol):
     async def request(self, url: str, method: str, *args, **kwargs):
         return await http_requests.request(
             self.host + url,
+            method,
             headers=self.headers,
             **kwargs,
         )
@@ -46,8 +48,8 @@ class OneBot11API(BotInstanceAPIProtocol):
     async def delete_msg(self, *args, **kwargs):
         ...
 
-    async def get_msg(self, *args, **kwargs):
-        ...
+    async def get_msg(self, message_id: str):
+        return await self.post('/get_msg', data={'message_id': message_id})
 
     async def get_forward_msg(self, *args, **kwargs):
         ...

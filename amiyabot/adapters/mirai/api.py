@@ -2,8 +2,8 @@ import re
 import json
 import hashlib
 
-from typing import Optional
-from amiyabot.adapters.api import BotInstanceAPIProtocol
+from typing import Optional, Union
+from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.network.download import download_async
 from amiyabot.network.httpRequests import http_requests
 
@@ -15,9 +15,10 @@ class MiraiAPI(BotInstanceAPIProtocol):
         self.session = session
         self.host = f'http://{host}:{port}'
 
-    async def get(self, url: str, *args, **kwargs):
+    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
         return await http_requests.get(
             self.host + url,
+            params,
             **kwargs,
         )
 
@@ -34,17 +35,17 @@ class MiraiAPI(BotInstanceAPIProtocol):
     async def request(self, url: str, method: str, *args, **kwargs):
         return await http_requests.request(
             self.host + url,
+            method,
             **kwargs,
         )
 
-    @staticmethod
-    async def get_user_avatar(user_id: str) -> Optional[bytes]:
+    async def get_user_avatar(self, user_id: str, *args, **kwargs) -> Optional[str]:
         url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=640'
         data = await download_async(url)
         if data and hashlib.md5(data).hexdigest() == 'acef72340ac0e914090bd35799f5594e':
             url = f'https://q1.qlogo.cn/g?b=qq&nk={user_id}&s=100'
-            data = await download_async(url)
-        return data
+
+        return url
 
     async def upload(self, interface: str, field_type: str, file: bytes, msg_type: str):
         res = await http_requests.post_upload(
@@ -69,7 +70,17 @@ class MiraiAPI(BotInstanceAPIProtocol):
     async def send_group_message(self, group_id: str, chain_list: list):
         return await self.post(*HttpAdapter.group_message(self.session, group_id, chain_list))
 
-    async def send_group_notice(self, group_id: str, content: str, **kwargs) -> Optional[bool]:
+    async def send_group_notice(
+        self,
+        group_id: str,
+        content: str,
+        send_to_new_member: Optional[bool] = None,
+        pinned: Optional[bool] = None,
+        show_edit_card: Optional[bool] = None,
+        show_pop_up: Optional[bool] = None,
+        require_confirm: Optional[bool] = None,
+        image: Optional[Union[str, bytes]] = None,
+    ) -> Optional[bool]:
         """发布群公告
 
         Args:
@@ -88,8 +99,7 @@ class MiraiAPI(BotInstanceAPIProtocol):
             bool: 是否成功
         """
         data = {'target': group_id, 'content': content}
-        if kwargs.get('image'):
-            image = kwargs['image']
+        if image is not None:
             if isinstance(image, str):
                 regex = re.compile(
                     r'^(?:http|ftp)s?://'  # http:// or https://
@@ -106,16 +116,16 @@ class MiraiAPI(BotInstanceAPIProtocol):
                     data['imagePath'] = image
             elif isinstance(image, bytes):
                 data['imageBase64'] = image
-        if kwargs.get('send_to_new_member'):
-            data['sendToNewMember'] = kwargs['send_to_new_member']
-        if kwargs.get('pinned'):
-            data['pinned'] = kwargs['pinned']
-        if kwargs.get('show_edit_card'):
-            data['showEditCard'] = kwargs['show_edit_card']
-        if kwargs.get('show_pop_up'):
-            data['showPopup'] = kwargs['show_pop_up']
-        if kwargs.get('require_confirm'):
-            data['requireConfirmation'] = kwargs['require_confirm']
+        if send_to_new_member is not None:
+            data['sendToNewMember'] = send_to_new_member
+        if pinned is not None:
+            data['pinned'] = pinned
+        if show_edit_card is not None:
+            data['showEditCard'] = show_edit_card
+        if show_pop_up is not None:
+            data['showPopup'] = show_pop_up
+        if require_confirm is not None:
+            data['requireConfirmation'] = require_confirm
 
         return await self.post('/anno/publish', data)
 

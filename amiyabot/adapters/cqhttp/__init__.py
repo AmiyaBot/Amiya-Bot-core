@@ -18,6 +18,3 @@ class CQHttpBotInstance(OneBot11Instance):
     @property
     def api(self):
         return CQHttpAPI(self.host, self.http_port, self.token)
-
-    def get_user_avatar(self, message: dict):
-        return f'https://q.qlogo.cn/headimg_dl?dst_uin=%s&spec=100' % str(message['sender']['user_id'])

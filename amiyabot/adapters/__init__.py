@@ -4,17 +4,16 @@ import asyncio
 import websockets
 import contextlib
 
-from websockets.legacy.client import WebSocketClientProtocol
 from typing import Any, List, Union, Callable, Coroutine, Optional
+from websockets.legacy.client import WebSocketClientProtocol
 from amiyabot.typeIndexes import T_BotHandlerFactory
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
-from .api import BotInstanceAPIProtocol
+from .apiProtocol import BotInstanceAPIProtocol
 
-HANDLER_TYPE = Callable[[str, dict], Coroutine[Any, Any, None]]
-PACKAGE_RESULT = Union[Message, Event, EventList]
+HANDLER_TYPE = Callable[[Optional[Union[Message, Event, EventList]]], Coroutine[Any, Any, None]]
 
 
 class BotAdapterProtocol:
@@ -54,9 +53,6 @@ class BotAdapterProtocol:
 
         return callback
 
-    def get_user_avatar(self, message: dict):
-        return ''
-
     @contextlib.asynccontextmanager
     async def get_websocket_connection(self, mark: str, url: str, headers: Optional[dict] = None):
         async with WebSocketConnect(self, mark, url, headers) as ws:
@@ -77,11 +73,11 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         """
-        连接至服务并启动实例
+        启动实例，执行 handler 方法处理消息
 
-        :param private: 是否私域
+        :param private: 是否私域机器人
         :param handler: 消息处理方法
         """
         raise NotImplementedError
@@ -113,23 +109,12 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def package_message(self, event: str, message: dict) -> PACKAGE_RESULT:
-        """
-        预处理并封装消息对象
-
-        :param event:   事件名
-        :param message: 消息对象
-        :return:        封装结果：Message、Event、EventList
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    async def recall_message(self, message_id: Union[str, int], target_id: Optional[Union[str, int]] = None):
+    async def recall_message(self, message_id: Union[str, int], data: Optional[Message] = None):
         """
         撤回消息
 
         :param message_id: 消息 ID
-        :param target_id:  目标 ID
+        :param data:       Message 对象，可以是自定义的，仅需赋值属性 is_direct、user_id、guild_id 以及 channel_id
         """
         raise NotImplementedError
 

@@ -1,3 +1,6 @@
+import asyncio
+
+from amiyabot.adapters import HANDLER_TYPE
 from amiyabot.adapters.onebot12 import OneBot12Instance
 from amiyabot.builtin.messageChain import Chain
 
@@ -16,15 +19,17 @@ class ComWeChatBotInstance(OneBot12Instance):
     def __str__(self):
         return 'ComWeChat'
 
-    async def package_message(self, event: str, message: dict):
-        return package_com_wechat_message(self, message)
+    async def start(self, private: bool, handler: HANDLER_TYPE):
+        while self.keep_run:
+            await self.keep_connect(handler, package_method=package_com_wechat_message)
+            await asyncio.sleep(10)
 
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reply = await build_message_send(self.api, chain)
 
         res = []
-        request = await self.api.post('/', {'action': 'send_message', 'params': reply})
+        request = await self.api.post('/', self.api.ob12_action('send_message', reply))
         if request:
             res.append(request)
 
-        return [ComWeChatMessageCallback(self, item) for item in res]
+        return [ComWeChatMessageCallback(chain.data, self, item) for item in res]

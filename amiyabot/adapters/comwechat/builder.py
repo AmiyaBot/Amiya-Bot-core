@@ -1,6 +1,7 @@
 from amiyabot.adapters import MessageCallback
-from amiyabot.adapters.api import BotInstanceAPIProtocol
+from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.adapters.onebot12.builder import build_message_send as build_ob12
+from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
@@ -8,6 +9,9 @@ from amiyabot.builtin.messageChain.element import *
 class ComWeChatMessageCallback(MessageCallback):
     async def recall(self):
         return False
+
+    async def get_message(self) -> Optional[Message]:
+        return None
 
 
 async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain):

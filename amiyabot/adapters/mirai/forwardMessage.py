@@ -53,7 +53,7 @@ class MiraiForwardMessage:
 
         async with self.data.bot.processing_context(chain, self.data.factory_name):
             callback = MiraiMessageCallback(
-                self.data.channel_id,
+                self.data,
                 self.data.instance,
                 await self.api.send_group_message(self.data.channel_id, [self.node]),
             )

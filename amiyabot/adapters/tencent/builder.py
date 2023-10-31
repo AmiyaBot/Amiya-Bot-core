@@ -2,21 +2,30 @@ from amiyabot.adapters import MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
+from .api import TencentAPI, MessageSendRequest
+from .package import package_tencent_message
+
 
 class TencentMessageCallback(MessageCallback):
     async def recall(self):
         if not self.response:
             log.warning('can not recall message because the response is None.')
             return False
-        await self.instance.recall_message(self.response['id'], self.response['channel_id'])
 
+        await self.instance.recall_message(self.response.json['id'], self.data)
 
-@dataclass
-class MessageSendRequest:
-    data: dict
-    direct: bool
-    user_id: str
-    upload_image: bool = False
+    async def get_message(self):
+        if not self.response:
+            return None
+
+        api: TencentAPI = self.instance.api
+
+        response = self.response.json
+        message = await api.get_message(response['channel_id'], response['id'])
+        data = message.json['message']
+
+        if isinstance(data, dict):
+            return await package_tencent_message(self.instance, 'MESSAGE_CREATE', data, True)
 
 
 class MessageSendRequestGroup:
@@ -29,9 +38,15 @@ class MessageSendRequestGroup:
         self.reference: bool = reference
         self.direct: bool = direct
 
-    def __insert_req(self, content: str = '', image: Optional[Union[str, bytes]] = None):
-        # noinspection PyArgumentList
-        req = MessageSendRequest(data={'msg_id': self.message_id}, direct=self.direct, user_id=self.user_id)
+    def __insert_req(self, content: str = '', image: Optional[Union[str, bytes]] = None, data: Optional[dict] = None):
+        req = MessageSendRequest(
+            data={
+                'msg_id': self.message_id,
+                **(data or {}),
+            },
+            direct=self.direct,
+            user_id=self.user_id,
+        )
 
         if content:
             req.data['content'] = content
@@ -53,13 +68,14 @@ class MessageSendRequestGroup:
 
     def add_text(self, text: str):
         if self.req_list:
-            req = self.req_list[-1]
+            req_data = self.req_list[-1].data
 
-            if 'content' not in req.data:
-                req.data['content'] = ''
+            if 'embed' not in req_data and 'ark' not in req_data:
+                if 'content' not in req_data:
+                    req_data['content'] = ''
 
-            req.data['content'] += text
-            return None
+                req_data['content'] += text
+                return None
 
         self.text += text
 
@@ -67,15 +83,25 @@ class MessageSendRequestGroup:
         self.__insert_req(content=self.text, image=image)
         self.text = ''
 
+    def add_data(self, data: Optional[dict]):
+        self.done()
+        self.__insert_req(data=data)
+
     def done(self):
         if self.text:
             self.__insert_req(content=self.text)
+            self.text = ''
 
 
 async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
     chain_list = custom_chain or chain.chain
 
-    messages = MessageSendRequestGroup(chain.data.user_id, chain.data.message_id, chain.reference, chain.data.is_direct)
+    messages = MessageSendRequestGroup(
+        chain.data.user_id,
+        chain.data.message_id,
+        chain.reference,
+        chain.data.is_direct,
+    )
 
     for item in chain_list:
         # At
@@ -113,6 +139,14 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
                 messages.add_image(result)
             else:
                 log.warning('html convert fail.')
+
+        # Embed
+        if isinstance(item, Embed):
+            messages.add_data(item.get())
+
+        # Ark
+        if isinstance(item, Ark):
+            messages.add_data(item.get())
 
     messages.done()
 

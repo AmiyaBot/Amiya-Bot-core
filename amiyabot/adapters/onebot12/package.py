@@ -2,9 +2,10 @@ from amiyabot.builtin.message import Event, EventList, Message
 from amiyabot.adapters import BotAdapterProtocol
 
 from ..common import text_convert
+from .api import OneBot12API
 
 
-def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
+async def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
     message_type = data['type']
 
     if message_type == 'message':
@@ -25,7 +26,7 @@ def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
 
         msg.message_id = str(data['message_id'])
         msg.user_id = str(data['user_id'])
-        msg.avatar = instance.get_user_avatar(data)
+        msg.avatar = await instance.api.get_user_avatar(data)
 
         message_chain = data['message']
         text = ''
@@ -47,19 +48,19 @@ def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
                     text += chain_data['text'].strip()
 
                 if chain['type'] == 'image':
-                    msg.image.append(chain_data['file_id'])
+                    msg.image.append(await get_file(instance, chain_data))
 
                 if chain['type'] == 'file':
-                    msg.files.append(chain_data['file_id'])
+                    msg.files.append(await get_file(instance, chain_data))
 
                 if chain['type'] == 'voice':
-                    msg.voice = chain_data['file_id']
+                    msg.voice = await get_file(instance, chain_data)
 
                 if chain['type'] == 'audio':
-                    msg.audio = chain_data['file_id']
+                    msg.audio = await get_file(instance, chain_data)
 
                 if chain['type'] == 'video':
-                    msg.video = chain_data['file_id']
+                    msg.video = await get_file(instance, chain_data)
 
         return text_convert(msg, text, text)
 
@@ -69,3 +70,9 @@ def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
         event_list.append(instance, '{type}.{detail_type}'.format(**data), data)
 
     return event_list
+
+
+async def get_file(instance: BotAdapterProtocol, chain_data: dict):
+    api: OneBot12API = instance.api
+
+    return await api.get_file(chain_data['file_id'])

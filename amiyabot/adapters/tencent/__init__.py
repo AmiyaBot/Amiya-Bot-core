@@ -6,12 +6,10 @@ from websockets.legacy.client import WebSocketClientProtocol
 from typing import Dict, Optional
 from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
-from amiyabot.network.httpRequests import http_requests
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
-from .url import APIConstant, get_url
 from .api import TencentAPI
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
@@ -50,18 +48,18 @@ class TencentBotInstance(BotAdapterProtocol):
             if item.connection:
                 await item.connection.close()
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         log.info(f'requesting appid {self.appid} gateway')
 
-        resp = await self.api.get(APIConstant.gatewayBotURI)
+        resp = await self.api.gateway_bot()
 
         if not resp:
             if self.keep_run:
                 await asyncio.sleep(10)
-                asyncio.create_task(self.connect(private, handler))
+                asyncio.create_task(self.start(private, handler))
             return False
 
-        gateway = GateWay(**resp)
+        gateway = GateWay(**resp.json)
 
         log.info(
             f'appid {self.appid} gateway resp: shards {gateway.shards}, remaining %d/%d'
@@ -102,7 +100,7 @@ class TencentBotInstance(BotAdapterProtocol):
                                 for n in range(gateway.shards - 1):
                                     asyncio.create_task(self.create_connection(handler, n + 1))
                         else:
-                            asyncio.create_task(handler.message_handler(payload.t, payload.d))
+                            await self.create_package_task(handler, payload)
 
                     if payload.op == 10:
                         create_token = {
@@ -147,7 +145,7 @@ class TencentBotInstance(BotAdapterProtocol):
                         if payload.t == 'RESUMED':
                             log.info(f'Bot reconnected({sign}).')
                         else:
-                            asyncio.create_task(handler.message_handler(payload.t, payload.d))
+                            await self.create_package_task(handler, payload)
 
                     if payload.op == 10:
                         reconnect_token = {
@@ -181,6 +179,13 @@ class TencentBotInstance(BotAdapterProtocol):
                 sec = 0
                 await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_json())
 
+    async def create_package_task(self, handler: ConnectionHandler, payload: Payload):
+        asyncio.create_task(
+            handler.message_handler(
+                await package_tencent_message(self, payload.t, payload.d),
+            ),
+        )
+
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
         reqs = await build_message_send(chain)
         res = []
@@ -196,7 +201,7 @@ class TencentBotInstance(BotAdapterProtocol):
                     )
                 )
 
-        return [TencentMessageCallback(self, item) for item in res]
+        return [TencentMessageCallback(chain.data, self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -220,12 +225,11 @@ class TencentBotInstance(BotAdapterProtocol):
 
         return message
 
-    async def package_message(self, event: str, message: dict):
-        return await package_tencent_message(self, event, message)
+    async def recall_message(self, message_id: str, data: Optional[Message] = None):
+        await self.api.delete_message(message_id, data.guild_id if data.is_direct else data.channel_id, data.is_direct)
 
-    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
-        await http_requests.request(
-            get_url(f'/channels/{target_id}/messages/{message_id}?hidetip=false'),
-            method='delete',
-            headers=self.headers,
-        )
+
+class TencentSandboxBotInstance(TencentBotInstance):
+    @property
+    def api(self):
+        return TencentAPI(self.appid, self.token, True)

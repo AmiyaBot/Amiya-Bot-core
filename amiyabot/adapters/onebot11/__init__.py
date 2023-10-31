@@ -56,12 +56,12 @@ class OneBot11Instance(BotAdapterProtocol):
         if self.connection:
             await self.connection.close()
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, private: bool, handler: HANDLER_TYPE):
         while self.keep_run:
             await self.keep_connect(handler)
             await asyncio.sleep(10)
 
-    async def keep_connect(self, handler: Callable):
+    async def keep_connect(self, handler: HANDLER_TYPE, package_method: Callable = package_onebot11_message):
         mark = f'websocket({self.appid})'
 
         async with self.get_websocket_connection(mark, self.url, self.headers) as websocket:
@@ -78,7 +78,11 @@ class OneBot11Instance(BotAdapterProtocol):
                         return None
 
                     async with log.catch(ignore=[json.JSONDecodeError]):
-                        asyncio.create_task(handler('', json.loads(message)))
+                        asyncio.create_task(
+                            handler(
+                                await package_method(self, self.appid, json.loads(message)),
+                            ),
+                        )
 
                 await websocket.close()
 
@@ -95,7 +99,7 @@ class OneBot11Instance(BotAdapterProtocol):
                 else:
                     await self.connection.send(json.dumps({'action': 'send_msg', 'params': item}))
 
-        return [OneBot11MessageCallback(self, item) for item in res]
+        return [OneBot11MessageCallback(chain.data, self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -117,8 +121,5 @@ class OneBot11Instance(BotAdapterProtocol):
 
         return message
 
-    async def package_message(self, event: str, message: dict):
-        return package_onebot11_message(self, self.appid, message)
-
-    async def recall_message(self, message_id: str, target_id: Optional[str] = None):
+    async def recall_message(self, message_id: str, data: Optional[Message] = None):
         await self.api.post('/delete_msg', {'message_id': message_id})

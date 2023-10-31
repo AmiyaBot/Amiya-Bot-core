@@ -5,7 +5,6 @@ import dataclasses
 
 from typing import Optional, Union
 from dataclasses import dataclass
-from amiyabot.network.httpRequests import http_requests, ResponseException
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, ManualCloseException, HANDLER_TYPE
@@ -23,14 +22,12 @@ class KOOKBotInstance(BotAdapterProtocol):
         super().__init__(appid, token)
 
         self.ws_url = ''
-        self.base_url = 'https://www.kookapp.cn/api/v3'
-        self.headers = {'Authorization': f'Bot {token}'}
         self.connection = None
 
         self.pong = 0
         self.last_sn = 0
 
-        self.bot_name = 'kook_bot'
+        self.bot_name = appid
 
     def __str__(self):
         return 'KOOK'
@@ -43,11 +40,11 @@ class KOOKBotInstance(BotAdapterProtocol):
     def __still_alive(self):
         return self.keep_run and self.connection
 
-    async def connect(self, private: bool, handler: HANDLER_TYPE):
-        me_req = await self.get_request('/user/me')
+    async def start(self, private: bool, handler: HANDLER_TYPE):
+        me_req = await self.api.get_me()
         if me_req:
-            self.appid = me_req['data']['id']
-            self.bot_name = me_req['data']['username']
+            self.appid = me_req.json['data']['id']
+            self.bot_name = me_req.json['data']['username']
 
         while self.keep_run:
             await self.__connect(handler)
@@ -58,11 +55,11 @@ class KOOKBotInstance(BotAdapterProtocol):
             if not self.ws_url:
                 log.info(f'requesting appid {self.appid} gateway')
 
-                resp = await self.get_request('/gateway/index', {'compress': 0})
+                resp = await self.api.get('/gateway/index', params={'compress': 0})
                 if not resp:
                     raise ManualCloseException
 
-                self.ws_url = resp['data']['url']
+                self.ws_url = resp.json['data']['url']
 
             async with self.get_websocket_connection(self.appid, self.ws_url) as websocket:
                 if websocket:
@@ -78,7 +75,11 @@ class KOOKBotInstance(BotAdapterProtocol):
                             self.last_sn = payload.sn
 
                         if payload.s == 0:
-                            asyncio.create_task(handler('event', payload.d))
+                            asyncio.create_task(
+                                handler(
+                                    await self.package_message(payload.d),
+                                ),
+                            )
 
                         if payload.s == 1:
                             if payload.d['code'] != 0:
@@ -139,13 +140,13 @@ class KOOKBotInstance(BotAdapterProtocol):
 
     async def record_role_list(self, guild_id: str):
         if guild_id in RolePermissionCache.cache_create_time:
-            if time.time() - RolePermissionCache.cache_create_time[guild_id] < 10:
+            if time.time() - RolePermissionCache.cache_create_time[guild_id] < 5:
                 return
 
-        res = await self.get_request('/guild-role/list', {'guild_id': guild_id}, ignore_error=True)
-        if res:
+        res = await self.api.get('/guild-role/list', params={'guild_id': guild_id}, ignore_error=True)
+        if res and res.json['code'] == 0:
             roles = {}
-            for item in res['data']['items']:
+            for item in res.json['data']['items']:
                 roles[item['role_id']] = item['permissions']
 
             RolePermissionCache.guild_role[guild_id] = roles
@@ -160,7 +161,7 @@ class KOOKBotInstance(BotAdapterProtocol):
         self.keep_run = False
         await self.close_connection()
 
-    async def package_message(self, event: str, message: dict):
+    async def package_message(self, message: dict):
         if message['type'] != 255:
             guild_id = message['extra'].get('guild_id', '')
             if guild_id:
@@ -182,7 +183,9 @@ class KOOKBotInstance(BotAdapterProtocol):
             if chain.reference:
                 payload['quote'] = chain.data.message_id
 
-            callback.append(KOOKMessageCallback(self, await self.post_request(url, payload)))
+            res = await self.api.post(url, payload)
+            if res:
+                callback.append(KOOKMessageCallback(chain.data, self, res.json))
 
         return callback
 
@@ -204,33 +207,8 @@ class KOOKBotInstance(BotAdapterProtocol):
 
         return message
 
-    async def recall_message(self, message_id: Union[str, int], target_id: Union[str, int] = None):
-        await self.post_request('/message/delete', {'msg_id': message_id})
-
-    async def get_request(self, url: str, params: Optional[dict] = None, **kwargs):
-        return self.__check_response(
-            await http_requests.get(self.base_url + url, params, headers=self.headers, **kwargs)
-        )
-
-    async def post_request(self, url: str, payload: Optional[dict] = None, **kwargs):
-        return self.__check_response(
-            await http_requests.post(self.base_url + url, payload, headers=self.headers, **kwargs)
-        )
-
-    @staticmethod
-    def __check_response(response_text: Optional[str]) -> Optional[dict]:
-        if response_text is None:
-            return None
-
-        try:
-            data = json.loads(response_text)
-        except json.JSONDecodeError as e:
-            raise ResponseException(-1, repr(e)) from e
-
-        if 'code' in data and data['code'] != 0:
-            raise ResponseException(**data)
-
-        return data
+    async def recall_message(self, message_id: Union[str, int], data: Optional[Message] = None):
+        await self.api.post('/message/delete', {'msg_id': message_id})
 
 
 @dataclass

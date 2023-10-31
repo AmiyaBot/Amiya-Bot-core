@@ -1,4 +1,3 @@
-import json
 import base64
 
 from amiyabot.builtin.messageChain import Chain

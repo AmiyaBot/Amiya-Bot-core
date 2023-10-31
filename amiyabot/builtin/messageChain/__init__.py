@@ -188,6 +188,14 @@ class Chain:
         )
         return self
 
+    def embed(self, title: str, prompt: str, thumbnail: str, fields: List[str]):
+        self.chain.append(Embed(title, prompt, thumbnail, fields))
+        return self
+
+    def ark(self, template_id: int, kv: List[dict]):
+        self.chain.append(Ark(template_id, kv))
+        return self
+
     def extend(self, data: Any):
         self.chain.append(Extend(data))
         return self

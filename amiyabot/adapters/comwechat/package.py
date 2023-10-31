@@ -2,8 +2,8 @@ from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.onebot12.package import package_onebot12_message
 
 
-def package_com_wechat_message(instance: BotAdapterProtocol, data: dict):
-    msg = package_onebot12_message(instance, data)
+async def package_com_wechat_message(instance: BotAdapterProtocol, data: dict):
+    msg = await package_onebot12_message(instance, data)
 
     if msg:
         if data['type'] == 'message':

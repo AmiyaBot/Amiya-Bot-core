@@ -8,6 +8,9 @@ from amiyabot.builtin.messageChain.element import *
 from amiyabot.util import is_valid_url
 from amiyabot import log
 
+from .api import OneBot11API
+from .package import package_onebot11_message
+
 
 class OneBot11MessageCallback(MessageCallback):
     async def recall(self):
@@ -15,9 +18,25 @@ class OneBot11MessageCallback(MessageCallback):
             log.warning('can not recall message because the response is None.')
             return False
 
-        response = json.loads(self.response)
+        await self.instance.recall_message(self.response.json['data']['message_id'])
 
-        await self.instance.recall_message(response['data']['message_id'])
+    async def get_message(self):
+        if not self.response:
+            return None
+
+        api: OneBot11API = self.instance.api
+
+        message_id = self.response.json['data']['message_id']
+
+        message_res = await api.get_msg(message_id)
+        message_data = message_res.json
+
+        if message_data:
+            return await package_onebot11_message(
+                self.instance,
+                '',
+                {'post_type': 'message', **message_data['data']},
+            )
 
 
 async def build_message_send(chain: Chain, chain_only: bool = False):
