@@ -38,10 +38,11 @@ class MessageSendRequestGroup:
         self.reference: bool = reference
         self.direct: bool = direct
 
-    def __insert_req(self, content: str = '', image: Optional[Union[str, bytes]] = None):
+    def __insert_req(self, content: str = '', image: Optional[Union[str, bytes]] = None, data: Optional[dict] = None):
         req = MessageSendRequest(
             data={
                 'msg_id': self.message_id,
+                **(data or {}),
             },
             direct=self.direct,
             user_id=self.user_id,
@@ -67,13 +68,14 @@ class MessageSendRequestGroup:
 
     def add_text(self, text: str):
         if self.req_list:
-            req = self.req_list[-1]
+            req_data = self.req_list[-1].data
 
-            if 'content' not in req.data:
-                req.data['content'] = ''
+            if 'embed' not in req_data and 'ark' not in req_data:
+                if 'content' not in req_data:
+                    req_data['content'] = ''
 
-            req.data['content'] += text
-            return None
+                req_data['content'] += text
+                return None
 
         self.text += text
 
@@ -81,9 +83,14 @@ class MessageSendRequestGroup:
         self.__insert_req(content=self.text, image=image)
         self.text = ''
 
+    def add_data(self, data: Optional[dict]):
+        self.done()
+        self.__insert_req(data=data)
+
     def done(self):
         if self.text:
             self.__insert_req(content=self.text)
+            self.text = ''
 
 
 async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
@@ -132,6 +139,14 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
                 messages.add_image(result)
             else:
                 log.warning('html convert fail.')
+
+        # Embed
+        if isinstance(item, Embed):
+            messages.add_data(item.get())
+
+        # Ark
+        if isinstance(item, Ark):
+            messages.add_data(item.get())
 
     messages.done()
 

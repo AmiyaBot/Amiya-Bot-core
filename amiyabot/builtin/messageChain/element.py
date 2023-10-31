@@ -125,6 +125,38 @@ class Html:
 
 
 @dataclass
+class Embed:
+    title: str
+    prompt: str
+    thumbnail: str
+    fields: List[str]
+
+    def get(self):
+        return {
+            'embed': {
+                'title': self.title,
+                'prompt': self.prompt,
+                'thumbnail': {'url': self.thumbnail},
+                'fields': [{'name': item} for item in self.fields],
+            }
+        }
+
+
+@dataclass
+class Ark:
+    template_id: int
+    kv: List[dict]
+
+    def get(self):
+        return {
+            'ark': {
+                'template_id': self.template_id,
+                'kv': self.kv,
+            }
+        }
+
+
+@dataclass
 class Extend:
     data: Any
 
@@ -134,5 +166,5 @@ class Extend:
         return self.data
 
 
-CHAIN_ITEM = Union[At, AtAll, Tag, Face, Text, Image, Voice, Html, Extend]
+CHAIN_ITEM = Union[At, AtAll, Tag, Face, Text, Image, Voice, Html, Embed, Ark, Extend]
 CHAIN_LIST = List[CHAIN_ITEM]
