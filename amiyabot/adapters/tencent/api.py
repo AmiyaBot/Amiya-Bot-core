@@ -24,6 +24,7 @@ class TencentAPI(BotInstanceAPIProtocol):
         self.appid = appid
         self.token = token
         self.sandbox = sandbox
+        self.post_message_max_retry_times = 3
 
     @property
     def headers(self):
@@ -293,12 +294,12 @@ class TencentAPI(BotInstanceAPIProtocol):
             api = f'/channels/{channel_id}/messages'
 
         retry_times = 0
-        while retry_times < 3:
+        while retry_times < self.post_message_max_retry_times:
             retry_times += 1
 
             res = await self.post(api, req.data, req.upload_image)
             if res:
-                if 'code' in res.json and res.json['code'] != 200:
+                if 'code' in res.json and res.json['code'] not in http_requests.success + http_requests.async_success:
                     log.error(res.json['message'], 'message send error by code: %s --' % res.json['code'])
                 else:
                     return res

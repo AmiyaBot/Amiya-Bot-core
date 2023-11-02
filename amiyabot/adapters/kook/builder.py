@@ -109,8 +109,6 @@ async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAI
             result = await item.create_html_image()
             if result:
                 await make_image_message({'file': result})
-            else:
-                log.warning('html convert fail.')
 
         # Extend
         if isinstance(item, Extend):

@@ -42,8 +42,6 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
                 result = await item.create_html_image()
                 if result:
                     chain_data.append({'type': 'image', 'data': await append_image(result)})
-                else:
-                    log.warning('html convert fail.')
 
     return send_msg(chain_data), voice_list
 

@@ -72,8 +72,6 @@ async def build_message_send(api: BotInstanceAPIProtocol, chain: Chain, custom: 
                     res = await append_image(api, result)
                     if res:
                         chain_data.append(res)
-                else:
-                    log.warning('html convert fail.')
 
             # Extend
             if isinstance(item, Extend):
