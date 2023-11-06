@@ -1,10 +1,9 @@
 from amiyabot.adapters import MessageCallback
-from amiyabot.network.httpRequests import http_requests
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
-from .api import KOOKAPI
+from .api import KOOKAPI, log
 
 
 class KOOKMessageCallback(MessageCallback):
@@ -48,11 +47,19 @@ class KOOKMessageCallback(MessageCallback):
         return data
 
 
-async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
+async def build_message_send(api: KOOKAPI, chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
     chain_list = custom_chain or chain.chain
 
-    message = {'type': 9, 'content': ''}
-    card_message = {'type': 'card', 'theme': 'none', 'size': 'lg', 'modules': []}
+    message = {
+        'type': 9,
+        'content': '',
+    }
+    card_message = {
+        'type': 'card',
+        'theme': 'none',
+        'size': 'lg',
+        'modules': [],
+    }
 
     use_card = len(chain_list) > 1 and len([n for n in chain_list if type(n) in [Image, Html, Extend]])
 
@@ -62,19 +69,29 @@ async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAI
                 card_message['modules'][-1]['text']['content'] += data
                 return
 
-            card_message['modules'].append({'type': 'section', 'text': {'type': 'kmarkdown', 'content': data}})
+            card_message['modules'].append(
+                {
+                    'type': 'section',
+                    'text': {'type': 'kmarkdown', 'content': data},
+                }
+            )
             return
 
         message['content'] += data
 
     async def make_image_message(data):
-        res = await http_requests.request(instance.base_url + '/asset/create', data=data, headers=instance.headers)
+        res = await api.create_asset(data)
         if res:
-            async with log.catch():
-                url = json.loads(res)['data']['url']
+            async with log.catch('make image error'):
+                url = res.json['data']['url']
 
             if use_card:
-                card_message['modules'].append({'type': 'container', 'elements': [{'type': 'image', 'src': url}]})
+                card_message['modules'].append(
+                    {
+                        'type': 'container',
+                        'elements': [{'type': 'image', 'src': url}],
+                    }
+                )
             else:
                 message['type'] = 2
                 message['content'] = url
@@ -98,7 +115,7 @@ async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAI
 
         # Image
         if isinstance(item, Image):
-            await make_image_message({'file': await item.get()})
+            await make_image_message(await item.get())
 
         # Voice
         if isinstance(item, Voice):
@@ -108,9 +125,7 @@ async def build_message_send(instance, chain: Chain, custom_chain: Optional[CHAI
         if isinstance(item, Html):
             result = await item.create_html_image()
             if result:
-                await make_image_message({'file': result})
-            else:
-                log.warning('html convert fail.')
+                await make_image_message(result)
 
         # Extend
         if isinstance(item, Extend):

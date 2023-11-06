@@ -88,8 +88,6 @@ async def build_message_send(
                             'imageId': await get_image_id(api, result, chain.data.message_type),
                         }
                     )
-                else:
-                    log.warning('html convert fail.')
 
             # Extend
             if isinstance(item, Extend):

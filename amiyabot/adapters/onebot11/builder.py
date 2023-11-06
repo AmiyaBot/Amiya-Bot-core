@@ -84,8 +84,6 @@ async def build_message_send(chain: Chain, chain_only: bool = False):
                 result = await item.create_html_image()
                 if result:
                     chain_data.append(await append_image(result))
-                else:
-                    log.warning('html convert fail.')
 
             # Extend
             if isinstance(item, Extend):

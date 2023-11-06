@@ -137,8 +137,6 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
             result = await item.create_html_image()
             if result:
                 messages.add_image(result)
-            else:
-                log.warning('html convert fail.')
 
         # Embed
         if isinstance(item, Embed):

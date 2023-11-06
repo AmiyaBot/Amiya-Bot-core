@@ -84,10 +84,14 @@ class Html:
     async def create_html_image(self):
         async with log.catch('html convert error:'):
             page: Optional[Page] = await basic_browser_service.open_page(
-                self.url, is_file=self.is_file, width=self.width, height=self.height
+                self.url,
+                is_file=self.is_file,
+                width=self.width,
+                height=self.height,
             )
 
             if not page:
+                log.warning(f'can not open page in {basic_browser_service}.')
                 return None
 
             if self.data:
@@ -121,7 +125,10 @@ class Html:
             if not BROWSER_PAGE_NOT_CLOSE:
                 await page.close()
 
-            return result
+            if result:
+                return result
+
+        log.warning('html convert fail.')
 
 
 @dataclass
