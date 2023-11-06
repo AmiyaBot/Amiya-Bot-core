@@ -20,11 +20,11 @@ class MessageSendRequest:
 
 
 class TencentAPI(BotInstanceAPIProtocol):
-    def __init__(self, appid: str, token: str, sandbox: bool = False):
+    def __init__(self, appid: str, token: str, sandbox: bool = False, post_message_max_retry_times: int = 3):
         self.appid = appid
         self.token = token
         self.sandbox = sandbox
-        self.post_message_max_retry_times = 3
+        self.post_message_max_retry_times = post_message_max_retry_times
 
     @property
     def headers(self):
