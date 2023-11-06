@@ -1,8 +1,11 @@
 import json
 
-from typing import Optional
+from typing import Optional, Union
 from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.network.httpRequests import http_requests
+from amiyabot.log import LoggerManager
+
+log = LoggerManager('KOOK')
 
 
 class KOOKAPI(BotInstanceAPIProtocol):
@@ -56,3 +59,10 @@ class KOOKAPI(BotInstanceAPIProtocol):
         if res:
             data = json.loads(res)
             return data['data']['avatar']
+
+    async def create_asset(self, file: Union[str, bytes]):
+        return await http_requests.post_form(
+            self.host + '/asset/create',
+            {'file': file},
+            headers=self.headers,
+        )
