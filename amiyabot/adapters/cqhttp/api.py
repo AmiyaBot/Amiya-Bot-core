@@ -1,6 +1,6 @@
 from typing import Optional
 
-from amiyabot.adapters.onebot11.api import OneBot11API
+from amiyabot.adapters.onebot.v11.api import OneBot11API
 from amiyabot.adapters.mirai.api import MiraiAPI
 
 

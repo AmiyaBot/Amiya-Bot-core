@@ -59,7 +59,7 @@ asyncio.run(bots.start())
 import asyncio
 
 from amiyabot import AmiyaBot, Message, Chain
-from amiyabot.adapters.onebot11 import onebot11
+from amiyabot.adapters.onebot.v11 import onebot11
 
 bot = AmiyaBot(
     appid='******',

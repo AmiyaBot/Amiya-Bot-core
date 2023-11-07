@@ -1,7 +1,7 @@
 from amiyabot.builtin.message import Event, EventList, Message
 from amiyabot.adapters import BotAdapterProtocol
 
-from ..common import text_convert
+from amiyabot.adapters.common import text_convert
 from .api import OneBot12API
 
 

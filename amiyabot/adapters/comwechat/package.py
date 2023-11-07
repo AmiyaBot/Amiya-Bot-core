@@ -1,5 +1,5 @@
 from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.adapters.onebot12.package import package_onebot12_message
+from amiyabot.adapters.onebot.v12 import package_onebot12_message
 
 
 async def package_com_wechat_message(instance: BotAdapterProtocol, data: dict):
