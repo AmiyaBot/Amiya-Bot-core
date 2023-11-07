@@ -10,7 +10,7 @@ from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
-from .api import TencentAPI
+from .api import QQGuildAPI
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
 from .intents import Intents
 from .package import package_tencent_message
@@ -19,7 +19,7 @@ from .builder import build_message_send, TencentMessageCallback
 log = LoggerManager('Tencent')
 
 
-class TencentBotInstance(BotAdapterProtocol):
+class QQGuildBotInstance(BotAdapterProtocol):
     def __init__(self, appid: str, token: str):
         super().__init__(appid, token)
 
@@ -33,7 +33,7 @@ class TencentBotInstance(BotAdapterProtocol):
 
     @property
     def api(self):
-        return TencentAPI(self.appid, self.token)
+        return QQGuildAPI(self.appid, self.token)
 
     def __create_heartbeat(self, websocket, interval: int, record: ShardsRecord):
         heartbeat_key = random_code(10)
@@ -229,7 +229,7 @@ class TencentBotInstance(BotAdapterProtocol):
         await self.api.delete_message(message_id, data.guild_id if data.is_direct else data.channel_id, data.is_direct)
 
 
-class TencentSandboxBotInstance(TencentBotInstance):
+class QQGuildSandboxBotInstance(QQGuildBotInstance):
     @property
     def api(self):
-        return TencentAPI(self.appid, self.token, True)
+        return QQGuildAPI(self.appid, self.token, True)

@@ -31,10 +31,18 @@ class TasksControl:
 
         if task.each is not None:
             scheduler.add_job(
-                task.func, id=f'{task.tag}.{task.sub_tag}', trigger='interval', seconds=task.each, **task.kwargs
+                task.func,
+                id=f'{task.tag}.{task.sub_tag}',
+                trigger='interval',
+                seconds=task.each,
+                **task.kwargs,
             )
         else:
-            scheduler.add_job(task.func, id=f'{task.tag}.{task.sub_tag}', **task.kwargs)
+            scheduler.add_job(
+                task.func,
+                id=f'{task.tag}.{task.sub_tag}',
+                **task.kwargs,
+            )
 
     @classmethod
     def remove_task(cls, tag: str, sub_tag: Optional[str] = None):

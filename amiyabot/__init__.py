@@ -11,7 +11,10 @@ from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.kook import KOOKBotInstance
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.cqhttp import CQHttpBotInstance
-from amiyabot.adapters.tencent import TencentBotInstance
+from amiyabot.adapters.onebot.v11 import OneBot11Instance
+from amiyabot.adapters.onebot.v12 import OneBot12Instance
+from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
+from amiyabot.adapters.comwechat import ComWeChatBotInstance
 from amiyabot.adapters.common import CQCode
 
 # network
@@ -51,7 +54,7 @@ class AmiyaBot(BotInstance):
         appid: Optional[str] = None,
         token: Optional[str] = None,
         private: bool = False,
-        adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance,
+        adapter: typing.Type[BotAdapterProtocol] = QQGuildBotInstance,
     ):
         if not appid:
             appid = random_code(10)
