@@ -30,12 +30,10 @@ from amiyabot.signalHandler import SignalHandler
 # lib
 from amiyabot.builtin.lib.eventBus import event_bus
 from amiyabot.builtin.lib.timedTask import TasksControl
-from amiyabot.builtin.lib.browserService import (
-    BrowserLaunchConfig,
-    basic_browser_service,
-)
+from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
 
 # message
+from amiyabot.builtin.messageChain import Chain, ChainBuilder
 from amiyabot.builtin.message import (
     Event,
     EventList,
@@ -45,7 +43,6 @@ from amiyabot.builtin.message import (
     WaitEventOutOfFocus,
     Equal,
 )
-from amiyabot.builtin.messageChain import Chain, ChainBuilder
 
 
 class AmiyaBot(BotInstance):

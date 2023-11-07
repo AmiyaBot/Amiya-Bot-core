@@ -1,13 +1,13 @@
 import json
 import asyncio
 
-from typing import Callable, List
+from typing import Optional, List
 from dataclasses import dataclass
 from fastapi import WebSocket, WebSocketDisconnect
+from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.network.httpServer import HttpServer
-from amiyabot import log
-
 from amiyabot.builtin.message import Message, Event
+from amiyabot import log
 
 from ..common import text_convert
 
@@ -19,11 +19,12 @@ class ReceivedMessage:
 
 
 class TestServer(HttpServer):
-    def __init__(self, appid: str, host: str, port: int):
+    def __init__(self, instance: BotAdapterProtocol, appid: str, host: str, port: int):
         super().__init__(host, port)
 
         self.appid = appid
-        self.handler = None
+        self.instance = instance
+        self.handler: Optional[HANDLER_TYPE] = None
         self.clients: List[WebSocket] = []
 
         self.__create_websocket_api()
@@ -48,7 +49,7 @@ class TestServer(HttpServer):
 
             self.clients.remove(websocket)
 
-    async def run(self, handler: Callable):
+    async def run(self, handler: HANDLER_TYPE):
         self.handler = handler
 
         await self.serve()
@@ -60,19 +61,18 @@ class TestServer(HttpServer):
     async def __handle_message(self, data: ReceivedMessage):
         async with log.catch(ignore=[json.JSONDecodeError]):
             content = json.loads(data.data)
-            asyncio.create_task(
-                self.handler(
-                    self.package_message(content['event'], content['event_data']),
-                ),
-            )
+            message = await self.package_message(content['event'], content['event_id'], content['event_data'])
 
-    async def package_message(self, event: str, message: dict):
+            asyncio.create_task(self.handler(message))
+
+    async def package_message(self, event: str, event_id: str, message: dict):
         if event != 'message':
-            return Event(self, event, message)
+            return Event(self.instance, event, message)
 
         text = message['message']
-        msg = Message(self, message)
+        msg = Message(self.instance, message)
 
+        msg.message_id = event_id
         msg.user_id = message['user_id']
         msg.channel_id = message['channel_id']
         msg.message_type = message['message_type']
