@@ -82,6 +82,7 @@ def argv(name: str, formatter: Callable = str):
             return True
 
         return formatter(sys.argv[index])
+    return formatter()
 
 
 def create_dir(path: str, is_file: bool = False):

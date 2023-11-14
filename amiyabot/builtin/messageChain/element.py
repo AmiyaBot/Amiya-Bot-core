@@ -2,17 +2,10 @@ import json
 import asyncio
 
 from dataclasses import dataclass
-from typing import Optional, Union, List, Any
-from playwright.async_api import Page
-from amiyabot.builtin.lib.browserService import basic_browser_service
+from typing import List, Any
+from amiyabot.builtin.lib.browserService import *
 from amiyabot.adapters.common import CQCode
-from amiyabot.util import argv
 from amiyabot import log
-
-DEFAULT_WIDTH = argv('browser-width', int) or 1280
-DEFAULT_HEIGHT = argv('browser-height', int) or 720
-DEFAULT_RENDER_TIME = argv('browser-render-time', int) or 200
-BROWSER_PAGE_NOT_CLOSE = bool(argv('browser-page-not-close'))
 
 
 class ChainBuilder:

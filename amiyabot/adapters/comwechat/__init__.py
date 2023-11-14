@@ -1,7 +1,7 @@
 import asyncio
 
 from amiyabot.adapters import HANDLER_TYPE
-from amiyabot.adapters.onebot12 import OneBot12Instance
+from amiyabot.adapters.onebot.v12 import OneBot12Instance
 from amiyabot.builtin.messageChain import Chain
 
 from .package import package_com_wechat_message

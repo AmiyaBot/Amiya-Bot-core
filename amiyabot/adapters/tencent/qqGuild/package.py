@@ -3,8 +3,8 @@ import re
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters import BotAdapterProtocol
 
-from .api import TencentAPI
-from ..common import text_convert
+from .api import QQGuildAPI
+from amiyabot.adapters.common import text_convert
 
 ADMIN = ['2', '4', '5']
 
@@ -22,7 +22,7 @@ async def package_tencent_message(instance: BotAdapterProtocol, event: str, mess
         data = get_info(Message(instance, message), message)
         data.is_direct = 'direct_message' in message and message['direct_message']
 
-        api: TencentAPI = instance.api
+        api: QQGuildAPI = instance.api
         bot = await api.get_me()
 
         if not data.is_direct:

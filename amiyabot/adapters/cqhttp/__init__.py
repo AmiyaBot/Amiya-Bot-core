@@ -1,4 +1,4 @@
-from amiyabot.adapters.onebot11 import OneBot11Instance
+from amiyabot.adapters.onebot.v11 import OneBot11Instance
 
 from .api import CQHttpAPI
 from .forwardMessage import CQHTTPForwardMessage

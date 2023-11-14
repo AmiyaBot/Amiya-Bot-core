@@ -1,6 +1,6 @@
 from amiyabot.adapters import MessageCallback
 from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
-from amiyabot.adapters.onebot12.builder import build_message_send as build_ob12
+from amiyabot.adapters.onebot.v12 import build_message_send as build_ob12
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *

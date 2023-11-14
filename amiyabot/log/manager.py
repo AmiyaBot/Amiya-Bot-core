@@ -25,7 +25,7 @@ class LoggerManager:
         self.handlers: Dict[str, logging.Logger] = {}
 
         self.name = name
-        self._debug = argv('debug')
+        self._debug = argv('debug', bool)
         self.level = level or (logging.DEBUG if self._debug else logging.INFO)
         self.formatter = formatter
         self.save_path = save_path
