@@ -3,7 +3,7 @@ import copy
 from typing import Union, Optional
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.adapters.onebot11.builder import build_message_send, OneBot11MessageCallback
+from amiyabot.adapters.onebot.v11.builder import build_message_send, OneBot11MessageCallback
 
 from .api import CQHttpAPI
 

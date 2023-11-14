@@ -19,7 +19,7 @@ class MessageSendRequest:
     upload_image: bool = False
 
 
-class TencentAPI(BotInstanceAPIProtocol):
+class QQGuildAPI(BotInstanceAPIProtocol):
     def __init__(self, appid: str, token: str, sandbox: bool = False, post_message_max_retry_times: int = 3):
         self.appid = appid
         self.token = token

@@ -11,7 +11,10 @@ from amiyabot.adapters import BotAdapterProtocol
 from amiyabot.adapters.kook import KOOKBotInstance
 from amiyabot.adapters.mirai import MiraiBotInstance
 from amiyabot.adapters.cqhttp import CQHttpBotInstance
-from amiyabot.adapters.tencent import TencentBotInstance
+from amiyabot.adapters.onebot.v11 import OneBot11Instance
+from amiyabot.adapters.onebot.v12 import OneBot12Instance
+from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
+from amiyabot.adapters.comwechat import ComWeChatBotInstance
 from amiyabot.adapters.common import CQCode
 
 # network
@@ -27,12 +30,10 @@ from amiyabot.signalHandler import SignalHandler
 # lib
 from amiyabot.builtin.lib.eventBus import event_bus
 from amiyabot.builtin.lib.timedTask import TasksControl
-from amiyabot.builtin.lib.browserService import (
-    BrowserLaunchConfig,
-    basic_browser_service,
-)
+from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
 
 # message
+from amiyabot.builtin.messageChain import Chain, ChainBuilder
 from amiyabot.builtin.message import (
     Event,
     EventList,
@@ -42,7 +43,6 @@ from amiyabot.builtin.message import (
     WaitEventOutOfFocus,
     Equal,
 )
-from amiyabot.builtin.messageChain import Chain, ChainBuilder
 
 
 class AmiyaBot(BotInstance):
@@ -51,7 +51,7 @@ class AmiyaBot(BotInstance):
         appid: Optional[str] = None,
         token: Optional[str] = None,
         private: bool = False,
-        adapter: typing.Type[BotAdapterProtocol] = TencentBotInstance,
+        adapter: typing.Type[BotAdapterProtocol] = QQGuildBotInstance,
     ):
         if not appid:
             appid = random_code(10)

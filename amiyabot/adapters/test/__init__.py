@@ -6,12 +6,12 @@ from amiyabot.builtin.messageChain import Chain
 from amiyabot.log import LoggerManager
 
 from .builder import build_message_send
-from .ws import TestServer
+from .server import TestServer
 
 log = LoggerManager('Test')
 
 
-def test_instance(host: str, port: int):
+def test_instance(host: str = '127.0.0.1', port: int = 32001):
     def adapter(appid: str, _):
         return TestInstance(appid, host, port)
 
@@ -33,7 +33,7 @@ class TestInstance(BotAdapterProtocol):
         self.host = host
         self.port = port
 
-        self.server = TestServer(appid, host, port)
+        self.server = TestServer(self, appid, host, port)
 
         @self.server.app.on_event('startup')
         async def startup():

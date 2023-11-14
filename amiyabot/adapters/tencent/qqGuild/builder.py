@@ -2,7 +2,7 @@ from amiyabot.adapters import MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
-from .api import TencentAPI, MessageSendRequest
+from .api import QQGuildAPI, MessageSendRequest
 from .package import package_tencent_message
 
 
@@ -18,7 +18,7 @@ class TencentMessageCallback(MessageCallback):
         if not self.response:
             return None
 
-        api: TencentAPI = self.instance.api
+        api: QQGuildAPI = self.instance.api
 
         response = self.response.json
         message = await api.get_message(response['channel_id'], response['id'])

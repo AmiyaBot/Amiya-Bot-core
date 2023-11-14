@@ -5,6 +5,7 @@
 /dist/
 /venv/
 /log/
+/testTemp/
 /*.egg-info/
 
 .DS_Store
