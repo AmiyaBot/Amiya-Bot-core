@@ -2,13 +2,11 @@ from .qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
 
 
 class TencentBotInstance(QQGuildBotInstance):
-    def __init__(self, appid: str, token: str):
-        super().__init__(appid, token)
+    ...
 
 
 class TencentSandboxBotInstance(QQGuildSandboxBotInstance):
-    def __init__(self, appid: str, token: str):
-        super().__init__(appid, token)
+    ...
 
 
 notice = (
