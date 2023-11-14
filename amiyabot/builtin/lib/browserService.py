@@ -17,16 +17,22 @@ from playwright.async_api import (
 
 log = LoggerManager('Browser')
 
+DEFAULT_WIDTH = argv('browser-width', int) or 1280
+DEFAULT_HEIGHT = argv('browser-height', int) or 720
+DEFAULT_RENDER_TIME = argv('browser-render-time', int) or 200
+BROWSER_PAGE_NOT_CLOSE = argv('browser-page-not-close', bool)
+BROWSER_LAUNCH_WITH_HEADED = argv('browser-launch-with-headed', bool)
+
 
 class BrowserLaunchConfig:
     def __init__(self):
         self.browser_type: str = 'chromium'
-        self.debug: bool = bool(argv('debug'))
+        self.debug: bool = argv('debug', bool)
 
     async def launch_browser(self, playwright: Playwright) -> Union[Browser, BrowserContext]:
         browser: BrowserType = getattr(playwright, self.browser_type)
 
-        return await browser.launch(headless=not self.debug)
+        return await browser.launch(headless=not BROWSER_LAUNCH_WITH_HEADED)
 
     async def new_page(self, browser: Union[Browser, BrowserContext], viewport_size: ViewportSize) -> Page:
         return await browser.new_page(no_viewport=True, viewport=viewport_size)
