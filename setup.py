@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import setuptools
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
@@ -63,7 +64,8 @@ class CustomBdistWheelCommand(_bdist_wheel):
             if not (not release_new or release_new.lower() == 'y'):
                 new_version = input('version: ')
 
-        self.distribution.metadata.version = new_version
+        # 加入一个随机数
+        self.distribution.metadata.version = new_version+"."+str(random.randint(0, 1000))
         print(dir(self.distribution))
         print(self.distribution.version)
         print(self.distribution.version)
