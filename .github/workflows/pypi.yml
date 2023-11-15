@@ -1,3 +1,7 @@
+name: Pylint
+
+on: [ pull_request, push ]
+
 jobs:
   pypi-publish:
     name: upload release to PyPI
