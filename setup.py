@@ -67,7 +67,7 @@ class CustomBdistWheelCommand(_bdist_wheel):
 
         # 加入一个随机数的BuildNumber保证Action可以重复执行
         build_number = random.randint(0, 1000)
-        self.build_number = build_number
+        self.build_number = f"{build_number}"
 
         _bdist_wheel.finalize_options(self)
 
