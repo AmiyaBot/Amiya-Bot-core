@@ -83,7 +83,7 @@ for root, dirs, files in os.walk('amiyabot/_assets'):
         data_files.append(os.path.join(root, item))
 
 setuptools.setup(
-    name='amiyabot-core-test',
+    name='amiyabot',
     version="0.0.1",
     author='vivien8261',
     author_email='826197021@qq.com',
