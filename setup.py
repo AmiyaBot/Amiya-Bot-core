@@ -65,7 +65,7 @@ class CustomBdistWheelCommand(_bdist_wheel):
 
         # 加入一个随机数
         build_number = str(random.randint(0, 1000))
-        self.build_number = f'.{build_number}'
+        self.build_number = f'{build_number}'
         self.distribution.metadata.version = new_version + "." + str(random.randint(0, 1000))
 
         _bdist_wheel.finalize_options(self)
