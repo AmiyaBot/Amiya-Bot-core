@@ -1,6 +1,9 @@
 name: Pylint
 
-on: [ pull_request, push ]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   pypi-publish:
