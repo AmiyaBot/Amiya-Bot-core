@@ -64,12 +64,10 @@ class CustomBdistWheelCommand(_bdist_wheel):
                 new_version = input('version: ')
 
         # 加入一个随机数
-        self.distribution.metadata.version = new_version+"."+str(random.randint(0, 1000))
-        print(dir(self.distribution))
-        print(self.distribution.version)
-        print(self.distribution.version)
-        print(self.distribution.get_version())
-        
+        build_number = str(random.randint(0, 1000))
+        self.build_number = f'.{build_number}'
+        self.distribution.metadata.version = new_version + "." + str(random.randint(0, 1000))
+
         _bdist_wheel.finalize_options(self)
 
     def run(self):
