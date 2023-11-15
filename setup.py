@@ -102,4 +102,4 @@ setuptools.setup(
     },
 )
 
-# python setup.py bdist_wheel
+# python setup.py bdist_wheel --auto-increment-version
