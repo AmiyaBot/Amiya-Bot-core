@@ -51,7 +51,6 @@ class CustomBdistWheelCommand(_bdist_wheel):
         self.auto_increment_version = False
 
     def finalize_options(self):
-        _bdist_wheel.finalize_options(self)
         latest_version = get_new_version()
         if self.auto_increment_version:
             new_version = incr_version(latest_version)
@@ -70,6 +69,8 @@ class CustomBdistWheelCommand(_bdist_wheel):
         print(self.distribution.version)
         print(self.distribution.version)
         print(self.distribution.get_version())
+        
+        _bdist_wheel.finalize_options(self)
 
     def run(self):
         _bdist_wheel.run(self)
