@@ -64,6 +64,10 @@ class CustomBdistWheelCommand(_bdist_wheel):
                 new_version = input('version: ')
 
         self.distribution.metadata.version = new_version
+        print(dir(self.distribution))
+        print(self.distribution.version)
+        print(self.distribution.version)
+        print(self.distribution.get_version())
 
     def run(self):
         _bdist_wheel.run(self)
@@ -83,8 +87,8 @@ for root, dirs, files in os.walk('amiyabot/_assets'):
         data_files.append(os.path.join(root, item))
 
 setuptools.setup(
-    name='amiyabot',
-    version="0.0.1",
+    name='amiyabot-core-test',
+    version="0.0.5",
     author='vivien8261',
     author_email='826197021@qq.com',
     url='https://www.amiyabot.com',
