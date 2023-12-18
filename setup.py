@@ -2,15 +2,17 @@ import os
 import json
 import random
 import setuptools
-from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 from urllib import request
+
 
 def ver_num(_v):
     num = int(_v.replace('.', ''))
     if num < 1000:
         num *= 10
     return num
+
 
 def get_new_version():
     pypi = json.loads(request.urlopen('https://pypi.python.org/pypi/amiyabot/json').read())
@@ -20,8 +22,8 @@ def get_new_version():
 
     print(f'latest: {latest}')
 
-    return f"{latest}"
-    # return f"1.10.10"
+    return f'{latest}'
+
 
 # Auto increment the version number.
 # 1.0.9 -> 1.1.0 , 1.9.9 -> 2.0.0 but 9.9.9 -> 10.0.0
@@ -41,9 +43,14 @@ def incr_version(v):
         v.append('1')
     return '.'.join(v)
 
+
 class CustomBdistWheelCommand(_bdist_wheel):
     user_options = _bdist_wheel.user_options + [
-        ('auto-increment-version', None, 'Auto increment the version number before building with special rule: 1.0.9 -> 1.1.0 , 1.9.9 -> 2.0.0 . However 9.9.9 -> 10.0.0')
+        (
+            'auto-increment-version',
+            None,
+            'Auto increment the version number before building with special rule: 1.0.9 -> 1.1.0 , 1.9.9 -> 2.0.0 . However 9.9.9 -> 10.0.0',
+        )
     ]
 
     def initialize_options(self):
@@ -67,12 +74,13 @@ class CustomBdistWheelCommand(_bdist_wheel):
 
         # 加入一个随机数的BuildNumber保证Action可以重复执行
         build_number = random.randint(0, 1000)
-        self.build_number = f"{build_number}"
+        self.build_number = f'{build_number}'
 
         _bdist_wheel.finalize_options(self)
 
     def run(self):
         _bdist_wheel.run(self)
+
 
 with open('README.md', mode='r', encoding='utf-8') as md:
     description = md.read()
@@ -90,7 +98,7 @@ for root, dirs, files in os.walk('amiyabot/_assets'):
 
 setuptools.setup(
     name='amiyabot',
-    version="0.0.1",
+    version='0.0.1',
     author='vivien8261',
     author_email='826197021@qq.com',
     url='https://www.amiyabot.com',

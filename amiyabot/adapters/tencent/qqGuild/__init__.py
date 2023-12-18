@@ -4,19 +4,16 @@ import asyncio
 
 from websockets.legacy.client import WebSocketClientProtocol
 from typing import Dict, Optional
-from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
-from .api import QQGuildAPI
+from .api import QQGuildAPI, log
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
-from .intents import Intents
+from .intents import get_intents
 from .package import package_tencent_message
 from .builder import build_message_send, TencentMessageCallback
-
-log = LoggerManager('Tencent')
 
 
 class QQGuildBotInstance(BotAdapterProtocol):
@@ -29,7 +26,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
         self.shards_record: Dict[int, ShardsRecord] = {}
 
     def __str__(self):
-        return 'Tencent'
+        return 'QQGuild'
 
     @property
     def api(self):
@@ -105,7 +102,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
                     if payload.op == 10:
                         create_token = {
                             'token': f'Bot {self.appid}.{self.token}',
-                            'intents': Intents(handler.private).intents.get_all_intents(),
+                            'intents': get_intents(handler.private, self.__str__()).get_all_intents(),
                             'shard': [shards_index, gateway.shards],
                             'properties': {
                                 '$os': sys.platform,
@@ -233,3 +230,6 @@ class QQGuildSandboxBotInstance(QQGuildBotInstance):
     @property
     def api(self):
         return QQGuildAPI(self.appid, self.token, True)
+
+    def __str__(self):
+        return 'QQGuildSandbox'
