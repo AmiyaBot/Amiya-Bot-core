@@ -2,7 +2,6 @@ import json
 import time
 import requests
 
-from amiyabot.network.httpRequests import http_requests
 from amiyabot.adapters.tencent.qqGuild.api import QQGuildAPI, log
 
 

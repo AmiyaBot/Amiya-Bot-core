@@ -49,9 +49,14 @@ class MessageStructure:
         self.is_direct = False
 
         self.user_id = ''
-        self.guild_id = ''
+        self.user_openid = ''
+
         self.channel_id = ''
+        self.channel_openid = ''
+
+        self.guild_id = ''
         self.src_guild_id = ''
+
         self.nickname = ''
         self.avatar = ''
 

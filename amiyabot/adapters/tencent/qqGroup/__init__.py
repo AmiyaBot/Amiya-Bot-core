@@ -1,6 +1,7 @@
 from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance
 
 from .api import QQGroupAPI
+from .package import package_qq_group_message
 
 
 def qq_group(client_secret: str):
@@ -22,3 +23,7 @@ class QQGroupBotInstance(QQGuildBotInstance):
     @property
     def api(self):
         return self.__access_token_api
+
+    @property
+    def package_method(self):
+        return package_qq_group_message
