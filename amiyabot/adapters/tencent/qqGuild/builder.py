@@ -128,10 +128,6 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
         if isinstance(item, Image):
             messages.add_image(await item.get())
 
-        # Voice
-        if isinstance(item, Voice):
-            pass
-
         # Html
         if isinstance(item, Html):
             result = await item.create_html_image()

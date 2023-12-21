@@ -117,10 +117,6 @@ async def build_message_send(api: KOOKAPI, chain: Chain, custom_chain: Optional[
         if isinstance(item, Image):
             await make_image_message(await item.get())
 
-        # Voice
-        if isinstance(item, Voice):
-            pass
-
         # Html
         if isinstance(item, Html):
             result = await item.create_html_image()

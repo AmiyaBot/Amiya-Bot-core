@@ -149,7 +149,11 @@ class Chain:
         return self
 
     def voice(self, file: str, title: str = 'voice'):
-        self.chain.append(Voice(file, title))
+        self.chain.append(Voice(file, title, builder=self.builder))
+        return self
+
+    def video(self, file: str):
+        self.chain.append(Video(file, builder=self.builder))
         return self
 
     def markdown(
