@@ -37,6 +37,8 @@ class QQGroupChainBuilderOptions:
 
 class QQGroupChainBuilder(ChainBuilder, metaclass=Singleton):
     def __init__(self, options: QQGroupChainBuilderOptions):
+        create_dir(options.resource_path)
+
         self.server = HttpServer(options.host, options.port, **options.http_server_options)
         self.server.add_static_folder('/resource', options.resource_path)
 
@@ -118,13 +120,16 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, custom_chain: Option
         if url.startswith('http'):
             res = await api.upload_file(chain.data.channel_openid, file_type, url)
             if res:
-                file_info = res.json['file_info']
+                if 'file_info' in res.json:
+                    file_info = res.json['file_info']
 
-                payload.msg_type = 7
-                payload.media = {'file_info': file_info}
+                    payload.msg_type = 7
+                    payload.media = {'file_info': file_info}
 
-                payload_list.append(payload)
-                payload = GroupPayload(msg_id=chain.data.message_id)
+                    payload_list.append(payload)
+                    payload = GroupPayload(msg_id=chain.data.message_id)
+                else:
+                    log.warning('file upload fail.')
 
             if isinstance(chain.builder, QQGroupChainBuilder):
                 chain.builder.remove_file(url)
