@@ -2,16 +2,14 @@ import json
 import time
 import requests
 
-from typing import Optional
-from amiyabot.network.httpRequests import http_requests
-from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
-from amiyabot.log import LoggerManager
 
-log = LoggerManager('Tencent')
+from ..qqGuild.api import QQGuildAPI, log
 
 
-class QQGroupAPI(BotInstanceAPIProtocol):
-    def __init__(self, appid: str, client_secret: str):
+class QQGroupAPI(QQGuildAPI):
+    def __init__(self, appid: str, token: str, client_secret: str):
+        super().__init__(appid, token)
+
         self.appid = appid
         self.client_secret = client_secret
         self.access_token = ''
@@ -50,34 +48,6 @@ class QQGroupAPI(BotInstanceAPIProtocol):
     def domain(self):
         return 'https://api.sgroup.qq.com'
 
-    async def get(self, url: str, params: Optional[dict] = None, *args, **kwargs):
-        return await http_requests.get(
-            self.domain + url,
-            params,
-            headers=self.headers,
-        )
-
-    async def post(self, url: str, payload: Optional[dict] = None, *args, **kwargs):
-        return await http_requests.post(
-            self.domain + url,
-            payload,
-            headers=self.headers,
-        )
-
-    async def request(self, url: str, method: str, payload: Optional[dict] = None, *args, **kwargs):
-        return await http_requests.request(
-            self.domain + url,
-            method,
-            data=payload,
-            headers=self.headers,
-        )
-
-    async def gateway(self):
-        return await self.get('/gateway')
-
-    async def gateway_bot(self):
-        return await self.get('/gateway/bot')
-
     async def upload_file(self, channel_openid: str, file_type: int, url: str, srv_send_msg: bool = False):
         return await self.post(
             f'/v2/groups/{channel_openid}/files',
@@ -88,11 +58,5 @@ class QQGroupAPI(BotInstanceAPIProtocol):
             },
         )
 
-    async def post_message(self, channel_openid: str, payload: dict):
-        print(payload)
-        res = await self.post(f'/v2/groups/{channel_openid}/messages', payload)
-        print(res)
-        return res
-
-    async def delete_message(self, message_id: str, target_id: str, is_direct: bool, hidetip: bool = True):
-        ...
+    async def post_group_message(self, channel_openid: str, payload: dict):
+        return await self.post(f'/v2/groups/{channel_openid}/messages', payload)

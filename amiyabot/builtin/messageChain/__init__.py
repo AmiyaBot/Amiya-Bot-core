@@ -1,5 +1,4 @@
 import re
-import os
 
 from amiyabot.builtin.message import MessageStructure
 from amiyabot.builtin.lib.imageCreator import create_image, IMAGES_TYPE
@@ -26,7 +25,7 @@ class Chain:
         data: Optional[MessageStructure] = None,
         at: bool = True,
         reference: bool = False,
-        chain_builder: ChainBuilder = ChainBuilder(),
+        chain_builder: Optional[ChainBuilder] = None,
     ):
         """
         创建回复消息
@@ -44,7 +43,8 @@ class Chain:
         if data and at and not data.is_direct:
             self.at(enter=True)
 
-        self._builder = chain_builder
+        self._builder = chain_builder or ChainBuilder()
+        self.use_default_builder = not bool(chain_builder)
 
     @property
     def builder(self):
@@ -53,9 +53,10 @@ class Chain:
     @builder.setter
     def builder(self, value: ChainBuilder):
         self._builder = value
+        self.use_default_builder = False
 
         for item in self.chain:
-            if isinstance(item, (Html, Image)):
+            if hasattr(item, 'builder'):
                 item.builder = value
 
     def at(self, user: Optional[str] = None, enter: bool = False):

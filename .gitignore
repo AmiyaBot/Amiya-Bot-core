@@ -1,5 +1,6 @@
 /.idea/
 /__pycache__/
+/resource/
 /plugins/
 /build/
 /dist/
