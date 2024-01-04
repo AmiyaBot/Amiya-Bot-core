@@ -190,34 +190,24 @@ class Ark:
 class Markdown:
     template_id: str
     params: List[dict]
+    keyboard: Optional[InlineKeyboard] = None
+    keyboard_template_id: Optional[str] = ''
 
     def get(self):
-        return {
+        data = {
             'markdown': {
                 'custom_template_id': self.template_id,
                 'params': self.params,
             }
         }
 
-
-@dataclass
-class Keyboard:
-    template_id: Optional[str] = ''
-    keyboard: Optional[InlineKeyboard] = None
-
-    def get(self):
         if self.keyboard:
-            return {
-                'keyboard': {
-                    'content': self.keyboard.dict(),
-                }
-            }
-        else:
-            return {
-                'keyboard': {
-                    'id': self.template_id,
-                }
-            }
+            data.update({'keyboard': {'content': self.keyboard.dict()}})
+
+        if self.keyboard_template_id:
+            data.update({'keyboard': {'id': self.keyboard_template_id}})
+
+        return data
 
 
 @dataclass
@@ -243,7 +233,6 @@ CHAIN_ITEM = Union[
     Embed,
     Ark,
     Markdown,
-    Keyboard,
     Extend,
 ]
 CHAIN_LIST = List[CHAIN_ITEM]
