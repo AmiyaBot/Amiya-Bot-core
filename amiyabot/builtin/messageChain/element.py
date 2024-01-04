@@ -7,6 +7,8 @@ from amiyabot.builtin.lib.browserService import *
 from amiyabot.adapters.common import CQCode
 from amiyabot import log
 
+from .keyboard import InlineKeyboard
+
 
 class ChainBuilder:
     @classmethod
@@ -185,6 +187,40 @@ class Ark:
 
 
 @dataclass
+class Markdown:
+    template_id: str
+    params: List[dict]
+
+    def get(self):
+        return {
+            'markdown': {
+                'custom_template_id': self.template_id,
+                'params': self.params,
+            }
+        }
+
+
+@dataclass
+class Keyboard:
+    template_id: Optional[str] = ''
+    keyboard: Optional[InlineKeyboard] = None
+
+    def get(self):
+        if self.keyboard:
+            return {
+                'keyboard': {
+                    'content': self.keyboard.dict(),
+                }
+            }
+        else:
+            return {
+                'keyboard': {
+                    'id': self.template_id,
+                }
+            }
+
+
+@dataclass
 class Extend:
     data: Any
 
@@ -194,5 +230,20 @@ class Extend:
         return self.data
 
 
-CHAIN_ITEM = Union[At, AtAll, Tag, Face, Text, Image, Voice, Video, Html, Embed, Ark, Extend]
+CHAIN_ITEM = Union[
+    At,
+    AtAll,
+    Tag,
+    Face,
+    Text,
+    Image,
+    Voice,
+    Video,
+    Html,
+    Embed,
+    Ark,
+    Markdown,
+    Keyboard,
+    Extend,
+]
 CHAIN_LIST = List[CHAIN_ITEM]

@@ -157,20 +157,6 @@ class Chain:
         self.chain.append(Video(file, builder=self.builder))
         return self
 
-    def markdown(
-        self,
-        content: str,
-        render_time: int = DEFAULT_RENDER_TIME,
-        is_dark: bool = False,
-    ):
-        return self.html(
-            ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
-            width=50,
-            height=50,
-            data={'content': content},
-            render_time=render_time,
-        )
-
     def html(
         self,
         path: str,
@@ -191,6 +177,28 @@ class Chain:
                 builder=self.builder,
             )
         )
+        return self
+
+    def markdown(
+        self,
+        content: str,
+        render_time: int = DEFAULT_RENDER_TIME,
+        is_dark: bool = False,
+    ):
+        return self.html(
+            ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
+            width=50,
+            height=50,
+            data={'content': content},
+            render_time=render_time,
+        )
+
+    def markdown_template(self, template_id: str, params: List[dict]):
+        self.chain.append(Markdown(template_id, params))
+        return self
+
+    def keyboard(self, keyboard: Optional[InlineKeyboard] = None, template_id: Optional[str] = ''):
+        self.chain.append(Keyboard(template_id, keyboard))
         return self
 
     def embed(self, title: str, prompt: str, thumbnail: str, fields: List[str]):

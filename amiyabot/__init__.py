@@ -33,7 +33,7 @@ from amiyabot.builtin.lib.timedTask import TasksControl
 from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
 
 # message
-from amiyabot.builtin.messageChain import Chain, ChainBuilder
+from amiyabot.builtin.messageChain import Chain, ChainBuilder, InlineKeyboard
 from amiyabot.builtin.message import (
     Event,
     EventList,
