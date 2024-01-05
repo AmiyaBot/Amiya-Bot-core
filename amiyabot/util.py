@@ -231,8 +231,8 @@ def dhash_image(image: bytes, size: int = 8):
 
 def get_public_ip():
     try:
-        response = requests.get('https://api.ipify.org')
+        response = requests.get('https://api.ipify.org', timeout=3)
         return response.text
-    except Exception as e:
+    except Exception:
         pass
     return '127.0.0.1'

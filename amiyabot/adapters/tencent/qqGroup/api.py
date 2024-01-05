@@ -30,6 +30,7 @@ class QQGroupAPI(QQGuildAPI):
                     headers={
                         'Content-Type': 'application/json',
                     },
+                    timeout=3,
                 )
                 data = json.loads(res.text)
 

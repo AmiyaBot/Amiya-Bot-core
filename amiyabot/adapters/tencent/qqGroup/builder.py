@@ -72,7 +72,7 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=Singleton):
             del self.file_caches[url]
 
     async def get_image(self, image: Union[str, bytes]) -> Union[str, bytes]:
-        if type(image) is bytes:
+        if isinstance(image, bytes):
             path, url = self.temp_filename('png')
 
             with open(path, mode='wb') as f:
