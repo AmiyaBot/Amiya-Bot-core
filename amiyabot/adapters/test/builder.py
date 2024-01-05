@@ -1,4 +1,4 @@
-import os
+import uuid
 import base64
 
 from amiyabot.builtin.messageChain import Chain
