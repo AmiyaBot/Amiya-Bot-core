@@ -11,6 +11,7 @@ async def package_qq_group_message(instance: BotAdapterProtocol, event: str, mes
     if event in message_created:
         data = Message(instance, message)
         data.is_direct = event == 'C2C_MESSAGE_CREATE'
+        data.is_at = True
 
         data.user_id = message['author']['id']
         data.user_openid = message['author']['member_openid']
