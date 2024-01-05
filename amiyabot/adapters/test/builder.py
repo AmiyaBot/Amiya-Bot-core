@@ -1,4 +1,4 @@
-import os
+import uuid
 import base64
 
 from amiyabot.builtin.messageChain import Chain
@@ -10,7 +10,10 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
     chain_data = []
     voice_list = []
 
-    event_id = chain.data.message_id
+    if chain.data and chain.data.message_id:
+        event_id = chain.data.message_id
+    else:
+        event_id = str(uuid.uuid4())
 
     if chain_list:
         for item in chain_list:
