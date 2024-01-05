@@ -7,11 +7,21 @@ from amiyabot.builtin.lib.browserService import *
 from amiyabot.adapters.common import CQCode
 from amiyabot import log
 
+from .keyboard import InlineKeyboard
+
 
 class ChainBuilder:
     @classmethod
     async def get_image(cls, image: Union[str, bytes]) -> Union[str, bytes]:
         return image
+
+    @classmethod
+    async def get_voice(cls, voice_file: str) -> str:
+        return voice_file
+
+    @classmethod
+    async def get_video(cls, video_file: str) -> str:
+        return video_file
 
     @classmethod
     async def on_page_rendered(cls, page: Page):
@@ -48,7 +58,6 @@ class Image:
     url: Optional[str] = None
     content: Optional[bytes] = None
     builder: Optional[ChainBuilder] = None
-    dhash: Optional[int] = None
 
     async def get(self):
         if self.builder:
@@ -62,6 +71,27 @@ class Image:
 class Voice:
     file: str
     title: str
+    builder: Optional[ChainBuilder] = None
+
+    async def get(self):
+        if self.builder:
+            res = await self.builder.get_voice(self.file)
+            if res:
+                return res
+        return self.file
+
+
+@dataclass
+class Video:
+    file: str
+    builder: Optional[ChainBuilder] = None
+
+    async def get(self):
+        if self.builder:
+            res = await self.builder.get_video(self.file)
+            if res:
+                return res
+        return self.file
 
 
 @dataclass
@@ -157,6 +187,30 @@ class Ark:
 
 
 @dataclass
+class Markdown:
+    template_id: str
+    params: List[dict]
+    keyboard: Optional[InlineKeyboard] = None
+    keyboard_template_id: Optional[str] = ''
+
+    def get(self):
+        data = {
+            'markdown': {
+                'custom_template_id': self.template_id,
+                'params': self.params,
+            }
+        }
+
+        if self.keyboard:
+            data.update({'keyboard': {'content': self.keyboard.dict()}})
+
+        if self.keyboard_template_id:
+            data.update({'keyboard': {'id': self.keyboard_template_id}})
+
+        return data
+
+
+@dataclass
 class Extend:
     data: Any
 
@@ -166,5 +220,19 @@ class Extend:
         return self.data
 
 
-CHAIN_ITEM = Union[At, AtAll, Tag, Face, Text, Image, Voice, Html, Embed, Ark, Extend]
+CHAIN_ITEM = Union[
+    At,
+    AtAll,
+    Tag,
+    Face,
+    Text,
+    Image,
+    Voice,
+    Video,
+    Html,
+    Embed,
+    Ark,
+    Markdown,
+    Extend,
+]
 CHAIN_LIST = List[CHAIN_ITEM]

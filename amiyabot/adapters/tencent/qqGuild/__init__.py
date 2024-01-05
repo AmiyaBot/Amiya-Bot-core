@@ -4,19 +4,16 @@ import asyncio
 
 from websockets.legacy.client import WebSocketClientProtocol
 from typing import Dict, Optional
-from amiyabot.log import LoggerManager
 from amiyabot.util import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 
-from .api import QQGuildAPI
+from .api import QQGuildAPI, log
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
-from .intents import Intents
-from .package import package_tencent_message
-from .builder import build_message_send, TencentMessageCallback
-
-log = LoggerManager('Tencent')
+from .intents import get_intents
+from .package import package_qq_guild_message
+from .builder import build_message_send, QQGuildMessageCallback
 
 
 class QQGuildBotInstance(BotAdapterProtocol):
@@ -29,11 +26,15 @@ class QQGuildBotInstance(BotAdapterProtocol):
         self.shards_record: Dict[int, ShardsRecord] = {}
 
     def __str__(self):
-        return 'Tencent'
+        return 'QQGuild'
 
     @property
     def api(self):
         return QQGuildAPI(self.appid, self.token)
+
+    @property
+    def package_method(self):
+        return package_qq_guild_message
 
     def __create_heartbeat(self, websocket, interval: int, record: ShardsRecord):
         heartbeat_key = random_code(10)
@@ -105,7 +106,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
                     if payload.op == 10:
                         create_token = {
                             'token': f'Bot {self.appid}.{self.token}',
-                            'intents': Intents(handler.private).intents.get_all_intents(),
+                            'intents': get_intents(handler.private, self.__str__()).get_all_intents(),
                             'shard': [shards_index, gateway.shards],
                             'properties': {
                                 '$os': sys.platform,
@@ -182,7 +183,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
     async def create_package_task(self, handler: ConnectionHandler, payload: Payload):
         asyncio.create_task(
             handler.message_handler(
-                await package_tencent_message(self, payload.t, payload.d),
+                await self.package_method(self, payload.t, payload.d),
             ),
         )
 
@@ -201,7 +202,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
                     )
                 )
 
-        return [TencentMessageCallback(chain.data, self, item) for item in res]
+        return [QQGuildMessageCallback(chain.data, self, item) for item in res]
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):
         data = Message(self)
@@ -233,3 +234,6 @@ class QQGuildSandboxBotInstance(QQGuildBotInstance):
     @property
     def api(self):
         return QQGuildAPI(self.appid, self.token, True)
+
+    def __str__(self):
+        return 'QQGuildSandbox'

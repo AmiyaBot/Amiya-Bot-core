@@ -1,5 +1,4 @@
 import re
-import os
 
 from amiyabot.builtin.message import MessageStructure
 from amiyabot.builtin.lib.imageCreator import create_image, IMAGES_TYPE
@@ -26,7 +25,7 @@ class Chain:
         data: Optional[MessageStructure] = None,
         at: bool = True,
         reference: bool = False,
-        chain_builder: ChainBuilder = ChainBuilder(),
+        chain_builder: Optional[ChainBuilder] = None,
     ):
         """
         创建回复消息
@@ -44,7 +43,8 @@ class Chain:
         if data and at and not data.is_direct:
             self.at(enter=True)
 
-        self._builder = chain_builder
+        self._builder = chain_builder or ChainBuilder()
+        self.use_default_builder = not bool(chain_builder)
 
     @property
     def builder(self):
@@ -53,9 +53,10 @@ class Chain:
     @builder.setter
     def builder(self, value: ChainBuilder):
         self._builder = value
+        self.use_default_builder = False
 
         for item in self.chain:
-            if isinstance(item, (Html, Image)):
+            if hasattr(item, 'builder'):
                 item.builder = value
 
     def at(self, user: Optional[str] = None, enter: bool = False):
@@ -149,22 +150,12 @@ class Chain:
         return self
 
     def voice(self, file: str, title: str = 'voice'):
-        self.chain.append(Voice(file, title))
+        self.chain.append(Voice(file, title, builder=self.builder))
         return self
 
-    def markdown(
-        self,
-        content: str,
-        render_time: int = DEFAULT_RENDER_TIME,
-        is_dark: bool = False,
-    ):
-        return self.html(
-            ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
-            width=50,
-            height=50,
-            data={'content': content},
-            render_time=render_time,
-        )
+    def video(self, file: str):
+        self.chain.append(Video(file, builder=self.builder))
+        return self
 
     def html(
         self,
@@ -186,6 +177,30 @@ class Chain:
                 builder=self.builder,
             )
         )
+        return self
+
+    def markdown(
+        self,
+        content: str,
+        render_time: int = DEFAULT_RENDER_TIME,
+        is_dark: bool = False,
+    ):
+        return self.html(
+            ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
+            width=50,
+            height=50,
+            data={'content': content},
+            render_time=render_time,
+        )
+
+    def markdown_template(
+        self,
+        template_id: str,
+        params: List[dict],
+        keyboard: Optional[InlineKeyboard] = None,
+        keyboard_template_id: Optional[str] = '',
+    ):
+        self.chain.append(Markdown(template_id, params, keyboard, keyboard_template_id))
         return self
 
     def embed(self, title: str, prompt: str, thumbnail: str, fields: List[str]):

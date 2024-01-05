@@ -7,6 +7,7 @@ import string
 import zipfile
 import asyncio
 import inspect
+import requests
 import importlib
 
 from io import BytesIO
@@ -226,3 +227,12 @@ def is_valid_url(url: str):
 
 def dhash_image(image: bytes, size: int = 8):
     return dhash.dhash_int(image=Image.open(BytesIO(image)), size=size)
+
+
+def get_public_ip():
+    try:
+        response = requests.get('https://api.ipify.org', timeout=3)
+        return response.text
+    except Exception:
+        pass
+    return '127.0.0.1'

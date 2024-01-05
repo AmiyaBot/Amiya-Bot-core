@@ -2,14 +2,14 @@ import re
 
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters import BotAdapterProtocol
+from amiyabot.adapters.common import text_convert
 
 from .api import QQGuildAPI
-from amiyabot.adapters.common import text_convert
 
 ADMIN = ['2', '4', '5']
 
 
-async def package_tencent_message(instance: BotAdapterProtocol, event: str, message: dict, is_reference: bool = False):
+async def package_qq_guild_message(instance: BotAdapterProtocol, event: str, message: dict, is_reference: bool = False):
     message_created = [
         'MESSAGE_CREATE',
         'AT_MESSAGE_CREATE',
@@ -64,7 +64,7 @@ async def package_tencent_message(instance: BotAdapterProtocol, event: str, mess
         if 'message_reference' in message:
             reference = await api.get_message(message['channel_id'], message['message_reference']['message_id'])
             if reference:
-                reference_data = await package_tencent_message(instance, event, reference.json['message'], True)
+                reference_data = await package_qq_guild_message(instance, event, reference.json['message'], True)
                 if reference_data:
                     data.image += reference_data.image
 

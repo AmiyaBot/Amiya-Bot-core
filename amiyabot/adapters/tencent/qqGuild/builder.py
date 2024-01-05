@@ -3,10 +3,10 @@ from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
 from .api import QQGuildAPI, MessageSendRequest
-from .package import package_tencent_message
+from .package import package_qq_guild_message
 
 
-class TencentMessageCallback(MessageCallback):
+class QQGuildMessageCallback(MessageCallback):
     async def recall(self):
         if not self.response:
             log.warning('can not recall message because the response is None.')
@@ -25,7 +25,7 @@ class TencentMessageCallback(MessageCallback):
         data = message.json['message']
 
         if isinstance(data, dict):
-            return await package_tencent_message(self.instance, 'MESSAGE_CREATE', data, True)
+            return await package_qq_guild_message(self.instance, 'MESSAGE_CREATE', data, True)
 
 
 class MessageSendRequestGroup:
@@ -128,10 +128,6 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
         if isinstance(item, Image):
             messages.add_image(await item.get())
 
-        # Voice
-        if isinstance(item, Voice):
-            pass
-
         # Html
         if isinstance(item, Html):
             result = await item.create_html_image()
@@ -144,6 +140,10 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
 
         # Ark
         if isinstance(item, Ark):
+            messages.add_data(item.get())
+
+        # Markdown
+        if isinstance(item, Markdown):
             messages.add_data(item.get())
 
     messages.done()
