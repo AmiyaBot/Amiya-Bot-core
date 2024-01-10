@@ -12,6 +12,28 @@ from amiyabot.builtin.messageChain.element import *
 from .api import QQGroupAPI, log
 
 
+class SeqService:
+    def __init__(self):
+        self.seq_rec = {}
+        self.alive = True
+
+    def msg_req(self, msg_id: str):
+        if msg_id not in self.seq_rec:
+            self.seq_rec[msg_id] = {'last': time.time(), 'seq': 0}
+
+        self.seq_rec[msg_id]['seq'] += 1
+
+        return self.seq_rec[msg_id]['seq']
+
+    async def run(self):
+        while self.alive:
+            await asyncio.sleep(1)
+            self.seq_rec = {m_id: item for m_id, item in self.seq_rec.items() if time.time() - item['last'] < 30}
+
+    async def stop(self):
+        self.alive = False
+
+
 @dataclass
 class GroupPayload:
     content: str = ''
@@ -104,11 +126,12 @@ class QQGroupMessageCallback(MessageCallback):
         ...
 
 
-async def build_message_send(api: QQGroupAPI, chain: Chain, custom_chain: Optional[CHAIN_LIST] = None):
-    chain_list = custom_chain or chain.chain
+async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqService):
+    chain_list = chain.chain
+    msg_id = chain.data.message_id
 
     payload_list: List[GroupPayload] = []
-    payload = GroupPayload(msg_id=chain.data.message_id)
+    payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
 
     async def insert_media(url: str, file_type: int = 1):
         nonlocal payload
@@ -127,7 +150,7 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, custom_chain: Option
                     payload.media = {'file_info': file_info}
 
                     payload_list.append(payload)
-                    payload = GroupPayload(msg_id=chain.data.message_id)
+                    payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
                 else:
                     log.warning('file upload fail.')
 
