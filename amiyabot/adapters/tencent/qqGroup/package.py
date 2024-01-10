@@ -19,6 +19,11 @@ async def package_qq_group_message(instance: BotAdapterProtocol, event: str, mes
         data.channel_openid = message['group_openid']
         data.message_id = message['id']
 
+        if 'attachments' in message:
+            for item in message['attachments']:
+                if item['content_type'].startswith('image'):
+                    data.image.append(item['url'])
+
         if 'content' in message:
             data = text_convert(data, message['content'].strip(), message['content'])
 

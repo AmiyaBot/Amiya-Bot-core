@@ -5,7 +5,13 @@ from amiyabot.builtin.messageChain import Chain, ChainBuilder
 from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance
 
 from .api import QQGroupAPI, log
-from .builder import QQGroupMessageCallback, QQGroupChainBuilder, QQGroupChainBuilderOptions, build_message_send
+from .builder import (
+    QQGroupMessageCallback,
+    QQGroupChainBuilder,
+    QQGroupChainBuilderOptions,
+    SeqService,
+    build_message_send,
+)
 from .package import package_qq_group_message
 from ... import HANDLER_TYPE
 
@@ -32,6 +38,7 @@ class QQGroupBotInstance(QQGuildBotInstance):
 
         self.__access_token_api = QQGroupAPI(self.appid, self.token, client_secret)
         self.__default_chain_builder = default_chain_builder
+        self.__seq_service = SeqService()
 
     def __str__(self):
         return 'QQGroup'
@@ -48,13 +55,19 @@ class QQGroupBotInstance(QQGuildBotInstance):
         if hasattr(self.__default_chain_builder, 'start'):
             self.__default_chain_builder.start()
 
+        asyncio.create_task(self.__seq_service.run())
+
         await super().start(private, handler)
 
+    async def close(self):
+        await self.__seq_service.stop()
+        await super().close()
+
     async def send_chain_message(self, chain: Chain, is_sync: bool = False):
-        if chain.use_default_builder:
+        if not isinstance(chain.builder, QQGroupChainBuilder):
             chain.builder = self.__default_chain_builder
 
-        payloads = await build_message_send(self.api, chain)
+        payloads = await build_message_send(self.api, chain, self.__seq_service)
         res = []
 
         for payload in payloads:
