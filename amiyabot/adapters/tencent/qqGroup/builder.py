@@ -3,7 +3,7 @@ import shutil
 
 from graiax import silkcoder
 from dataclasses import asdict, field
-from amiyabot.util import create_dir, get_public_ip, random_code, Singleton
+from amiyabot.util import create_dir, get_public_ip, random_code
 from amiyabot.adapters import MessageCallback
 from amiyabot.network.httpServer import HttpServer
 from amiyabot.builtin.messageChain import Chain
@@ -34,6 +34,18 @@ class SeqService:
         self.alive = False
 
 
+class PortSingleton(type):
+    ports = {}
+
+    def __call__(cls, *args, **kwargs):
+        options: QQGroupChainBuilderOptions = args[0]
+
+        if options.port not in cls.ports:
+            cls.ports[options.port] = super(PortSingleton, cls).__call__(*args, **kwargs)
+
+        return cls.ports[options.port]
+
+
 @dataclass
 class GroupPayload:
     content: str = ''
@@ -57,7 +69,7 @@ class QQGroupChainBuilderOptions:
     http_server_options: dict = field(default_factory=dict)
 
 
-class QQGroupChainBuilder(ChainBuilder, metaclass=Singleton):
+class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
     def __init__(self, options: QQGroupChainBuilderOptions):
         create_dir(options.resource_path)
 
@@ -70,12 +82,16 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=Singleton):
 
         self.file_caches = {}
 
+        self.running = False
+
     @property
     def domain(self):
         return f'{self.http}://{self.ip}:{self.options.port}/resource'
 
     def start(self):
-        asyncio.create_task(self.server.serve())
+        if not self.running:
+            asyncio.create_task(self.server.serve())
+        self.running = True
 
     def temp_filename(self, suffix: str):
         filename = f'{int(time.time())}{random_code(10)}.{suffix}'
