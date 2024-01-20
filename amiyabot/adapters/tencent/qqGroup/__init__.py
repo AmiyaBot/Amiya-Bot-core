@@ -55,7 +55,8 @@ class QQGroupBotInstance(QQGuildBotInstance):
         if hasattr(self.__default_chain_builder, 'start'):
             self.__default_chain_builder.start()
 
-        asyncio.create_task(self.__seq_service.run())
+        if not self.__seq_service.alive:
+            asyncio.create_task(self.__seq_service.run())
 
         await super().start(private, handler)
 

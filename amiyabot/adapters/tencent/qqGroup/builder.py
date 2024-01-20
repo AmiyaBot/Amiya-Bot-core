@@ -15,7 +15,7 @@ from .api import QQGroupAPI, log
 class SeqService:
     def __init__(self):
         self.seq_rec = {}
-        self.alive = True
+        self.alive = False
 
     def msg_req(self, msg_id: str):
         if msg_id not in self.seq_rec:
@@ -26,9 +26,12 @@ class SeqService:
         return self.seq_rec[msg_id]['seq']
 
     async def run(self):
-        while self.alive:
-            await asyncio.sleep(1)
-            self.seq_rec = {m_id: item for m_id, item in self.seq_rec.items() if time.time() - item['last'] < 30}
+        if not self.alive:
+            self.alive = True
+
+            while self.alive:
+                await asyncio.sleep(1)
+                self.seq_rec = {m_id: item for m_id, item in self.seq_rec.items() if time.time() - item['last'] < 300}
 
     async def stop(self):
         self.alive = False

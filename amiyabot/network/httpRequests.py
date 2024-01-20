@@ -29,7 +29,9 @@ class HttpRequests:
 
                     if res.status not in cls.success + cls.async_success:
                         if not ignore_error:
-                            log.warning(f'Request failed <{url}>[{request_name}]. Got code {res.status} {res.reason}')
+                            log.warning(
+                                f'Request failed <{url}>[{request_name}]. Got code {res.status} {res.reason}. Response: {response.text}'
+                            )
 
                     return response
 

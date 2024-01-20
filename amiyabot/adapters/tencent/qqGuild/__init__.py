@@ -55,7 +55,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
 
         resp = await self.api.gateway_bot()
 
-        if not resp:
+        if not resp or 'url' not in resp.json:
             if self.keep_run:
                 await asyncio.sleep(10)
                 asyncio.create_task(self.start(private, handler))
