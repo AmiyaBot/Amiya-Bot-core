@@ -152,6 +152,12 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqServ
     payload_list: List[GroupPayload] = []
     payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
 
+    def refresh_payload():
+        nonlocal payload
+
+        payload_list.append(payload)
+        payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
+
     async def insert_media(url: str, file_type: int = 1):
         nonlocal payload
 
@@ -163,13 +169,15 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqServ
             res = await api.upload_file(chain.data.channel_openid, file_type, url)
             if res:
                 if 'file_info' in res.json:
+                    if file_type != 1:
+                        refresh_payload()
+
                     file_info = res.json['file_info']
 
                     payload.msg_type = 7
                     payload.media = {'file_info': file_info}
 
-                    payload_list.append(payload)
-                    payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
+                    refresh_payload()
                 else:
                     log.warning('file upload fail.')
 
