@@ -3,7 +3,7 @@ import shutil
 
 from graiax import silkcoder
 from dataclasses import asdict, field
-from amiyabot.util import create_dir, get_public_ip, random_code, Singleton
+from amiyabot.util import create_dir, get_public_ip, random_code
 from amiyabot.adapters import MessageCallback
 from amiyabot.network.httpServer import HttpServer
 from amiyabot.builtin.messageChain import Chain
@@ -15,7 +15,7 @@ from .api import QQGroupAPI, log
 class SeqService:
     def __init__(self):
         self.seq_rec = {}
-        self.alive = True
+        self.alive = False
 
     def msg_req(self, msg_id: str):
         if msg_id not in self.seq_rec:
@@ -26,12 +26,27 @@ class SeqService:
         return self.seq_rec[msg_id]['seq']
 
     async def run(self):
-        while self.alive:
-            await asyncio.sleep(1)
-            self.seq_rec = {m_id: item for m_id, item in self.seq_rec.items() if time.time() - item['last'] < 30}
+        if not self.alive:
+            self.alive = True
+
+            while self.alive:
+                await asyncio.sleep(1)
+                self.seq_rec = {m_id: item for m_id, item in self.seq_rec.items() if time.time() - item['last'] < 300}
 
     async def stop(self):
         self.alive = False
+
+
+class PortSingleton(type):
+    ports = {}
+
+    def __call__(cls, *args, **kwargs):
+        options: QQGroupChainBuilderOptions = args[0]
+
+        if options.port not in cls.ports:
+            cls.ports[options.port] = super(PortSingleton, cls).__call__(*args, **kwargs)
+
+        return cls.ports[options.port]
 
 
 @dataclass
@@ -57,7 +72,7 @@ class QQGroupChainBuilderOptions:
     http_server_options: dict = field(default_factory=dict)
 
 
-class QQGroupChainBuilder(ChainBuilder, metaclass=Singleton):
+class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
     def __init__(self, options: QQGroupChainBuilderOptions):
         create_dir(options.resource_path)
 
@@ -70,12 +85,16 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=Singleton):
 
         self.file_caches = {}
 
+        self.running = False
+
     @property
     def domain(self):
         return f'{self.http}://{self.ip}:{self.options.port}/resource'
 
     def start(self):
-        asyncio.create_task(self.server.serve())
+        if not self.running:
+            asyncio.create_task(self.server.serve())
+        self.running = True
 
     def temp_filename(self, suffix: str):
         filename = f'{int(time.time())}{random_code(10)}.{suffix}'
@@ -133,6 +152,12 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqServ
     payload_list: List[GroupPayload] = []
     payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
 
+    def refresh_payload():
+        nonlocal payload
+
+        payload_list.append(payload)
+        payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
+
     async def insert_media(url: str, file_type: int = 1):
         nonlocal payload
 
@@ -144,13 +169,15 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqServ
             res = await api.upload_file(chain.data.channel_openid, file_type, url)
             if res:
                 if 'file_info' in res.json:
+                    if file_type != 1:
+                        refresh_payload()
+
                     file_info = res.json['file_info']
 
                     payload.msg_type = 7
                     payload.media = {'file_info': file_info}
 
-                    payload_list.append(payload)
-                    payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
+                    refresh_payload()
                 else:
                     log.warning('file upload fail.')
 

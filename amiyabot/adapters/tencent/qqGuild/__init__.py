@@ -22,6 +22,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
 
         self.appid = appid
         self.token = token
+        self.bot_name = ''
 
         self.shards_record: Dict[int, ShardsRecord] = {}
 
@@ -54,7 +55,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
 
         resp = await self.api.gateway_bot()
 
-        if not resp:
+        if not resp or 'url' not in resp.json:
             if self.keep_run:
                 await asyncio.sleep(10)
                 asyncio.create_task(self.start(private, handler))
@@ -88,12 +89,9 @@ class QQGuildBotInstance(BotAdapterProtocol):
 
                     if payload.op == 0:
                         if payload.t == 'READY':
+                            self.bot_name = payload.d['user']['username']
                             log.info(
-                                f'connected({sign}): %s(%s)'
-                                % (
-                                    payload.d['user']['username'],
-                                    'private' if handler.private else 'public',
-                                )
+                                f'connected({sign}): {self.bot_name}(%s)' % ('private' if handler.private else 'public')
                             )
                             self.shards_record[shards_index].session_id = payload.d['session_id']
 
