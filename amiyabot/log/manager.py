@@ -1,21 +1,17 @@
 import os
 import sys
-import inspect
 import logging
 import traceback
 
-from typing import Union, Dict, List, Tuple, Type, Any, Callable, Optional, Awaitable
+from typing import Union, Dict, List, Type, Callable, Optional, Awaitable
 from contextlib import asynccontextmanager, contextmanager
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 from amiyabot.util import argv, create_dir
-
-FETCHER = Callable[[str, str, Tuple[Any, ...], Dict[str, Any]], None]
 
 
 class LoggerManager:
     user_logger = None
 
-    log_fetchers: List[FETCHER] = []
     log_handlers: List[logging.Handler] = []
 
     def __init__(
@@ -63,16 +59,6 @@ class LoggerManager:
         cls.user_logger = logger_cls()
 
     @classmethod
-    def add_fetcher(cls, func: FETCHER):
-        cls.log_fetchers.append(func)
-        return func
-
-    @classmethod
-    def remove_fetcher(cls, func: FETCHER):
-        if func in cls.log_fetchers:
-            cls.log_fetchers.remove(func)
-
-    @classmethod
     def add_handler(cls, handler: logging.Handler):
         cls.log_handlers.append(handler)
         return handler
@@ -111,7 +97,7 @@ class LoggerManager:
 
     @property
     def print_method(self):
-        def method(text: str, *args, **kwarg):
+        def method(text: str):
             if self.debug_mode:
                 stack = traceback.extract_stack()
                 source = stack[-3]
@@ -124,28 +110,29 @@ class LoggerManager:
             else:
                 output = ' ' + text.strip('\n')
 
-            level = inspect.getframeinfo(inspect.currentframe().f_back)[2]
-
-            for func in self.log_fetchers:
-                func(text, level, *args, **kwarg)
-
             return output
 
         return method
 
     def info(self, text: str, *args, **kwarg):
         self.__logger.info(
-            self.print_method(text, *args, **kwarg),
+            self.print_method(text),
+            *args,
+            **kwarg,
         )
 
     def debug(self, text: str, *args, **kwarg):
         self.__logger.debug(
-            self.print_method(text, *args, **kwarg),
+            self.print_method(text),
+            *args,
+            **kwarg,
         )
 
     def warning(self, text: str, *args, **kwarg):
         self.__logger.warning(
-            self.print_method(text, *args, **kwarg),
+            self.print_method(text),
+            *args,
+            **kwarg,
         )
 
     def error(self, err: Union[str, Exception], desc: Optional[str] = None, *args, **kwarg):
@@ -155,7 +142,9 @@ class LoggerManager:
             text = f'{desc} {text}'
 
         self.__logger.error(
-            self.print_method(text, desc=desc, *args, **kwarg),
+            self.print_method(text),
+            *args,
+            **kwarg,
         )
 
         return text
@@ -164,7 +153,9 @@ class LoggerManager:
         text = traceback.format_exc() if isinstance(err, Exception) else str(err)
 
         self.__logger.critical(
-            self.print_method(text, *args, **kwarg),
+            self.print_method(text),
+            *args,
+            **kwarg,
         )
 
     @asynccontextmanager
