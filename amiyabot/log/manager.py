@@ -1,40 +1,64 @@
 import os
 import sys
+import inspect
 import logging
 import traceback
 
-from typing import Union, Dict, List, Type, Any, Callable, Optional, Awaitable
+from typing import Union, Dict, List, Tuple, Type, Any, Callable, Optional, Awaitable
 from contextlib import asynccontextmanager, contextmanager
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 from amiyabot.util import argv
 
-
-class UserLogger:
-    logger: Optional[Any] = None
+FETCHER = Callable[[str, str, Tuple[Any, ...], Dict[str, Any]], None]
 
 
 class LoggerManager:
+    user_logger = None
+    log_fetchers: Dict[int, FETCHER] = {}
+
     def __init__(
         self,
-        name: str,
+        name: str = '',
         level: Optional[int] = None,
-        formatter: str = '%(asctime)s [%(name)9s][%(levelname)9s]%(message)s',
-        save_path: str = 'log',
+        formatter: str = '',
+        save_path: str = './log',
         save_filename: str = 'running',
     ):
         self.handlers: Dict[str, logging.Logger] = {}
 
         self.name = name
-        self._debug = argv('debug', bool)
-        self.level = level or (logging.DEBUG if self._debug else logging.INFO)
-        self.formatter = formatter
+        self.debug_mode = argv('debug', bool)
+
+        self.level = level or (logging.DEBUG if self.debug_mode else logging.INFO)
+        if formatter:
+            self.formatter = formatter
+        else:
+            if name:
+                self.formatter = '%(asctime)s [%(name)9s][%(levelname)9s]%(message)s'
+            else:
+                self.formatter = '%(asctime)s [%(levelname)9s]%(message)s'
+
         self.save_path = save_path
         self.save_filename = save_filename
 
+    @classmethod
+    def use(cls, logger_cls):
+        cls.user_logger = logger_cls()
+
+    @classmethod
+    def add_fetcher(cls, func: FETCHER):
+        cls.log_fetchers[id(func)] = func
+        return func
+
+    @classmethod
+    def remove_fetcher(cls, func: FETCHER):
+        if id(func) in cls.log_fetchers:
+            del cls.log_fetchers[id(func)]
+
     @property
     def __handler(self):
-        if UserLogger.logger:
-            return UserLogger.logger
+        if self.user_logger and self != self.user_logger:
+            return self.user_logger
 
         if self.save_filename not in self.handlers:
             if not os.path.exists(self.save_path):
@@ -66,48 +90,63 @@ class LoggerManager:
 
         return self.handlers[self.save_filename]
 
-    def __print_text(self, text: str):
-        if self._debug:
-            stack = traceback.extract_stack()
-            source = stack[-3]
-            filename = os.path.basename(source.filename)
+    @property
+    def print_method(self):
+        def method(text: str, *args, **kwarg):
+            if self.debug_mode:
+                stack = traceback.extract_stack()
+                source = stack[-3]
+                filename = os.path.basename(source.filename)
 
-            if filename == '__init__.py':
-                filename = '/'.join(source.filename.replace('\\', '/').split('/')[-2:])
+                if filename == '__init__.py':
+                    filename = '/'.join(source.filename.replace('\\', '/').split('/')[-2:])
 
-            return f'[{filename}:{source.lineno}] ' + text.strip('\n')
+                output = f'[{filename}:{source.lineno}] ' + text.strip('\n')
+            else:
+                output = ' ' + text.strip('\n')
 
-        return ' ' + text.strip('\n')
+            level = inspect.getframeinfo(inspect.currentframe().f_back)[2]
 
-    def info(self, message: str):
-        self.__handler.info(self.__print_text(message))
+            for func in self.log_fetchers.values():
+                func(text, level, *args, **kwarg)
 
-    def debug(self, message: str):
-        self.__handler.debug(self.__print_text(message))
+            return output
 
-    def warning(self, message: str):
-        self.__handler.warning(self.__print_text(message))
+        return method
 
-    def error(self, message: Union[str, Exception], desc: Optional[str] = None):
-        text = message
+    def info(self, text: str, *args, **kwarg):
+        self.__handler.info(
+            self.print_method(text, *args, **kwarg),
+        )
 
-        if isinstance(message, Exception):
-            text = traceback.format_exc()
+    def debug(self, text: str, *args, **kwarg):
+        self.__handler.debug(
+            self.print_method(text, *args, **kwarg),
+        )
+
+    def warning(self, text: str, *args, **kwarg):
+        self.__handler.warning(
+            self.print_method(text, *args, **kwarg),
+        )
+
+    def error(self, err: Union[str, Exception], desc: Optional[str] = None, *args, **kwarg):
+        text = traceback.format_exc() if isinstance(err, Exception) else str(err)
 
         if desc:
             text = f'{desc} {text}'
 
-        self.__handler.error(self.__print_text(text))
+        self.__handler.error(
+            self.print_method(text, desc=desc, *args, **kwarg),
+        )
 
         return text
 
-    def critical(self, message: Union[str, Exception]):
-        text = message
+    def critical(self, err: Union[str, Exception], *args, **kwarg):
+        text = traceback.format_exc() if isinstance(err, Exception) else str(err)
 
-        if isinstance(message, Exception):
-            text = traceback.format_exc()
-
-        self.__handler.critical(self.__print_text(text))
+        self.__handler.critical(
+            self.print_method(text, *args, **kwarg),
+        )
 
     @asynccontextmanager
     async def catch(

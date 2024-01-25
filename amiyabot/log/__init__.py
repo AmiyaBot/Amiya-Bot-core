@@ -1,6 +1,6 @@
 import jieba
 
-from .manager import LoggerManager, UserLogger
+from .manager import LoggerManager
 from .progress import download_progress
 
 jieba.setLogLevel(jieba.logging.INFO)

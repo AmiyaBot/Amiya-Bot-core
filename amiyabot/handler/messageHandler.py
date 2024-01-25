@@ -27,7 +27,7 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
         await event_handler(bot, data, _log)
         return None
 
-    _log.info(data.__str__())
+    _log.info(data.__str__(), message=data)
 
     data.bot = bot
 
