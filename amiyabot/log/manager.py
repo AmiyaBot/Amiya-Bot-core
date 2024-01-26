@@ -93,7 +93,7 @@ class LoggerManager:
             _logger.addHandler(h)
 
         for h in set(_logger.handlers) - set(self.log_handlers):
-            if h != self.file_handler and h != self.stream_handler:
+            if h not in (self.file_handler, self.stream_handler):
                 _logger.removeHandler(h)
 
         return _logger
