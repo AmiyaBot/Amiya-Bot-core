@@ -27,13 +27,16 @@ class HttpRequests:
                     response = Response(await res.text())
                     response.response = res
 
+                    log_text = (
+                        f'Request <{url}>[{request_name}]. '
+                        f'Got code {res.status} {res.reason}. '
+                        f'Response: {response.text}'
+                    )
+                    log.debug(log_text)
+
                     if res.status not in cls.success + cls.async_success:
                         if not ignore_error:
-                            log.warning(
-                                f'Request failed <{url}>[{request_name}]. '
-                                f'Got code {res.status} {res.reason}. '
-                                f'Response: {response.text}'
-                            )
+                            log.warning(log_text)
 
                     return response
 

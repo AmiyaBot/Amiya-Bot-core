@@ -3,111 +3,163 @@ import sys
 import logging
 import traceback
 
-from typing import Union, Dict, List, Type, Any, Callable, Optional, Awaitable
+from typing import Union, Dict, List, Type, Callable, Optional, Awaitable
 from contextlib import asynccontextmanager, contextmanager
 from concurrent_log_handler import ConcurrentRotatingFileHandler
-from amiyabot.util import argv
+from amiyabot.util import argv, create_dir
 
-
-class UserLogger:
-    logger: Optional[Any] = None
+LOG_FILE_MAX_BYTES = argv('log-file-max-bytes', int) or (512 * 1024)
+LOG_FILE_BACKUP_COUNT = argv('log-file-backup-count', int) or 10
 
 
 class LoggerManager:
+    user_logger = None
+
+    log_handlers: List[logging.Handler] = []
+
     def __init__(
         self,
-        name: str,
+        name: str = '',
         level: Optional[int] = None,
-        formatter: str = '%(asctime)s [%(name)9s][%(levelname)9s]%(message)s',
-        save_path: str = 'log',
+        formatter: str = '',
+        save_path: str = './log',
         save_filename: str = 'running',
     ):
-        self.handlers: Dict[str, logging.Logger] = {}
-
         self.name = name
-        self._debug = argv('debug', bool)
-        self.level = level or (logging.DEBUG if self._debug else logging.INFO)
-        self.formatter = formatter
+        self.debug_mode = argv('debug', bool)
+
+        self.level = level or (logging.DEBUG if self.debug_mode else logging.INFO)
+        if formatter:
+            self.formatter = formatter
+        else:
+            if name:
+                self.formatter = '%(asctime)s [%(name)9s][%(levelname)9s]%(message)s'
+            else:
+                self.formatter = '%(asctime)s [%(levelname)9s]%(message)s'
+
         self.save_path = save_path
         self.save_filename = save_filename
 
+        formatter = logging.Formatter(self.formatter)
+
+        self.file_handler = ConcurrentRotatingFileHandler(
+            filename=f'{self.save_path}/{self.save_filename}.log',
+            encoding='utf-8',
+            maxBytes=LOG_FILE_MAX_BYTES,
+            backupCount=LOG_FILE_BACKUP_COUNT,
+        )
+        self.file_handler.setFormatter(formatter)
+        self.file_handler.setLevel(self.level)
+
+        self.stream_handler = logging.StreamHandler(stream=sys.stdout)
+        self.stream_handler.setFormatter(formatter)
+        self.stream_handler.setLevel(self.level)
+
+        self.loggers: Dict[str, logging.Logger] = {}
+
+    @classmethod
+    def use(cls, logger_cls):
+        cls.user_logger = logger_cls()
+
+    @classmethod
+    def add_handler(cls, handler: logging.Handler):
+        cls.log_handlers.append(handler)
+        return handler
+
+    @classmethod
+    def remove_handler(cls, handler: logging.Handler):
+        if handler in cls.log_handlers:
+            cls.log_handlers.remove(handler)
+
     @property
-    def __handler(self):
-        if UserLogger.logger:
-            return UserLogger.logger
+    def __logger(self):
+        if self.user_logger and self != self.user_logger:
+            return self.user_logger
 
-        if self.save_filename not in self.handlers:
-            if not os.path.exists(self.save_path):
-                os.makedirs(self.save_path)
-
-            formatter = logging.Formatter(self.formatter)
-
-            file_handler = ConcurrentRotatingFileHandler(
-                filename=f'{self.save_path}/{self.save_filename}.log',
-                encoding='utf-8',
-                maxBytes=512 * 1024,
-                backupCount=10,
-            )
-            file_handler.setFormatter(formatter)
-            file_handler.setLevel(self.level)
-
-            stream_handler = logging.StreamHandler(stream=sys.stdout)
-            stream_handler.setFormatter(formatter)
-            stream_handler.setLevel(self.level)
-
+        if self.save_filename not in self.loggers:
             logger = logging.getLogger(name=self.name)
             logger.setLevel(self.level)
 
-            if not logger.handlers:
-                logger.addHandler(file_handler)
-                logger.addHandler(stream_handler)
+            if not logger.hasHandlers():
+                logger.addHandler(self.file_handler)
+                logger.addHandler(self.stream_handler)
 
-            self.handlers[self.save_filename] = logger
+            self.loggers[self.save_filename] = logger
 
-        return self.handlers[self.save_filename]
+        create_dir(self.save_path)
+        _logger = self.loggers[self.save_filename]
 
-    def __print_text(self, text: str):
-        if self._debug:
-            stack = traceback.extract_stack()
-            source = stack[-3]
-            filename = os.path.basename(source.filename)
+        for h in set(self.log_handlers) - set(_logger.handlers):
+            _logger.addHandler(h)
 
-            if filename == '__init__.py':
-                filename = '/'.join(source.filename.replace('\\', '/').split('/')[-2:])
+        for h in set(_logger.handlers) - set(self.log_handlers):
+            if h not in (self.file_handler, self.stream_handler):
+                _logger.removeHandler(h)
 
-            return f'[{filename}:{source.lineno}] ' + text.strip('\n')
+        return _logger
 
-        return ' ' + text.strip('\n')
+    @property
+    def print_method(self):
+        def method(text: str):
+            if self.debug_mode:
+                stack = traceback.extract_stack()
+                source = stack[-3]
+                filename = os.path.basename(source.filename)
 
-    def info(self, message: str):
-        self.__handler.info(self.__print_text(message))
+                if filename == '__init__.py':
+                    filename = '/'.join(source.filename.replace('\\', '/').split('/')[-2:])
 
-    def debug(self, message: str):
-        self.__handler.debug(self.__print_text(message))
+                output = f'[{filename}:{source.lineno}] ' + text.strip('\n')
+            else:
+                output = ' ' + text.strip('\n')
 
-    def warning(self, message: str):
-        self.__handler.warning(self.__print_text(message))
+            return output
 
-    def error(self, message: Union[str, Exception], desc: Optional[str] = None):
-        text = message
+        return method
 
-        if isinstance(message, Exception):
-            text = traceback.format_exc()
+    def info(self, text: str, *args, **kwarg):
+        self.__logger.info(
+            self.print_method(text),
+            *args,
+            **kwarg,
+        )
+
+    def debug(self, text: str, *args, **kwarg):
+        self.__logger.debug(
+            self.print_method(text),
+            *args,
+            **kwarg,
+        )
+
+    def warning(self, text: str, *args, **kwarg):
+        self.__logger.warning(
+            self.print_method(text),
+            *args,
+            **kwarg,
+        )
+
+    def error(self, err: Union[str, Exception], desc: Optional[str] = None, *args, **kwarg):
+        text = traceback.format_exc() if isinstance(err, Exception) else str(err)
 
         if desc:
             text = f'{desc} {text}'
 
-        self.__handler.error(self.__print_text(text))
+        self.__logger.error(
+            self.print_method(text),
+            *args,
+            **kwarg,
+        )
 
         return text
 
-    def critical(self, message: Union[str, Exception]):
-        text = message
+    def critical(self, err: Union[str, Exception], *args, **kwarg):
+        text = traceback.format_exc() if isinstance(err, Exception) else str(err)
 
-        if isinstance(message, Exception):
-            text = traceback.format_exc()
-
-        self.__handler.critical(self.__print_text(text))
+        self.__logger.critical(
+            self.print_method(text),
+            *args,
+            **kwarg,
+        )
 
     @asynccontextmanager
     async def catch(
