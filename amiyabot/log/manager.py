@@ -8,6 +8,9 @@ from contextlib import asynccontextmanager, contextmanager
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 from amiyabot.util import argv, create_dir
 
+LOG_FILE_MAX_BYTES = argv('log-file-max-bytes', int) or (512 * 1024)
+LOG_FILE_BACKUP_COUNT = argv('log-file-backup-count', int) or 10
+
 
 class LoggerManager:
     user_logger = None
@@ -42,8 +45,8 @@ class LoggerManager:
         self.file_handler = ConcurrentRotatingFileHandler(
             filename=f'{self.save_path}/{self.save_filename}.log',
             encoding='utf-8',
-            maxBytes=512 * 1024,
-            backupCount=10,
+            maxBytes=LOG_FILE_MAX_BYTES,
+            backupCount=LOG_FILE_BACKUP_COUNT,
         )
         self.file_handler.setFormatter(formatter)
         self.file_handler.setLevel(self.level)
