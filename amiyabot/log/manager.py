@@ -3,11 +3,12 @@ import sys
 import logging
 import traceback
 
-from typing import Union, Dict, List, Type, Callable, Optional, Awaitable
+from typing import Union, List, Type, Callable, Optional, Awaitable
 from contextlib import asynccontextmanager, contextmanager
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 from amiyabot.util import argv, create_dir
 
+LOG_FILE_SAVE_PATH = argv('log-file-save-path', str) or './log'
 LOG_FILE_MAX_BYTES = argv('log-file-max-bytes', int) or (512 * 1024)
 LOG_FILE_BACKUP_COUNT = argv('log-file-backup-count', int) or 10
 
@@ -22,7 +23,7 @@ class LoggerManager:
         name: str = '',
         level: Optional[int] = None,
         formatter: str = '',
-        save_path: str = './log',
+        save_path: str = '',
         save_filename: str = 'running',
     ):
         self.debug_mode = argv('debug', bool)
@@ -35,9 +36,9 @@ class LoggerManager:
 
         fmt = logging.Formatter(formatter)
 
-        self.save_path = save_path
+        self.save_path = save_path or LOG_FILE_SAVE_PATH
         self.file_handler = ConcurrentRotatingFileHandler(
-            filename=f'{self.save_path}/{save_filename}.log',
+            filename=os.path.join(self.save_path, f'{save_filename}.log'),
             encoding='utf-8',
             maxBytes=LOG_FILE_MAX_BYTES,
             backupCount=LOG_FILE_BACKUP_COUNT,

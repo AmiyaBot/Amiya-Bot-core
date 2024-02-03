@@ -11,12 +11,11 @@ class PagePool:
         self.config = config
         self.browser = browser
 
-        self.queue = asyncio.Queue()
-
         self.size = 0
         self.queuing_num = 0
 
         self.lock = asyncio.Lock()
+        self.queue = asyncio.Queue()
 
     @property
     def max_size(self):
