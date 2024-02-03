@@ -12,13 +12,11 @@ class PagePool:
         self.browser = browser
 
         self.queue = asyncio.Queue()
-        self.pages = []
 
+        self.size = 0
         self.queuing_num = 0
 
-    @property
-    def size(self):
-        return len(self.pages)
+        self.lock = asyncio.Lock()
 
     @property
     def max_size(self):
@@ -39,41 +37,54 @@ class PagePool:
             f'{self.config.name} -- idle pages: {self.queue_size} opened: {self.size} queuing: {self.queuing_num}'
         )
 
-        if self.queue_size == 0 and self.size < self.max_size:
-            if isinstance(self.browser, BrowserContext):
-                page = await self.browser.new_page()
-            else:
-                context = await self.browser.new_context(no_viewport=True)
-                hook_res = await self.config.on_context_created(context)
-                if hook_res:
-                    context = hook_res
+        created = False
 
-                page = await context.new_page()
+        if self.queue_size == 0:
+            async with self.lock:
+                if self.size < self.max_size:
+                    if isinstance(self.browser, BrowserContext):
+                        page = await self.browser.new_page()
+                    else:
+                        context = await self.browser.new_context(no_viewport=True)
+                        hook_res = await self.config.on_context_created(context)
+                        if hook_res:
+                            context = hook_res
 
-            self.pages.append(page)
+                        page = await context.new_page()
 
-            log.debug(f'{self.config.name} -- page created. curr size: {self.size}/{self.max_size}')
-        else:
+                    created = True
+                    self.size += 1
+
+                    log.debug(f'{self.config.name} -- page created. curr size: {self.size}/{self.max_size}')
+
+        if not created:
             async with self.__queuing():
                 page: Page = await self.queue.get()
 
         try:
             await page.set_viewport_size(viewport_size)
         except Exception as e:
-            log.error(e)
+            log.warning(f'{self.config.name} -- {repr(e)}')
+            if 'context or browser has been closed' in str(e):
+                self.size -= 1
+                return await self.acquire_page(viewport_size)
 
         return PagePoolContext(self, page)
 
     async def release_page(self, page: Page):
-        await page.context.clear_cookies()
-        await page.evaluate(
-            '''
-            localStorage.clear();
-            sessionStorage.clear();
-            '''
-        )
-        await page.goto('about:blank')
-        await self.queue.put(page)
+        try:
+            await page.context.clear_cookies()
+            await page.evaluate(
+                '''
+                localStorage.clear();
+                sessionStorage.clear();
+                '''
+            )
+            await page.goto('about:blank')
+            await self.queue.put(page)
+        except Exception as e:
+            log.warning(f'{self.config.name} -- {repr(e)}')
+            self.size -= 1
 
         log.debug(f'{self.config.name} -- page released. idle pages: {self.queue_size}')
 
