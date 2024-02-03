@@ -14,7 +14,7 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
     instance = bot.instance
     instance_name = str(instance)
     if instance_name not in adapter_log:
-        adapter_log[instance_name] = LoggerManager(name=instance_name)
+        adapter_log[instance_name] = LoggerManager(name=instance_name, save_filename=instance_name)
 
     _log = adapter_log[instance_name]
 
