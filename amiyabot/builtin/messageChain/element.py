@@ -1,5 +1,5 @@
+import os
 import json
-import asyncio
 
 from dataclasses import dataclass
 from typing import List, Any
@@ -106,50 +106,51 @@ class Html:
 
     async def create_html_image(self):
         async with log.catch('html convert error:'):
-            page: Optional[Page] = await basic_browser_service.open_page(
-                self.url,
-                is_file=self.is_file,
-                width=self.width,
-                height=self.height,
-            )
+            page_context = await basic_browser_service.open_page(self.width, self.height)
 
-            if not page:
-                log.warning(f'can not open page in {basic_browser_service}.')
+            if not page_context:
                 return None
 
-            if self.data:
-                injected = '''
-                    if ('init' in window) {
-                        init(%s)
-                    } else {
-                        console.warn('Can not execute "window.init(data)" because this function does not exist.')
-                    }
-                ''' % json.dumps(
-                    self.data
-                )
+            async with page_context as page:
+                url = 'file:///' + os.path.abspath(self.url) if self.is_file else self.url
 
-                await page.evaluate(injected)
+                try:
+                    await page.goto(url)
+                    await page.wait_for_load_state()
+                except Exception as e:
+                    log.error(e, desc=f'can not goto url {url}. Error:')
+                    return None
 
-            # 等待渲染
-            await asyncio.sleep(self.render_time / 1000)
+                if self.data:
+                    injected = '''
+                        if ('init' in window) {
+                            init(%s)
+                        } else {
+                            console.warn('Can not execute "window.init(data)" because this function does not exist.')
+                        }
+                    ''' % json.dumps(
+                        self.data
+                    )
 
-            # 执行钩子
-            if self.builder:
-                await self.builder.on_page_rendered(page)
+                    await page.evaluate(injected)
 
-            # 截图
-            result = await page.screenshot(full_page=True)
+                # 等待渲染
+                await asyncio.sleep(self.render_time / 1000)
 
-            if self.builder:
-                res = await self.builder.get_image(result)
-                if res:
-                    result = res
+                # 执行钩子
+                if self.builder:
+                    await self.builder.on_page_rendered(page)
 
-            if not BROWSER_PAGE_NOT_CLOSE:
-                await page.close()
+                # 截图
+                result = await page.screenshot(full_page=True)
 
-            if result:
-                return result
+                if self.builder:
+                    res = await self.builder.get_image(result)
+                    if res:
+                        result = res
+
+                if result:
+                    return result
 
         log.warning('html convert fail.')
 

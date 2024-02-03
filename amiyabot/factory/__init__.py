@@ -7,6 +7,7 @@ import contextlib
 from amiyabot import log
 from amiyabot.util import temp_sys_path, extract_zip, import_module
 from amiyabot.builtin.lib.timedTask import TasksControl, Task
+from amiyabot.builtin.lib.browserService import BrowserLaunchConfig
 
 from .factoryTyping import *
 from .implemented import MessageHandlerItemImpl
@@ -220,6 +221,10 @@ class BotHandlerFactory(FactoryCore):
 
 
 class BotInstance(BotHandlerFactory):
+    @abc.abstractmethod
+    async def start(self, launch_browser: Union[bool, BrowserLaunchConfig] = False):
+        raise NotImplementedError
+
     @classmethod
     def load_plugin(
         cls,
