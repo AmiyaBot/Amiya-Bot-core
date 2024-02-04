@@ -4,6 +4,7 @@ from playwright.async_api import ViewportSize
 from contextlib import asynccontextmanager
 
 from .launchConfig import *
+from .pageContext import PageContext
 
 
 class PagePool:
@@ -68,7 +69,7 @@ class PagePool:
                 self.size -= 1
                 return await self.acquire_page(viewport_size)
 
-        return PagePoolContext(self, page)
+        return PagePoolContext(page, self)
 
     async def release_page(self, page: Page):
         try:
@@ -88,13 +89,10 @@ class PagePool:
         log.debug(f'{self.config.name} -- page released. idle pages: {self.queue_size}')
 
 
-class PagePoolContext:
-    def __init__(self, pool: PagePool, page: Page):
+class PagePoolContext(PageContext):
+    def __init__(self, page: Page, pool: PagePool):
+        super().__init__(page)
         self.pool = pool
-        self.page = page
-
-    async def __aenter__(self):
-        return self.page
 
     async def __aexit__(self, *args, **kwargs):
         await self.pool.release_page(self.page)

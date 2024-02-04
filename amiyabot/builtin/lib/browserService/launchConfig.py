@@ -6,7 +6,7 @@ from amiyabot.log import LoggerManager
 DEFAULT_WIDTH = argv('browser-width', int) or 1280
 DEFAULT_HEIGHT = argv('browser-height', int) or 720
 DEFAULT_RENDER_TIME = argv('browser-render-time', int) or 200
-BROWSER_PAGE_POOL_SIZE = argv('browser-page-pool-size', int) or 5
+BROWSER_PAGE_POOL_SIZE = argv('browser-page-pool-size', int) or 0
 BROWSER_LAUNCH_WITH_HEADED = argv('browser-launch-with-headed', bool)
 
 log = LoggerManager('Browser')

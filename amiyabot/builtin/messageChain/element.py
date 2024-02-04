@@ -105,54 +105,54 @@ class Html:
     builder: Optional[ChainBuilder] = None
 
     async def create_html_image(self):
-        async with log.catch('html convert error:'):
+        async with log.catch('browser service error:'):
             page_context = await basic_browser_service.open_page(self.width, self.height)
 
             if not page_context:
                 return None
 
             async with page_context as page:
-                url = 'file:///' + os.path.abspath(self.url) if self.is_file else self.url
+                async with log.catch('html convert error:'):
+                    url = 'file:///' + os.path.abspath(self.url) if self.is_file else self.url
 
-                try:
-                    await page.goto(url)
-                    await page.wait_for_load_state()
-                except Exception as e:
-                    log.error(e, desc=f'can not goto url {url}. Error:')
-                    return None
+                    try:
+                        await page.goto(url)
+                        await page.wait_for_load_state()
+                    except Exception as e:
+                        log.error(e, desc=f'can not goto url {url}. Error:')
+                        return None
 
-                if self.data:
-                    injected = '''
-                        if ('init' in window) {
-                            init(%s)
-                        } else {
-                            console.warn('Can not execute "window.init(data)" because this function does not exist.')
-                        }
-                    ''' % json.dumps(
-                        self.data
-                    )
+                    if self.data:
+                        injected = '''
+                            if ('init' in window) {
+                                init(%s)
+                            } else {
+                                console.warn(
+                                    'Can not execute "window.init(data)" because this function does not exist.'
+                                )
+                            }
+                        ''' % json.dumps(
+                            self.data
+                        )
+                        await page.evaluate(injected)
 
-                    await page.evaluate(injected)
+                    # 等待渲染
+                    await asyncio.sleep(self.render_time / 1000)
 
-                # 等待渲染
-                await asyncio.sleep(self.render_time / 1000)
+                    # 执行钩子
+                    if self.builder:
+                        await self.builder.on_page_rendered(page)
 
-                # 执行钩子
-                if self.builder:
-                    await self.builder.on_page_rendered(page)
+                    # 截图
+                    result = await page.screenshot(full_page=True)
 
-                # 截图
-                result = await page.screenshot(full_page=True)
+                    if self.builder:
+                        res = await self.builder.get_image(result)
+                        if res:
+                            result = res
 
-                if self.builder:
-                    res = await self.builder.get_image(result)
-                    if res:
-                        result = res
-
-                if result:
-                    return result
-
-        log.warning('html convert fail.')
+                    if result:
+                        return result
 
 
 @dataclass

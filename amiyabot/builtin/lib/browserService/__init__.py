@@ -2,6 +2,7 @@ from playwright.async_api import async_playwright, ConsoleMessage, Error as Page
 
 from .launchConfig import *
 from .pagePool import *
+from .pageContext import PageContext
 
 
 class BrowserService:
@@ -27,7 +28,9 @@ class BrowserService:
         self.playwright = await async_playwright().start()
         self.browser = await config.launch_browser(self.playwright)
         self.config = config
-        self.pool = PagePool(self.browser, config)
+
+        if self.config.page_pool_size:
+            self.pool = PagePool(self.browser, config)
 
         # if not config.browser_name:
         #     config.browser_name = self.browser._impl_obj._browser_type.name
@@ -42,9 +45,14 @@ class BrowserService:
 
     async def open_page(self, width: int, height: int):
         if self.browser:
-            page_context = await self.pool.acquire_page(
-                ViewportSize(width=width, height=height),
-            )
+            size = ViewportSize(width=width, height=height)
+
+            if self.pool:
+                page_context = await self.pool.acquire_page(size)
+            else:
+                page_context = PageContext(
+                    await self.browser.new_page(no_viewport=True, viewport=size),
+                )
 
             if self.config.debug:
                 page_context.page.once('console', self.__console)
