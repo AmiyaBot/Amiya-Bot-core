@@ -1,9 +1,10 @@
-from typing import Dict
+import os
 
+from typing import Dict
 from amiyabot.builtin.message import *
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.factory import MessageHandlerItem, BotHandlerFactory, EventHandlerType
-from amiyabot.log import LoggerManager
+from amiyabot.log.manager import LoggerManager, LOG_FILE_SAVE_PATH
 
 ChoiceRes = Union[MessageHandlerItem, Waiter]
 
@@ -14,7 +15,11 @@ async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, Ev
     instance = bot.instance
     instance_name = str(instance)
     if instance_name not in adapter_log:
-        adapter_log[instance_name] = LoggerManager(name=instance_name)
+        adapter_log[instance_name] = LoggerManager(
+            name=instance_name,
+            save_path=os.path.join(LOG_FILE_SAVE_PATH, 'adapters'),
+            save_filename=instance_name,
+        )
 
     _log = adapter_log[instance_name]
 

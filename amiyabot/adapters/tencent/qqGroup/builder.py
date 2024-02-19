@@ -123,6 +123,9 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
         return image
 
     async def get_voice(self, voice_file: str) -> str:
+        if voice_file.startswith('http'):
+            return voice_file
+
         voice = await silkcoder.async_encode(voice_file, ios_adaptive=True)
         path, url = self.temp_filename('silk')
 
@@ -132,6 +135,9 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
         return url
 
     async def get_video(self, video_file: str) -> str:
+        if video_file.startswith('http'):
+            return video_file
+
         path, url = self.temp_filename('mp4')
         shutil.copy(video_file, path)
         return url

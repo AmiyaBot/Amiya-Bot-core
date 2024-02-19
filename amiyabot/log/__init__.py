@@ -5,7 +5,7 @@ from .progress import download_progress
 
 jieba.setLogLevel(jieba.logging.INFO)
 
-logger = LoggerManager('Main')
+logger = LoggerManager('Default')
 
 info = logger.info
 error = logger.error
