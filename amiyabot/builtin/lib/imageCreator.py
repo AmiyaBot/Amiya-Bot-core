@@ -81,8 +81,7 @@ class TextParser:
             length += self.__font_seat(char)[0]
             sub_text += char
 
-            if length > self.width_seat:
-                self.width_seat = length
+            self.width_seat = max(self.width_seat, length)
 
             is_end = idx == len(text) - 1
             if length >= self.max_seat or char == '\n' or is_end:

@@ -213,6 +213,24 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqServ
         if isinstance(item, Html):
             await insert_media(await item.create_html_image())
 
+        # Ark
+        if isinstance(item, Ark):
+            payload.msg_type = 3
+            payload.ark = item.get()['ark']
+
+            refresh_payload()
+
+        # Markdown
+        if isinstance(item, Markdown):
+            md = item.get()
+
+            payload.msg_type = 2
+            payload.markdown = md['markdown']
+            if 'keyboard' in md:
+                payload.keyboard = md['keyboard']
+
+            refresh_payload()
+
     if payload.content:
         payload_list.append(payload)
 
