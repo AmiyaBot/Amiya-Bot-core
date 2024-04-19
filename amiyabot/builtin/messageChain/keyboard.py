@@ -46,9 +46,9 @@ class Row:
     def add_button(
         self,
         button: Union[str, Button],
-        rander_label: str,
-        rander_visited_label: str = '',
-        rander_style: int = 0,
+        render_label: str,
+        render_visited_label: str = '',
+        render_style: int = 0,
         action_type: int = 2,
         action_data: str = '',
         action_anchor: int = 0,
@@ -67,12 +67,12 @@ class Row:
         if isinstance(button, str):
             button = Button(button)
 
-        button.render_data.label = rander_label
-        button.render_data.visited_label = rander_visited_label or rander_label
-        button.render_data.style = rander_style
+        button.render_data.label = render_label
+        button.render_data.visited_label = render_visited_label or render_label
+        button.render_data.style = render_style
 
         button.action.type = action_type
-        button.action.data = action_data or rander_label
+        button.action.data = action_data or render_label
         button.action.anchor = action_anchor
         button.action.unsupport_tips = action_unsupport_tips
         button.action.click_limit = action_click_limit
@@ -91,7 +91,7 @@ class Row:
 
 @dataclass
 class InlineKeyboard:
-    bot_appid: int
+    bot_appid: Union[str, int] = ''
     rows: List[Row] = field(default_factory=list)
 
     def add_row(self):

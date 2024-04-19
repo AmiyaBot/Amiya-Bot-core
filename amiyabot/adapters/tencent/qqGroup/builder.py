@@ -2,6 +2,7 @@ import time
 import shutil
 
 from graiax import silkcoder
+from contextlib import contextmanager
 from dataclasses import asdict, field
 from amiyabot.util import create_dir, get_public_ip, random_code
 from amiyabot.adapters import MessageCallback
@@ -158,11 +159,19 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqServ
     payload_list: List[GroupPayload] = []
     payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
 
-    def refresh_payload():
+    def refresh_payload(safe: bool = False):
         nonlocal payload
 
-        payload_list.append(payload)
+        if not safe or payload.content:
+            payload_list.append(payload)
+
         payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
+
+    @contextmanager
+    def lone_payload():
+        refresh_payload(True)
+        yield
+        refresh_payload()
 
     async def insert_media(url: str, file_type: int = 1):
         nonlocal payload
@@ -215,21 +224,19 @@ async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqServ
 
         # Ark
         if isinstance(item, Ark):
-            payload.msg_type = 3
-            payload.ark = item.get()['ark']
-
-            refresh_payload()
+            with lone_payload():
+                payload.msg_type = 3
+                payload.ark = item.get()['ark']
 
         # Markdown
         if isinstance(item, Markdown):
-            md = item.get()
+            with lone_payload():
+                md = item.get()
 
-            payload.msg_type = 2
-            payload.markdown = md['markdown']
-            if 'keyboard' in md:
-                payload.keyboard = md['keyboard']
-
-            refresh_payload()
+                payload.msg_type = 2
+                payload.markdown = md['markdown']
+                if 'keyboard' in md:
+                    payload.keyboard = md['keyboard']
 
     if payload.content:
         payload_list.append(payload)
