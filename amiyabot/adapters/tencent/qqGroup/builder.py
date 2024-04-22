@@ -152,93 +152,99 @@ class QQGroupMessageCallback(MessageCallback):
         ...
 
 
-async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqService):
-    chain_list = chain.chain
-    msg_id = chain.data.message_id
+class PayloadBuilder:
+    def __init__(self, api: QQGroupAPI, chain: Chain, seq_service: SeqService):
+        self.api = api
+        self.chain = chain
+        self.seq_service = seq_service
 
-    payload_list: List[GroupPayload] = []
-    payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
+        self.chain_list = chain.chain
+        self.msg_id = chain.data.message_id
 
-    def refresh_payload(safe: bool = False):
-        nonlocal payload
+        self.payload_list: List[GroupPayload] = []
+        self.payload = GroupPayload(msg_id=self.msg_id, msg_seq=seq_service.msg_req(self.msg_id))
 
-        if not safe or payload.content:
-            payload_list.append(payload)
+    def refresh_payload(self, safe: bool = False):
+        if not safe or self.payload.content:
+            self.payload_list.append(self.payload)
 
-        payload = GroupPayload(msg_id=msg_id, msg_seq=seq_service.msg_req(msg_id))
+        self.payload = GroupPayload(msg_id=self.msg_id, msg_seq=self.seq_service.msg_req(self.msg_id))
 
     @contextmanager
-    def lone_payload():
-        refresh_payload(True)
+    def lone_payload(self):
+        self.refresh_payload(True)
         yield
-        refresh_payload()
+        self.refresh_payload()
 
-    async def insert_media(url: str, file_type: int = 1):
-        nonlocal payload
-
+    async def insert_media(self, url: str, file_type: int = 1):
         if not isinstance(url, str):
             log.warning(f'unsupported file type "{type(url)}".')
             return
 
         if url.startswith('http'):
-            res = await api.upload_file(chain.data.channel_openid, file_type, url)
+            res = await self.api.upload_file(self.chain.data.channel_openid, file_type, url)
             if res:
                 if 'file_info' in res.json:
                     if file_type != 1:
-                        refresh_payload()
+                        self.refresh_payload()
 
                     file_info = res.json['file_info']
 
-                    payload.msg_type = 7
-                    payload.media = {'file_info': file_info}
+                    self.payload.msg_type = 7
+                    self.payload.media = {'file_info': file_info}
 
-                    refresh_payload()
+                    self.refresh_payload()
                 else:
                     log.warning('file upload fail.')
 
-            if isinstance(chain.builder, QQGroupChainBuilder):
-                chain.builder.remove_file(url)
+            if isinstance(self.chain.builder, QQGroupChainBuilder):
+                self.chain.builder.remove_file(url)
         else:
             log.warning(f'media file must be network paths.')
 
-    for item in chain_list:
-        # Text
-        if isinstance(item, Text):
-            payload.content += item.content
+    async def build(self):
+        for item in self.chain_list:
+            # Text
+            if isinstance(item, Text):
+                self.payload.content += item.content
 
-        # Image
-        if isinstance(item, Image):
-            await insert_media(await item.get())
+            # Image
+            if isinstance(item, Image):
+                await self.insert_media(await item.get())
 
-        # Voice
-        if isinstance(item, Voice):
-            await insert_media(await item.get(), 3)
+            # Voice
+            if isinstance(item, Voice):
+                await self.insert_media(await item.get(), 3)
 
-        # Video
-        if isinstance(item, Video):
-            await insert_media(await item.get(), 2)
+            # Video
+            if isinstance(item, Video):
+                await self.insert_media(await item.get(), 2)
 
-        # Html
-        if isinstance(item, Html):
-            await insert_media(await item.create_html_image())
+            # Html
+            if isinstance(item, Html):
+                await self.insert_media(await item.create_html_image())
 
-        # Ark
-        if isinstance(item, Ark):
-            with lone_payload():
-                payload.msg_type = 3
-                payload.ark = item.get()['ark']
+            # Ark
+            if isinstance(item, Ark):
+                with self.lone_payload():
+                    self.payload.msg_type = 3
+                    self.payload.ark = item.get()['ark']
 
-        # Markdown
-        if isinstance(item, Markdown):
-            with lone_payload():
-                md = item.get()
+            # Markdown
+            if isinstance(item, Markdown):
+                with self.lone_payload():
+                    md = item.get()
 
-                payload.msg_type = 2
-                payload.markdown = md['markdown']
-                if 'keyboard' in md:
-                    payload.keyboard = md['keyboard']
+                    self.payload.msg_type = 2
+                    self.payload.markdown = md['markdown']
+                    if 'keyboard' in md:
+                        self.payload.keyboard = md['keyboard']
 
-    if payload.content:
-        payload_list.append(payload)
+        if self.payload.content:
+            self.payload_list.append(self.payload)
 
-    return [asdict(item) for item in payload_list]
+        return [asdict(item) for item in self.payload_list]
+
+
+async def build_message_send(api: QQGroupAPI, chain: Chain, seq_service: SeqService):
+    return await PayloadBuilder(api, chain, seq_service).build()
