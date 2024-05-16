@@ -117,9 +117,12 @@ async def append_voice(file: str):
 
 
 def send_msg(chain: Chain, chain_data: Union[str, list]):
-    return {
+    msg_data = {
         'message_type': chain.data.message_type,
         'user_id': chain.data.user_id,
         'group_id': chain.data.channel_id,
         'message': chain_data,
     }
+    msg_data = {k: v for k, v in msg_data.items() if v is not None and v != ''}
+
+    return msg_data
