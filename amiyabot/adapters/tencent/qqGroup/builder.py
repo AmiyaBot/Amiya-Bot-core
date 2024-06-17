@@ -182,7 +182,12 @@ class PayloadBuilder:
             return
 
         if url.startswith('http'):
-            res = await self.api.upload_file(self.chain.data.channel_openid, file_type, url)
+            res = await self.api.upload_file(
+                self.chain.data.user_openid if self.chain.data.is_direct else self.chain.data.channel_openid,
+                file_type,
+                url,
+                is_direct=self.chain.data.is_direct,
+            )
             if res:
                 if 'file_info' in res.json:
                     if file_type != 1:
