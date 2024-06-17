@@ -8,10 +8,10 @@ from amiyabot.util import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
+from amiyabot.adapters.tencent.intents import get_intents
 
 from .api import QQGuildAPI, log
 from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
-from .intents import get_intents
 from .package import package_qq_guild_message
 from .builder import build_message_send, QQGuildMessageCallback
 
@@ -91,7 +91,8 @@ class QQGuildBotInstance(BotAdapterProtocol):
                         if payload.t == 'READY':
                             self.bot_name = payload.d['user']['username']
                             log.info(
-                                f'connected({sign}): {self.bot_name}(%s)' % ('private' if handler.private else 'public')
+                                f'connected({sign}): {self.bot_name}({self}-%s)'
+                                % ('private' if handler.private else 'public')
                             )
                             self.shards_record[shards_index].session_id = payload.d['session_id']
 
@@ -104,7 +105,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
                     if payload.op == 10:
                         create_token = {
                             'token': f'Bot {self.appid}.{self.token}',
-                            'intents': get_intents(handler.private, self.__str__()).get_all_intents(),
+                            'intents': get_intents(handler.private, self.__str__()),
                             'shard': [shards_index, gateway.shards],
                             'properties': {
                                 '$os': sys.platform,
