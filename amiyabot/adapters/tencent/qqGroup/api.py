@@ -61,3 +61,6 @@ class QQGroupAPI(QQGuildAPI):
 
     async def post_group_message(self, channel_openid: str, payload: dict):
         return await self.post(f'/v2/groups/{channel_openid}/messages', payload)
+
+    async def post_private_message(self, user_openid: str, payload: dict):
+        return await self.post(f'/v2/users/{user_openid}/messages', payload)

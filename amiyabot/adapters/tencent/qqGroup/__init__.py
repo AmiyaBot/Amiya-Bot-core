@@ -2,6 +2,7 @@ import asyncio
 
 from typing import Optional
 from amiyabot.builtin.messageChain import Chain, ChainBuilder
+from amiyabot.adapters import HANDLER_TYPE
 from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance
 
 from .api import QQGroupAPI, log
@@ -13,23 +14,6 @@ from .builder import (
     build_message_send,
 )
 from .package import package_qq_group_message
-from ... import HANDLER_TYPE
-
-
-def qq_group(
-    client_secret: str,
-    default_chain_builder: Optional[ChainBuilder] = None,
-    default_chain_builder_options: QQGroupChainBuilderOptions = QQGroupChainBuilderOptions(),
-):
-    def adapter(appid: str, token: str):
-        if default_chain_builder:
-            cb = default_chain_builder
-        else:
-            cb = QQGroupChainBuilder(default_chain_builder_options)
-
-        return QQGroupBotInstance(appid, token, client_secret, cb)
-
-    return adapter
 
 
 class QQGroupBotInstance(QQGuildBotInstance):
@@ -42,6 +26,23 @@ class QQGroupBotInstance(QQGuildBotInstance):
 
     def __str__(self):
         return 'QQGroup'
+
+    @classmethod
+    def build_adapter(
+        cls,
+        client_secret: str,
+        default_chain_builder: Optional[ChainBuilder] = None,
+        default_chain_builder_options: QQGroupChainBuilderOptions = QQGroupChainBuilderOptions(),
+    ):
+        def adapter(appid: str, token: str):
+            if default_chain_builder:
+                cb = default_chain_builder
+            else:
+                cb = QQGroupChainBuilder(default_chain_builder_options)
+
+            return cls(appid, token, client_secret, cb)
+
+        return adapter
 
     @property
     def api(self):
@@ -74,10 +75,20 @@ class QQGroupBotInstance(QQGuildBotInstance):
         for payload in payloads:
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
                 res.append(
-                    await self.api.post_group_message(
-                        chain.data.channel_openid,
-                        payload,
+                    await (
+                        self.api.post_private_message(
+                            chain.data.user_openid,
+                            payload,
+                        )
+                        if chain.data.is_direct
+                        else self.api.post_group_message(
+                            chain.data.channel_openid,
+                            payload,
+                        )
                     )
                 )
 
         return [QQGroupMessageCallback(chain.data, self, item) for item in res]
+
+
+qq_group = QQGroupBotInstance.build_adapter

@@ -13,11 +13,15 @@ async def package_qq_group_message(instance: BotAdapterProtocol, event: str, mes
         data.is_direct = event == 'C2C_MESSAGE_CREATE'
         data.is_at = True
 
-        data.user_id = message['author']['id']
-        data.user_openid = message['author']['member_openid']
-        data.channel_id = message['group_id']
-        data.channel_openid = message['group_openid']
         data.message_id = message['id']
+        data.user_id = message['author']['id']
+
+        if data.is_direct:
+            data.user_openid = message['author']['user_openid']
+        else:
+            data.user_openid = message['author']['member_openid']
+            data.channel_id = message['group_id']
+            data.channel_openid = message['group_openid']
 
         if 'attachments' in message:
             for item in message['attachments']:
