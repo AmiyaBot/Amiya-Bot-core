@@ -49,9 +49,16 @@ class QQGroupAPI(QQGuildAPI):
     def domain(self):
         return 'https://api.sgroup.qq.com'
 
-    async def upload_file(self, channel_openid: str, file_type: int, url: str, srv_send_msg: bool = False):
+    async def upload_file(
+        self,
+        openid: str,
+        file_type: int,
+        url: str,
+        srv_send_msg: bool = False,
+        is_direct: bool = False,
+    ):
         return await self.post(
-            f'/v2/groups/{channel_openid}/files',
+            f'/v2/users/{openid}/files' if is_direct else f'/v2/groups/{openid}/files',
             {
                 'file_type': file_type,
                 'url': url,
