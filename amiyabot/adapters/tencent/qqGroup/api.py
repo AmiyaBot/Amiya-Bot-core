@@ -2,7 +2,6 @@ import json
 import time
 import requests
 
-
 from ..qqGuild.api import QQGuildAPI, log
 
 

@@ -1,73 +1,28 @@
 import os
-import sys
 import logging
 import traceback
 
 from typing import Union, List, Type, Callable, Optional, Awaitable
 from contextlib import asynccontextmanager, contextmanager
-from concurrent_log_handler import ConcurrentRotatingFileHandler
-from amiyabot.util import argv, create_dir
+from amiyabot.util import create_dir
 
-LOG_FILE_SAVE_PATH = argv('log-file-save-path', str) or './log'
-LOG_FILE_MAX_BYTES = argv('log-file-max-bytes', int) or (512 * 1024)
-LOG_FILE_BACKUP_COUNT = argv('log-file-backup-count', int) or 10
+from .handlers import LogHandlers, LOG_FILE_SAVE_PATH
 
 
 class LoggerManager:
     user_logger = None
 
-    log_handlers: List[logging.Handler] = []
-
-    def __init__(
-        self,
-        name: str = '',
-        level: Optional[int] = None,
-        formatter: str = '',
-        save_path: str = '',
-        save_filename: str = 'running',
-    ):
-        self.debug_mode = argv('debug', bool)
-
-        self.level = level or (logging.DEBUG if self.debug_mode else logging.INFO)
-
-        if not formatter:
-            n = '[%(name)9s]' if name else ''
-            formatter = f'%(asctime)s {n}[%(levelname)9s]%(message)s'
-
-        fmt = logging.Formatter(formatter)
-
-        self.save_path = save_path or LOG_FILE_SAVE_PATH
-        self.file_handler = ConcurrentRotatingFileHandler(
-            filename=os.path.join(self.save_path, f'{save_filename}.log'),
-            encoding='utf-8',
-            maxBytes=LOG_FILE_MAX_BYTES,
-            backupCount=LOG_FILE_BACKUP_COUNT,
-        )
-        self.file_handler.setFormatter(fmt)
-        self.file_handler.setLevel(self.level)
-
-        self.stream_handler = logging.StreamHandler(stream=sys.stdout)
-        self.stream_handler.setFormatter(fmt)
-        self.stream_handler.setLevel(self.level)
+    def __init__(self, name: str, save_path: str = LOG_FILE_SAVE_PATH, save_filename: str = 'running'):
+        self.save_path = save_path
 
         self.__logger = logging.getLogger(name=name)
-        self.__logger.setLevel(self.level)
-        self.__logger.addHandler(self.file_handler)
-        self.__logger.addHandler(self.stream_handler)
+        self.__logger.setLevel(LogHandlers.level)
+        self.__logger.addHandler(LogHandlers.get_stream_handler())
+        self.__logger.addHandler(LogHandlers.get_file_handler(save_path, save_filename))
 
     @classmethod
     def use(cls, logger_cls):
         cls.user_logger = logger_cls()
-
-    @classmethod
-    def add_handler(cls, handler: logging.Handler):
-        cls.log_handlers.append(handler)
-        return handler
-
-    @classmethod
-    def remove_handler(cls, handler: logging.Handler):
-        if handler in cls.log_handlers:
-            cls.log_handlers.remove(handler)
 
     @property
     def logger(self):
@@ -76,19 +31,12 @@ class LoggerManager:
 
         create_dir(self.save_path)
 
-        for h in set(self.log_handlers) - set(self.__logger.handlers):
-            self.__logger.addHandler(h)
-
-        for h in set(self.__logger.handlers) - set(self.log_handlers):
-            if h not in (self.file_handler, self.stream_handler):
-                self.__logger.removeHandler(h)
-
         return self.__logger
 
     @property
     def print_method(self):
         def method(text: str):
-            if self.debug_mode:
+            if LogHandlers.debug_mode:
                 stack = traceback.extract_stack()
                 source = stack[-3]
                 filename = os.path.basename(source.filename)

@@ -12,16 +12,17 @@ adapter_log: Dict[str, LoggerManager] = {}
 
 
 async def message_handler(bot: BotHandlerFactory, data: Union[Message, Event, EventList]):
+    appid = str(bot.appid)
     instance = bot.instance
-    instance_name = str(instance)
-    if instance_name not in adapter_log:
-        adapter_log[instance_name] = LoggerManager(
-            name=instance_name,
-            save_path=os.path.join(LOG_FILE_SAVE_PATH, 'adapters'),
-            save_filename=instance_name,
+
+    if appid not in adapter_log:
+        adapter_log[appid] = LoggerManager(
+            name=str(instance),
+            save_path=os.path.join(LOG_FILE_SAVE_PATH, 'bots'),
+            save_filename=appid,
         )
 
-    _log = adapter_log[instance_name]
+    _log = adapter_log[appid]
 
     # 执行事件响应
     if not isinstance(data, Message):
