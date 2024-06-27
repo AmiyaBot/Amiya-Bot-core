@@ -7,7 +7,15 @@ log = LoggerManager('Schedule')
 
 
 class Scheduler(AsyncIOScheduler):
-    options = {'executors': {'default': AsyncIOExecutor()}, 'job_defaults': {'coalesce': False, 'max_instances': 1}}
+    options = {
+        'executors': {
+            'default': AsyncIOExecutor(),
+        },
+        'job_defaults': {
+            'coalesce': False,
+            'max_instances': 1,
+        },
+    }
 
     def event_listener(self, mask):
         def register(task):

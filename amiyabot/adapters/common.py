@@ -20,12 +20,6 @@ def text_convert(message: Message, text: str, original: str):
     :return:         Message 对象
     """
 
-    # <= 1.2.7
-    # message.text = remove_punctuation(origin)
-    # message.text_digits = chinese_to_digits(message.text)
-    # message.text_origin = origin
-    # message.text_initial = initial
-
     message.text = text
     message.text_digits = chinese_to_digits(message.text)
     message.text_unsigned = remove_punctuation(original)
