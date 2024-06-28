@@ -2,8 +2,19 @@
 
 ![PyPI](https://img.shields.io/pypi/v/amiyabot)
 
-简洁高效的 Python 异步渐进式 QQ 频道机器人框架！<br>
-可使用内置的适配器创建 KOOK、mirai-api-http、go-cqhttp、ComWeChat Client 以及支持 OneBot v11/12 的机器人实现。
+简洁高效的 Python 异步渐进式 QQ 机器人框架！
+
+现已支持：
+
+- [QQ频道机器人](https://www.amiyabot.com/develop/adapters/qqChannel)
+- [QQ群机器人](https://www.amiyabot.com/develop/adapters/qqGroup)
+- [QQ全域机器人](https://www.amiyabot.com/develop/adapters/qqGlobal)
+- [KOOK机器人](https://www.amiyabot.com/develop/adapters/kook)
+- [Mirai-Api-Http](https://www.amiyabot.com/develop/adapters/mah)
+- [Go-CQHttp](https://www.amiyabot.com/develop/adapters/gocq)
+- [ComWeChatBot Client](https://www.amiyabot.com/develop/adapters/comwechat)
+- [OneBot 11](https://www.amiyabot.com/develop/adapters/onebot11)
+- [OneBot 12](https://www.amiyabot.com/develop/adapters/onebot12)
 
 官方文档：[www.amiyabot.com](https://www.amiyabot.com/)
 
@@ -12,8 +23,6 @@
     pip install amiyabot
 
 ## Get started
-
-### Single mode
 
 ```python
 import asyncio
@@ -31,7 +40,7 @@ async def _(data: Message):
 asyncio.run(bot.start())
 ```
 
-### Multiple mode
+### 多账户
 
 ```python
 import asyncio
@@ -53,7 +62,7 @@ async def _(data: Message):
 asyncio.run(bots.start())
 ```
 
-### Use adapter
+### 使用适配器
 
 ```python
 import asyncio
@@ -76,4 +85,3 @@ async def _(data: Message):
 asyncio.run(bot.start())
 ```
 
-## [Get more](https://www.amiyabot.com/)
