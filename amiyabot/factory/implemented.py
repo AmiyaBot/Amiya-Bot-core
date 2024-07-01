@@ -47,7 +47,8 @@ class MessageHandlerItemImpl(MessageHandlerItem):
     def restore_data(cls, result: Verify, data: Message):
         if result.on_selected:
             result.on_selected()
-            yield
+        yield
+        if result.on_selected:
             data.text_prefix = ''
             data.set_text(data.text_original, set_original=False)
 
