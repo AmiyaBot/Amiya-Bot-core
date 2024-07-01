@@ -150,6 +150,8 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem], wai
 
     # 将 Verify 结果赋值给 Message
     data.verify = selected[0]
+    if data.verify.on_selected:
+        data.verify.on_selected()
 
     return selected[1]
 

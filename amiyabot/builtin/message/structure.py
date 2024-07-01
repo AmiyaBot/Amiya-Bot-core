@@ -138,11 +138,22 @@ class Verify:
         self.weight = weight
         self.keypoint = keypoint
 
+        self.on_selected: Optional[Callable] = None
+
     def __bool__(self):
         return bool(self.result)
 
     def __repr__(self):
         return f'<Verify, {self.result}, {self.weight}>'
+
+    def set_attrs(self, *attrs: Any):
+        indexes = [
+            'result',
+            'weight',
+            'keypoint',
+        ]
+        for index, value in zip(indexes, attrs):
+            setattr(self, index, value)
 
 
 @dataclass
