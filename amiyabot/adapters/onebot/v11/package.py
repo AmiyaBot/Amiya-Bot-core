@@ -1,8 +1,6 @@
 from amiyabot.builtin.message import Event, EventList, Message
 from amiyabot.adapters import BotAdapterProtocol
 
-from amiyabot.adapters.common import text_convert
-
 
 async def package_onebot11_message(instance: BotAdapterProtocol, account: str, data: dict):
     if 'post_type' not in data:
@@ -77,4 +75,5 @@ async def package_onebot11_message(instance: BotAdapterProtocol, account: str, d
             if chain['type'] == 'image':
                 msg.image.append(chain_data['url'].strip())
 
-    return text_convert(msg, text, text)
+    msg.set_text(text)
+    return msg

@@ -1,6 +1,5 @@
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.adapters.common import text_convert
 
 
 async def package_qq_group_message(instance: BotAdapterProtocol, event: str, message: dict, is_reference: bool = False):
@@ -29,7 +28,7 @@ async def package_qq_group_message(instance: BotAdapterProtocol, event: str, mes
                     data.image.append(item['url'])
 
         if 'content' in message:
-            data = text_convert(data, message['content'].strip(), message['content'])
+            data.set_text(message['content'])
 
         return data
 

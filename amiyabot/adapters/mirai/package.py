@@ -1,8 +1,6 @@
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters import BotAdapterProtocol
 
-from ..common import text_convert
-
 
 def package_mirai_message(instance: BotAdapterProtocol, account: str, data: dict):
     if 'type' not in data:
@@ -50,4 +48,5 @@ def package_mirai_message(instance: BotAdapterProtocol, account: str, data: dict
             if chain['type'] == 'Image':
                 msg.image.append(chain['url'].strip())
 
-    return text_convert(msg, text, text)
+    msg.set_text(text)
+    return msg

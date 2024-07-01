@@ -1,7 +1,6 @@
 from amiyabot.builtin.message import Event, EventList, Message
 from amiyabot.adapters import BotAdapterProtocol
 
-from amiyabot.adapters.common import text_convert
 from .api import OneBot12API
 
 
@@ -62,7 +61,8 @@ async def package_onebot12_message(instance: BotAdapterProtocol, data: dict):
                 if chain['type'] == 'video':
                     msg.video = await get_file(instance, chain_data)
 
-        return text_convert(msg, text, text)
+        msg.set_text(text)
+        return msg
 
     event_list = EventList([Event(instance, message_type, data)])
 

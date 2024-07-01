@@ -4,6 +4,7 @@ import time
 from typing import Any, List, Union, Optional, Callable
 from dataclasses import dataclass
 from amiyabot.typeIndexes import *
+from amiyabot.util import remove_punctuation, chinese_to_digits, cut_by_jieba
 
 
 class EventStructure:
@@ -36,6 +37,7 @@ class MessageStructure:
         self.video = ''
 
         self.text = ''
+        self.text_prefix = ''
         self.text_digits = ''
         self.text_unsigned = ''
         self.text_original = ''
@@ -79,6 +81,24 @@ class MessageStructure:
                 'message': text + face + image,
             }
         )
+
+    def set_text(self, text: str, set_original: bool = True):
+        if set_original:
+            self.text_original = text
+
+        self.text = text.strip()
+        self.text_convert()
+
+    def text_convert(self):
+        self.text_digits = chinese_to_digits(self.text)
+        self.text_unsigned = remove_punctuation(self.text)
+
+        chars = cut_by_jieba(self.text) + cut_by_jieba(self.text_digits)
+
+        words = list(set(chars))
+        words = sorted(words, key=chars.index)
+
+        self.text_words = words
 
     @abc.abstractmethod
     async def send(self, reply: T_Chain):

@@ -12,8 +12,6 @@ from amiyabot.builtin.message import Message, Event
 from amiyabot.util import random_code, create_dir
 from amiyabot import log
 
-from ..common import text_convert
-
 
 @dataclass
 class ReceivedMessage:
@@ -95,7 +93,8 @@ class TestServer(HttpServer):
 
         text = message.get('message', '')
 
-        return text_convert(msg, text, text)
+        msg.set_text(text)
+        return msg
 
     def base64_to_temp_url(self, base64_string: str):
         data = base64_string.split('base64,')[-1]

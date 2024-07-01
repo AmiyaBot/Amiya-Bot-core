@@ -113,6 +113,7 @@ class HttpRequests:
         cls,
         url: str,
         file: bytes,
+        filename: str = 'file',
         file_field: str = 'file',
         payload: Optional[dict] = None,
         headers: Optional[dict] = None,
@@ -121,7 +122,7 @@ class HttpRequests:
         _headers = {**(headers or {})}
 
         data = cls.__build_form_data(payload)
-        data.add_field(file_field, file, content_type='application/octet-stream')
+        data.add_field(file_field, file, filename=filename, content_type='application/octet-stream')
 
         return await cls.request(
             url,
