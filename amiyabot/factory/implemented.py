@@ -1,6 +1,7 @@
 import re
 
 from dataclasses import dataclass
+from amiyabot.util import remove_prefix_once
 from amiyabot.builtin.message import Message, MessageMatch, Verify, Equal
 from amiyabot.factory.factoryTyping import MessageHandlerItem, KeywordsType
 
@@ -30,47 +31,44 @@ class MessageHandlerItemImpl(MessageHandlerItem):
         return Verify(False)
 
     async def verify(self, data: Message):
+        # 检查是否支持私信
         direct_only = self.direct_only or (self.group_config and self.group_config.direct_only)
-
-        if self.check_prefix is None:
-            if self.group_config:
-                need_check_prefix = self.group_config and self.group_config.check_prefix
-            else:
-                need_check_prefix = True
-        else:
-            need_check_prefix = self.check_prefix
 
         if data.is_direct:
             if not direct_only:
-                # 检查是否支持私信
                 if self.allow_direct is None:
                     if not self.group_config or not self.group_config.allow_direct:
                         return Verify(False)
 
                 if self.allow_direct is False:
                     return Verify(False)
-
         else:
-            # 是否仅支持私信
             if direct_only:
                 return Verify(False)
 
-        # 检查是否包含“前缀触发词”或被 @
+        # 检查是否包含前缀触发词或被 @
         flag = False
+
+        if self.check_prefix is None:
+            need_check_prefix = self.group_config.check_prefix if self.group_config else True
+        else:
+            need_check_prefix = self.check_prefix
+
         if need_check_prefix:
             if data.is_at:
                 flag = True
             else:
                 prefix_keywords = need_check_prefix if isinstance(need_check_prefix, list) else self.prefix_keywords()
 
-                # 未设置前缀触发词允许直接通过
                 if not prefix_keywords:
                     flag = True
 
-                for word in prefix_keywords:
-                    if data.text.startswith(word):
-                        flag = True
-                        break
+                # 如果前缀校验通过，再次修正 Message 对象的属性值
+                text, prefix = remove_prefix_once(data.text, prefix_keywords)
+                if prefix:
+                    flag = True
+                    data.text_prefix = prefix
+                    data.set_text(text, set_original=False)
 
         # 若不通过以上检查，且关键字不为全等句式（Equal）
         # 则允许当关键字为列表时，筛选列表内的全等句式继续执行校验，否则校验不通过

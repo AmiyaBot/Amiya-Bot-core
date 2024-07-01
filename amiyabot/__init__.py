@@ -15,7 +15,6 @@ from amiyabot.adapters.onebot.v11 import OneBot11Instance
 from amiyabot.adapters.onebot.v12 import OneBot12Instance
 from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
 from amiyabot.adapters.comwechat import ComWeChatBotInstance
-from amiyabot.adapters.common import CQCode
 
 # network
 from amiyabot.network.httpServer import HttpServer
@@ -33,7 +32,7 @@ from amiyabot.builtin.lib.timedTask import TasksControl
 from amiyabot.builtin.lib.browserService import BrowserLaunchConfig, basic_browser_service
 
 # message
-from amiyabot.builtin.messageChain import Chain, ChainBuilder, InlineKeyboard
+from amiyabot.builtin.messageChain import Chain, ChainBuilder, InlineKeyboard, CQCode
 from amiyabot.builtin.message import (
     Event,
     EventList,

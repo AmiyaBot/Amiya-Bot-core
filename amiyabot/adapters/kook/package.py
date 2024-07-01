@@ -4,8 +4,6 @@ from typing import List, Dict
 from amiyabot.builtin.message import Event, Message, File
 from amiyabot.adapters import BotAdapterProtocol
 
-from ..common import text_convert
-
 
 class RolePermissionCache:
     guild_role: Dict[str, Dict[str, int]] = {}
@@ -78,4 +76,5 @@ async def package_kook_message(instance: BotAdapterProtocol, message: dict):
         if extra['quote']['type'] == 2:
             data.image.append(extra['quote']['content'])
 
-    return text_convert(data, text.strip(), text)
+    data.set_text(text)
+    return data

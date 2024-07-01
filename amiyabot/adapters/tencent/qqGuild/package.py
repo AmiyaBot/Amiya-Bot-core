@@ -2,7 +2,6 @@ import re
 
 from amiyabot.builtin.message import Event, Message
 from amiyabot.adapters import BotAdapterProtocol
-from amiyabot.adapters.common import text_convert
 
 from .api import QQGuildAPI
 
@@ -59,7 +58,7 @@ async def package_qq_guild_message(instance: BotAdapterProtocol, event: str, mes
                 for fid in face_list:
                     data.face.append(fid)
 
-            data = text_convert(data, text.strip(), message['content'])
+            data.set_text(text)
 
         if 'message_reference' in message:
             reference = await api.get_message(message['channel_id'], message['message_reference']['message_id'])

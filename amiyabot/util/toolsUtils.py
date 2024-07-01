@@ -1,8 +1,10 @@
 import re
 import dhash
+import jieba
 import string
 import random
 
+from typing import List
 from string import punctuation
 from zhon.hanzi import punctuation as punctuation_cn
 from io import BytesIO
@@ -23,6 +25,17 @@ def remove_punctuation(text: str):
     for i in punctuation_cn:
         text = text.replace(i, '')
     return text
+
+
+def remove_prefix_once(sentence: str, prefix_keywords: List[str]):
+    for prefix in prefix_keywords:
+        if sentence.startswith(prefix):
+            return sentence[len(prefix) :], prefix
+    return sentence, ''
+
+
+def cut_by_jieba(text: str):
+    return jieba.lcut(text.lower().replace(' ', ''))
 
 
 def chinese_to_digits(text: str):
