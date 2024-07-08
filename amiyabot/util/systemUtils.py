@@ -56,6 +56,18 @@ def import_module(path: str, self_only: bool = True):
     return importlib.import_module(path)
 
 
+def delete_module(module_name: str):
+    if module_name in sys.modules:
+        to_delete = [module_name]
+
+        for name in sys.modules:
+            if name.startswith(module_name + '.'):
+                to_delete.append(name)
+
+        for name in to_delete:
+            del sys.modules[name]
+
+
 def append_sys_path(path: str):
     if path not in sys.path:
         sys.path.append(path)
