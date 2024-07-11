@@ -1,5 +1,6 @@
 import re
 import abc
+import copy
 import asyncio
 
 from typing import Callable, Optional, Union, List, Tuple, Any
@@ -147,6 +148,22 @@ class Message(MessageStructure):
         event.cancel()
 
         return None
+
+    def copy(self):
+        bot = self.bot
+        instance = self.instance
+
+        self.bot = None
+        self.instance = None
+
+        new_data = copy.deepcopy(self)
+        new_data.bot = bot
+        new_data.instance = instance
+
+        self.bot = bot
+        self.instance = instance
+
+        return new_data
 
 
 class MessageMatch:

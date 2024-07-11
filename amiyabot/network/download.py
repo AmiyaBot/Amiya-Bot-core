@@ -2,6 +2,7 @@ import aiohttp
 import requests
 
 from io import BytesIO
+from typing import Dict, Optional
 from amiyabot import log
 
 default_headers = {
@@ -10,7 +11,13 @@ default_headers = {
 }
 
 
-def download_sync(url: str, headers=None, stringify=False, progress=False, **kwargs):
+def download_sync(
+    url: str,
+    headers: Optional[Dict[str, str]] = None,
+    stringify: bool = False,
+    progress: bool = False,
+    **kwargs,
+):
     try:
         stream = requests.get(url, headers={**default_headers, **(headers or {})}, stream=True, timeout=30, **kwargs)
         container = BytesIO()
@@ -39,7 +46,7 @@ def download_sync(url: str, headers=None, stringify=False, progress=False, **kwa
         log.error(e, desc='download error:')
 
 
-async def download_async(url, headers=None, stringify=False, **kwargs):
+async def download_async(url, headers: Optional[Dict[str, str]] = None, stringify: bool = False, **kwargs):
     async with log.catch('download error:', ignore=[requests.exceptions.SSLError]):
         async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.get(url, headers={**default_headers, **(headers or {})}, **kwargs) as res:

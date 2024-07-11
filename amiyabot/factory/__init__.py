@@ -5,7 +5,7 @@ import zipimport
 import contextlib
 
 from amiyabot import log
-from amiyabot.util import temp_sys_path, extract_zip, import_module
+from amiyabot.util import temp_sys_path, extract_zip, import_module, delete_module
 from amiyabot.builtin.lib.timedTask import TasksControl, Task
 from amiyabot.builtin.lib.browserService import BrowserLaunchConfig
 
@@ -299,12 +299,18 @@ class BotInstance(BotHandlerFactory):
 
         self.plugins[plugin_id].uninstall()
 
-        if remove and self.plugins[plugin_id].path:
-            for item in self.plugins[plugin_id].path:
-                if os.path.isdir(item):
-                    shutil.rmtree(item)
-                else:
-                    os.remove(item)
+        if self.plugins[plugin_id].path:
+            delete_module(
+                os.path.basename(
+                    self.plugins[plugin_id].path[-1],
+                )
+            )
+            if remove:
+                for item in self.plugins[plugin_id].path:
+                    if os.path.isdir(item):
+                        shutil.rmtree(item)
+                    else:
+                        os.remove(item)
 
         del self.plugins[plugin_id]
 

@@ -1,7 +1,6 @@
 import re
 
 from typing import List
-from contextlib import contextmanager
 from dataclasses import dataclass
 from amiyabot.util import remove_prefix_once
 from amiyabot.builtin.message import Message, MessageMatch, Verify, Equal
@@ -41,16 +40,6 @@ class MessageHandlerItemImpl(MessageHandlerItem):
                 data.set_text(text, set_original=False)
 
         return func
-
-    @classmethod
-    @contextmanager
-    def restore_data(cls, result: Verify, data: Message):
-        if result.on_selected:
-            result.on_selected()
-        yield
-        if result.on_selected:
-            data.text_prefix = ''
-            data.set_text(data.text_original, set_original=False)
 
     async def verify(self, data: Message):
         result = Verify(False)
@@ -103,8 +92,10 @@ class MessageHandlerItemImpl(MessageHandlerItem):
 
         # 执行自定义校验并修正其返回值
         if self.custom_verify:
-            with self.restore_data(result, data):
-                res = await self.custom_verify(data)
+            if result.on_selected:
+                result.on_selected()
+
+            res = await self.custom_verify(data)
 
             if isinstance(res, bool) or res is None:
                 result.result = bool(res)
