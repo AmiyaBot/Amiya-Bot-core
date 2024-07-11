@@ -137,7 +137,7 @@ async def choice_handlers(data: Message, handlers: List[MessageHandlerItem], wai
         candidate.append((Verify(True, waiter.level), waiter))
 
     for item in handlers:
-        check = await item.verify(data)
+        check = await item.verify(data.copy())
         if check:
             candidate.append((check, item))
 
