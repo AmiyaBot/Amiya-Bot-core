@@ -17,8 +17,9 @@ class LoggerManager:
 
         self.__logger = logging.getLogger(name=name)
         self.__logger.setLevel(LogHandlers.level)
-        self.__logger.addHandler(LogHandlers.get_stream_handler())
-        self.__logger.addHandler(LogHandlers.get_file_handler(save_path, save_filename))
+
+        LogHandlers.set_stream_handler(self.__logger)
+        LogHandlers.set_file_handler(self.__logger, save_path, save_filename)
 
     @classmethod
     def use(cls, logger_cls):
