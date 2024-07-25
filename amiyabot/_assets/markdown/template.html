@@ -6,7 +6,6 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="./style/github-markdown.css">
-    <link rel="stylesheet" href="./style/highlight/vs.min.css">
     <title>template</title>
     <style>
         * {
@@ -23,14 +22,13 @@
 
         .markdown-body {
             width: max-content;
-            max-width: 960px;
             padding: 20px;
         }
     </style>
 </head>
 <body>
 <div id="template">
-    <div class="markdown-body" v-html="markdownBody"></div>
+    <div class="markdown-body" :style="{ maxWidth: data.max_width + 'px' }" v-html="markdownBody"></div>
 </div>
 </body>
 <script src="./js/highlight.min.js"></script>
@@ -47,20 +45,45 @@
         el: '#template',
         computed: {
             markdownBody() {
-                return marked.parse(this.content)
+                return marked.parse(this.data.content)
             }
         },
         methods: {
             init(data) {
-                this.$set(this, 'content', data['content'])
+                this.loadCSSText(data.css_style)
+                this.loadCSSFiles(data.is_dark)
+
+                this.$set(this, 'data', data)
                 this.$nextTick(() => {
                     hljs.highlightAll()
                 })
+            },
+            loadCSSText(css) {
+                const style = document.createElement('style');
+                style.innerHTML = css;
+                document.head.appendChild(style);
+            },
+            loadCSSFiles(isDark) {
+                const files = isDark ?
+                    ['./style/highlight/vs2015.min.css', './style/github-markdown-dark.css'] :
+                    ['./style/highlight/vs.min.css']
+
+                for (const file of files) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet'
+                    link.href = file
+                    document.head.appendChild(link);
+                }
             }
         },
         data() {
             return {
-                content: ''
+                data: {
+                    content: '',
+                    max_width: 0,
+                    css_style: '',
+                    is_dark: false,
+                }
             }
         },
         mounted() {
