@@ -16,7 +16,6 @@ MAX_SEAT = IMAGE_WIDTH - PADDING * 2
 class ChainConfig:
     max_length = argv('text-max-length', int) or 100
     md_template = os.path.join(cur_file_folder, '../../_assets/markdown/template.html')
-    md_template_dark = os.path.join(cur_file_folder, '../../_assets/markdown/template-dark.html')
 
 
 class Chain:
@@ -182,14 +181,21 @@ class Chain:
     def markdown(
         self,
         content: str,
+        max_width: int = 960,
+        css_style: str = '',
         render_time: int = DEFAULT_RENDER_TIME,
         is_dark: bool = False,
     ):
         return self.html(
-            ChainConfig.md_template_dark if is_dark else ChainConfig.md_template,
+            ChainConfig.md_template,
             width=50,
             height=50,
-            data={'content': content},
+            data={
+                'content': content,
+                'max_width': max_width,
+                'css_style': css_style,
+                'is_dark': is_dark,
+            },
             render_time=render_time,
         )
 
