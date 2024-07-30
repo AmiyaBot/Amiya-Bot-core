@@ -22,8 +22,7 @@ class ConnectionHandler:
 
 
 @dataclass
-class ShardsRecord:
-    shards_index: int
+class ConnectionModel:
     session_id: Optional[str] = None
     last_s: Optional[int] = None
     reconnect_limit: int = 3

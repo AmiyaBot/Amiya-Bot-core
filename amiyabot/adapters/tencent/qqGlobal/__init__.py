@@ -6,10 +6,18 @@ from .package import package_qq_global_message
 
 
 class QQGlobalBotInstance(QQGroupBotInstance):
-    def __init__(self, appid: str, token: str, client_secret: str, default_chain_builder: ChainBuilder):
-        super().__init__(appid, token, client_secret, default_chain_builder)
+    def __init__(
+        self,
+        appid: str,
+        token: str,
+        client_secret: str,
+        default_chain_builder: ChainBuilder,
+        shard_index: int,
+        shards: int,
+    ):
+        super().__init__(appid, token, client_secret, default_chain_builder, shard_index, shards)
 
-        self.guild = QQGuildBotInstance(appid, token)
+        self.guild = QQGuildBotInstance(appid, token, shard_index, shards)
 
     def __str__(self):
         return 'QQGlobal'
