@@ -19,7 +19,7 @@ class ComWeChatBotInstance(OneBot12Instance):
     def __str__(self):
         return 'ComWeChat'
 
-    async def start(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, handler: HANDLER_TYPE):
         while self.keep_run:
             await self.keep_connect(handler, package_method=package_com_wechat_message)
             await asyncio.sleep(10)

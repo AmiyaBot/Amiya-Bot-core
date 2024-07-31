@@ -48,7 +48,7 @@ class TestInstance(BotAdapterProtocol):
     async def close(self):
         ...
 
-    async def start(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, handler: HANDLER_TYPE):
         await self.server.run(handler)
 
     async def build_active_message_chain(self, chain: Chain, user_id: str, channel_id: str, direct_src_guild_id: str):

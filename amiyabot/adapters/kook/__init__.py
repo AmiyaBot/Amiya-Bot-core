@@ -37,7 +37,7 @@ class KOOKBotInstance(BotAdapterProtocol):
     def __still_alive(self):
         return self.keep_run and self.connection
 
-    async def start(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, handler: HANDLER_TYPE):
         me_req = await self.api.get_me()
         if me_req:
             self.appid = me_req.json['data']['id']

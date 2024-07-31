@@ -20,6 +20,7 @@ class BotHandlerFactory(FactoryCore):
         appid: Optional[str] = None,
         token: Optional[str] = None,
         adapter: Optional[Type[BotAdapterProtocol]] = None,
+        private: bool = False,
     ):
         super().__init__()
 
@@ -31,6 +32,7 @@ class BotHandlerFactory(FactoryCore):
         if adapter:
             self.instance = adapter(appid, token)
             self.instance.bot = self
+            self.instance.private = private
 
     @property
     def prefix_keywords(self) -> PrefixKeywords:

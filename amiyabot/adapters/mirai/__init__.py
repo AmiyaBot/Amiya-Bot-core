@@ -51,7 +51,7 @@ class MiraiBotInstance(BotAdapterProtocol):
         if self.connection:
             await self.connection.close()
 
-    async def start(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, handler: HANDLER_TYPE):
         while self.keep_run:
             await self.keep_connect(handler)
             await asyncio.sleep(10)
