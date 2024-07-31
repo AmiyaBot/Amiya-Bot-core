@@ -17,8 +17,16 @@ from .package import package_qq_group_message
 
 
 class QQGroupBotInstance(QQGuildBotInstance):
-    def __init__(self, appid: str, token: str, client_secret: str, default_chain_builder: ChainBuilder):
-        super().__init__(appid, token)
+    def __init__(
+        self,
+        appid: str,
+        token: str,
+        client_secret: str,
+        default_chain_builder: ChainBuilder,
+        shard_index: int,
+        shards: int,
+    ):
+        super().__init__(appid, token, shard_index, shards)
 
         self.__access_token_api = QQGroupAPI(self.appid, self.token, client_secret)
         self.__default_chain_builder = default_chain_builder
@@ -33,6 +41,8 @@ class QQGroupBotInstance(QQGuildBotInstance):
         client_secret: str,
         default_chain_builder: Optional[ChainBuilder] = None,
         default_chain_builder_options: QQGroupChainBuilderOptions = QQGroupChainBuilderOptions(),
+        shard_index: int = 0,
+        shards: int = 1,
     ):
         def adapter(appid: str, token: str):
             if default_chain_builder:
@@ -40,7 +50,7 @@ class QQGroupBotInstance(QQGuildBotInstance):
             else:
                 cb = QQGroupChainBuilder(default_chain_builder_options)
 
-            return cls(appid, token, client_secret, cb)
+            return cls(appid, token, client_secret, cb, shard_index, shards)
 
         return adapter
 
@@ -52,14 +62,14 @@ class QQGroupBotInstance(QQGuildBotInstance):
     def package_method(self):
         return package_qq_group_message
 
-    async def start(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, handler: HANDLER_TYPE):
         if hasattr(self.__default_chain_builder, 'start'):
             self.__default_chain_builder.start()
 
         if not self.__seq_service.alive:
             asyncio.create_task(self.__seq_service.run())
 
-        await super().start(private, handler)
+        await super().start(handler)
 
     async def close(self):
         await self.__seq_service.stop()

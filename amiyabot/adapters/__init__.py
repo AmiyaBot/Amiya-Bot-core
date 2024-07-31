@@ -17,11 +17,13 @@ HANDLER_TYPE = Callable[[Optional[Union[Message, Event, EventList]]], Coroutine[
 
 
 class BotAdapterProtocol:
-    def __init__(self, appid: str, token: str):
+    def __init__(self, appid: str, token: str, private: bool = False):
         self.appid = appid
         self.token = token
         self.alive = False
         self.keep_run = True
+
+        self.private = private
 
         # 适配器实例连接信息
         self.host: Optional[str] = None
@@ -29,6 +31,8 @@ class BotAdapterProtocol:
         self.http_port: Optional[int] = None
         self.session: Optional[str] = None
         self.headers: Optional[dict] = None
+
+        self.bot_name = ''
 
         self.log = LoggerManager(self.__str__())
         self.bot: Optional[T_BotHandlerFactory] = None
@@ -73,11 +77,10 @@ class BotAdapterProtocol:
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def start(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, handler: HANDLER_TYPE):
         """
         启动实例，执行 handler 方法处理消息
 
-        :param private: 是否私域机器人
         :param handler: 消息处理方法
         """
         raise NotImplementedError

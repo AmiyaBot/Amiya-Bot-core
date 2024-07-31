@@ -55,9 +55,8 @@ class AmiyaBot(BotInstance):
         if not appid:
             appid = random_code(10)
 
-        super().__init__(appid, token, adapter)
+        super().__init__(appid, token, adapter, private)
 
-        self.private = private
         self.send_message = self.instance.send_message
 
         self.__closed = False
@@ -71,7 +70,7 @@ class AmiyaBot(BotInstance):
             await basic_browser_service.launch(BrowserLaunchConfig() if launch_browser is True else launch_browser)
 
         self.run_timed_tasks()
-        await self.instance.start(self.private, self.__message_handler)
+        await self.instance.start(self.__message_handler)
 
     async def close(self):
         if not self.__closed:

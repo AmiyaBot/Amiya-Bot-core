@@ -11,20 +11,28 @@ from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.adapters.tencent.intents import get_intents
 
 from .api import QQGuildAPI, log
-from .model import GateWay, Payload, ShardsRecord, ConnectionHandler
+from .model import GateWay, Payload, ConnectionModel, ConnectionHandler
 from .package import package_qq_guild_message
 from .builder import build_message_send, QQGuildMessageCallback
 
 
+def qq_guild_shards(shard_index: int, shards: int):
+    def adapter(appid: str, token: str):
+        return QQGuildBotInstance(appid, token, shard_index, shards)
+
+    return adapter
+
+
 class QQGuildBotInstance(BotAdapterProtocol):
-    def __init__(self, appid: str, token: str):
+    def __init__(self, appid: str, token: str, shard_index: int = 0, shards: int = 1):
         super().__init__(appid, token)
 
         self.appid = appid
         self.token = token
-        self.bot_name = ''
+        self.shard_index = shard_index
+        self.shards = shards
 
-        self.shards_record: Dict[int, ShardsRecord] = {}
+        self.model: Optional[ConnectionModel] = None
 
     def __str__(self):
         return 'QQGuild'
@@ -37,20 +45,25 @@ class QQGuildBotInstance(BotAdapterProtocol):
     def package_method(self):
         return package_qq_guild_message
 
-    def __create_heartbeat(self, websocket, interval: int, record: ShardsRecord):
+    def __create_heartbeat(self, websocket, interval: int):
         heartbeat_key = random_code(10)
-        record.heartbeat_key = heartbeat_key
-        asyncio.create_task(self.heartbeat_interval(websocket, interval, record.shards_index, heartbeat_key))
+        self.model.heartbeat_key = heartbeat_key
+        asyncio.create_task(
+            self.heartbeat_interval(
+                websocket,
+                interval,
+                heartbeat_key,
+            )
+        )
 
     async def close(self):
         log.info(f'closing {self}(appid {self.appid})...')
         self.keep_run = False
 
-        for _, item in self.shards_record.items():
-            if item.connection:
-                await item.connection.close()
+        if self.model:
+            await self.model.connection.close()
 
-    async def start(self, private: bool, handler: HANDLER_TYPE):
+    async def start(self, handler: HANDLER_TYPE):
         log.info(f'requesting appid {self.appid} gateway')
 
         resp = await self.api.gateway_bot()
@@ -58,28 +71,35 @@ class QQGuildBotInstance(BotAdapterProtocol):
         if not resp or 'url' not in resp.json:
             if self.keep_run:
                 await asyncio.sleep(10)
-                asyncio.create_task(self.start(private, handler))
+                asyncio.create_task(self.start(handler))
             return False
 
         gateway = GateWay(**resp.json)
 
         log.info(
-            f'appid {self.appid} gateway resp: shards {gateway.shards}, remaining %d/%d'
+            f'appid {self.appid} gateway resp: shards {gateway.shards}, max_concurrency %d, remaining %d/%d'
             % (
+                gateway.session_start_limit['max_concurrency'],
                 gateway.session_start_limit['remaining'],
                 gateway.session_start_limit['total'],
             )
         )
 
-        await self.create_connection(ConnectionHandler(private=private, gateway=gateway, message_handler=handler))
+        await self.create_connection(
+            ConnectionHandler(
+                private=self.private,
+                gateway=gateway,
+                message_handler=handler,
+            )
+        )
 
-    async def create_connection(self, handler: ConnectionHandler, shards_index: int = 0):
+    async def create_connection(self, handler: ConnectionHandler):
         gateway = handler.gateway
-        sign = f'{self.appid} {shards_index + 1}/{gateway.shards}'
+        sign = f'{self.appid} {self.shard_index + 1}/{self.shards}'
 
         async with self.get_websocket_connection(sign, gateway.url) as websocket:
             if websocket:
-                self.shards_record[shards_index] = ShardsRecord(shards_index, connection=websocket)
+                self.model = ConnectionModel(connection=websocket)
 
                 while self.keep_run:
                     await asyncio.sleep(0)
@@ -94,11 +114,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
                                 f'connected({sign}): {self.bot_name}({self}-%s)'
                                 % ('private' if handler.private else 'public')
                             )
-                            self.shards_record[shards_index].session_id = payload.d['session_id']
-
-                            if shards_index == 0 and gateway.shards > 1:
-                                for n in range(gateway.shards - 1):
-                                    asyncio.create_task(self.create_connection(handler, n + 1))
+                            self.model.session_id = payload.d['session_id']
                         else:
                             await self.create_package_task(handler, payload)
 
@@ -106,7 +122,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
                         create_token = {
                             'token': f'Bot {self.appid}.{self.token}',
                             'intents': get_intents(handler.private, self.__str__()),
-                            'shard': [shards_index, gateway.shards],
+                            'shard': [self.shard_index, self.shards],
                             'properties': {
                                 '$os': sys.platform,
                                 '$browser': '',
@@ -115,25 +131,21 @@ class QQGuildBotInstance(BotAdapterProtocol):
                         }
                         await websocket.send(Payload(op=2, d=create_token).to_json())
 
-                        self.__create_heartbeat(
-                            websocket,
-                            payload.d['heartbeat_interval'],
-                            self.shards_record[shards_index],
-                        )
+                        self.__create_heartbeat(websocket, payload.d['heartbeat_interval'])
 
                     if payload.s:
-                        self.shards_record[shards_index].last_s = payload.s
+                        self.model.last_s = payload.s
 
-        while self.keep_run and self.shards_record[shards_index].reconnect_limit > 0:
-            await self.reconnect(handler, self.shards_record[shards_index], sign)
+        while self.keep_run and self.model.reconnect_limit > 0:
+            await self.reconnect(handler, sign)
             await asyncio.sleep(1)
 
-    async def reconnect(self, handler: ConnectionHandler, record: ShardsRecord, sign: str):
+    async def reconnect(self, handler: ConnectionHandler, sign: str):
         log.info(f'reconnecting({sign})...')
 
         async with self.get_websocket_connection(sign, handler.gateway.url) as websocket:
             if websocket:
-                record.connection = websocket
+                self.model.connection = websocket
 
                 while self.keep_run:
                     await asyncio.sleep(0)
@@ -150,34 +162,33 @@ class QQGuildBotInstance(BotAdapterProtocol):
                     if payload.op == 10:
                         reconnect_token = {
                             'token': f'Bot {self.appid}.{self.token}',
-                            'session_id': record.session_id,
-                            'seq': record.last_s,
+                            'session_id': self.model.session_id,
+                            'seq': self.model.last_s,
                         }
                         await websocket.send(Payload(op=6, d=reconnect_token).to_json())
 
-                        self.__create_heartbeat(websocket, payload.d['heartbeat_interval'], record)
+                        self.__create_heartbeat(websocket, payload.d['heartbeat_interval'])
 
-                        record.reconnect_limit = 3
+                        self.model.reconnect_limit = 3
 
                     if payload.s:
-                        record.last_s = payload.s
+                        self.model.last_s = payload.s
 
-        record.reconnect_limit -= 1
+        self.model.reconnect_limit -= 1
 
     async def heartbeat_interval(
         self,
         websocket: WebSocketClientProtocol,
         interval: int,
-        shards_index: int,
         heartbeat_key: str,
     ):
         sec = 0
-        while self.keep_run and self.shards_record[shards_index].heartbeat_key == heartbeat_key:
+        while self.keep_run and self.model.heartbeat_key == heartbeat_key:
             await asyncio.sleep(1)
             sec += 1
             if sec >= interval / 1000:
                 sec = 0
-                await websocket.send(Payload(op=1, d=self.shards_record[shards_index].last_s).to_json())
+                await websocket.send(Payload(op=1, d=self.model.last_s).to_json())
 
     async def create_package_task(self, handler: ConnectionHandler, payload: Payload):
         asyncio.create_task(
