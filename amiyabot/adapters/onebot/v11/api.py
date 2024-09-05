@@ -64,7 +64,7 @@ class OneBot11API(BotInstanceAPIProtocol):
         return await self.post('/set_group_ban', data={'group_id': group_id, 'user_id': user_id, 'duration': duration})
 
     #async def set_group_anonymous_ban(self, *args, **kwargs):
-        ...
+        #...
 
     async def set_group_whole_ban(self, group_id: int, enable: bool = True):
         return await self.post('/set_group_whole_ban', data={'group_id': group_id, 'enable': enable})
@@ -73,7 +73,7 @@ class OneBot11API(BotInstanceAPIProtocol):
         return await self.post('/set_group_admin', data={'group_id': group_id, 'user_id': user_id, 'enable': enable})
 
     #async def set_group_anonymous(self, *args, **kwargs):
-        ...
+        #...
 
     async def set_group_card(self, group_id: int, user_id: int, card: str = ""):
         return await self.post('/set_group_card', data={'group_id': group_id, 'user_id': user_id, 'card': card})
@@ -85,7 +85,7 @@ class OneBot11API(BotInstanceAPIProtocol):
         return await self.post('/set_group_leave', data={'group_id': group_id, 'is_dismiss': is_dismiss})
 
     #async def set_group_special_title(self, *args, **kwargs):
-        ...
+        #...
 
     async def set_friend_add_request(self, flag: str, approve: bool = True, remark: str = ""):
         return await self.post('/set_friend_add_request', data={'flag': flag, 'approve': approve, 'remark': remark})
