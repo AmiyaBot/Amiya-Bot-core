@@ -16,8 +16,10 @@ from .package import package_qq_guild_message
 from .builder import build_message_send, QQGuildMessageCallback
 
 
-def qq_guild_shards(shard_index: int, shards: int):
+def qq_guild_shards(shard_index: int, shards: int, sandbox: bool = False):
     def adapter(appid: str, token: str):
+        if sandbox:
+            return QQGuildSandboxBotInstance(appid, token, shard_index, shards)
         return QQGuildBotInstance(appid, token, shard_index, shards)
 
     return adapter

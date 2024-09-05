@@ -3,7 +3,7 @@ import shutil
 
 from graiax import silkcoder
 from contextlib import contextmanager
-from dataclasses import asdict, field
+from dataclasses import dataclass, asdict, field
 from amiyabot.util import create_dir, get_public_ip, random_code
 from amiyabot.adapters import MessageCallback
 from amiyabot.network.httpServer import HttpServer
