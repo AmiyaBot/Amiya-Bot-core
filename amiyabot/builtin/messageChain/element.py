@@ -1,8 +1,8 @@
 import os
 import json
 
-from dataclasses import dataclass
 from typing import List, Any
+from dataclasses import dataclass
 from amiyabot.builtin.lib.browserService import *
 from amiyabot import log
 
