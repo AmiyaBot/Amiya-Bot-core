@@ -1,3 +1,5 @@
+import ssl
+import certifi
 import aiohttp
 import requests
 
@@ -9,6 +11,7 @@ default_headers = {
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) '
     'AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1'
 }
+ssl_context = ssl.create_default_context(cafile=certifi.where())
 
 
 def download_sync(
@@ -46,9 +49,9 @@ def download_sync(
         log.error(e, desc='download error:')
 
 
-async def download_async(url, headers: Optional[Dict[str, str]] = None, stringify: bool = False, **kwargs):
+async def download_async(url: str, headers: Optional[Dict[str, str]] = None, stringify: bool = False, **kwargs):
     async with log.catch('download error:', ignore=[requests.exceptions.SSLError]):
-        async with aiohttp.ClientSession(trust_env=True) as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context), trust_env=True) as session:
             async with session.get(url, headers={**default_headers, **(headers or {})}, **kwargs) as res:
                 if res.status == 200:
                     if stringify:
