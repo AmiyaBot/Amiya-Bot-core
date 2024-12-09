@@ -176,7 +176,7 @@ class MessageMatch:
     @staticmethod
     def check_equal(data: Message, text: Equal, level: Optional[int] = None) -> MatchReturn:
         if text.content == data.text:
-            return True, level if level is not None else float('inf'), text
+            return True, level if level is not None else 1, text
         return False, 0, None
 
     @staticmethod
