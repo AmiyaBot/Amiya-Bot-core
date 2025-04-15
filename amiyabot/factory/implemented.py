@@ -2,7 +2,7 @@ import re
 
 from typing import List
 from dataclasses import dataclass
-from amiyabot.util import remove_prefix_once
+from amiyautils import remove_prefix_once
 from amiyabot.builtin.message import Message, MessageMatch, Verify, Equal
 from amiyabot.factory.factoryTyping import MessageHandlerItem, KeywordsType
 

@@ -1,10 +1,15 @@
 import abc
 import time
+import jieba
 
 from typing import Any, List, Union, Optional, Callable
 from dataclasses import dataclass
 from amiyabot.typeIndexes import *
-from amiyabot.util import remove_punctuation, chinese_to_digits, cut_by_jieba
+from amiyautils import remove_punctuation, chinese_to_digits
+
+
+def cut_by_jieba(text: str):
+    return jieba.lcut(text.lower().replace(' ', ''))
 
 
 class EventStructure:

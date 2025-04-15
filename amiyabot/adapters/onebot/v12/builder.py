@@ -5,7 +5,7 @@ from amiyabot.adapters import MessageCallback
 from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
-from amiyabot.util import is_valid_url, random_code
+from amiyautils import is_valid_url, random_code
 from amiyabot import log
 
 CUSTOM_CHAIN_ITEM = Callable[[CHAIN_ITEM], Awaitable[dict]]

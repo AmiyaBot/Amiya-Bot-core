@@ -4,7 +4,7 @@ import logging
 
 from typing import Optional, Dict
 from concurrent_log_handler import ConcurrentRotatingFileHandler
-from amiyabot.util import argv
+from amiyautils import argv
 
 
 LOG_FILE_SAVE_PATH = argv('log-file-save-path', str) or './log'

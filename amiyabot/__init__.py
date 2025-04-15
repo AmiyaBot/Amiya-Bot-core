@@ -4,7 +4,7 @@ import asyncio
 from typing import Optional, Union
 
 from amiyabot import log
-from amiyabot.util import random_code
+from amiyautils import random_code
 
 # adapters
 from amiyabot.adapters import BotAdapterProtocol
@@ -15,9 +15,6 @@ from amiyabot.adapters.onebot.v11 import OneBot11Instance
 from amiyabot.adapters.onebot.v12 import OneBot12Instance
 from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
 from amiyabot.adapters.comwechat import ComWeChatBotInstance
-
-# network
-from amiyabot.network.httpServer import HttpServer
 
 # factory
 from amiyabot.factory import BotInstance, PluginInstance, GroupConfig

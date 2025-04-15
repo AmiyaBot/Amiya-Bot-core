@@ -4,7 +4,7 @@ import traceback
 
 from typing import Union, List, Type, Callable, Optional, Awaitable
 from contextlib import asynccontextmanager, contextmanager
-from amiyabot.util import create_dir
+from amiyautils import create_dir
 
 from .handlers import LogHandlers, LOG_FILE_SAVE_PATH
 

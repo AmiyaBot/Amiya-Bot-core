@@ -4,7 +4,7 @@ import asyncio
 
 from websockets.legacy.client import WebSocketClientProtocol
 from typing import Dict, Optional
-from amiyabot.util import random_code
+from amiyautils import random_code
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE

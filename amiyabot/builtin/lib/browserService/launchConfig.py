@@ -1,6 +1,6 @@
 from typing import Union, Optional
 from playwright.async_api import Browser, BrowserType, BrowserContext, Page, Playwright
-from amiyabot.util import argv
+from amiyautils import argv
 from amiyabot.log import LoggerManager
 
 DEFAULT_WIDTH = argv('browser-width', int) or 1280
