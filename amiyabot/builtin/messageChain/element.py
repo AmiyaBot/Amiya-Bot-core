@@ -4,7 +4,7 @@ import json
 from typing import List, Any
 from dataclasses import dataclass
 from amiyabot.builtin.lib.browserService import *
-from amiyabot import log
+from amiyalog import logger as log
 
 from .keyboard import InlineKeyboard
 

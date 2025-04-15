@@ -10,7 +10,7 @@ from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyahttp import HttpServer
 from amiyabot.builtin.message import Message, Event
 from amiyautils import random_code, create_dir
-from amiyabot import log
+from amiyalog import logger as log
 
 
 @dataclass

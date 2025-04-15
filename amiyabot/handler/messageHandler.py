@@ -4,7 +4,7 @@ from typing import Dict
 from amiyabot.builtin.message import *
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.factory import MessageHandlerItem, BotHandlerFactory, EventHandlerType
-from amiyabot.log.manager import LoggerManager, LOG_FILE_SAVE_PATH
+from amiyalog.manager import LoggerManager, LOG_FILE_SAVE_PATH
 
 ChoiceRes = Union[MessageHandlerItem, Waiter]
 

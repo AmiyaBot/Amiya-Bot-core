@@ -5,7 +5,7 @@ from typing import Optional, List
 from dataclasses import dataclass
 from amiyabot.network.httpRequests import http_requests
 from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
-from amiyabot.log import LoggerManager
+from amiyalog import LoggerManager
 
 log = LoggerManager('Tencent')
 

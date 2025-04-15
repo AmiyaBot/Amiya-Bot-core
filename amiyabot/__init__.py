@@ -1,9 +1,10 @@
+import jieba
 import typing
 import asyncio
 
 from typing import Optional, Union
 
-from amiyabot import log
+from amiyalog import logger as log
 from amiyautils import random_code
 
 # adapters
@@ -39,6 +40,8 @@ from amiyabot.builtin.message import (
     WaitEventOutOfFocus,
     Equal,
 )
+
+jieba.setLogLevel(jieba.logging.INFO)
 
 
 class AmiyaBot(BotInstance):

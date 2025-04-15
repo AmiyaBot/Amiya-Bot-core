@@ -1,8 +1,9 @@
 aiohttp~=3.7.4.post0
-amiyahttp~=0.0.2
+amiyahttp~=0.0.4
+amiyalog~=0.0.1
+amiyautils~=0.0.1
 apscheduler~=3.10.4
 certifi~=2023.7.22
-concurrent-log-handler~=0.9.20
 dhash~=1.3
 graiax-silkcoder~=0.3.4
 jieba~=0.42.1

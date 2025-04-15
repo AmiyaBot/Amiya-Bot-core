@@ -1,4 +1,4 @@
-from amiyabot.log import LoggerManager
+from amiyalog import LoggerManager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.events import *

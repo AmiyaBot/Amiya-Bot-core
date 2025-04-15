@@ -4,7 +4,7 @@ import shutil
 import zipimport
 import contextlib
 
-from amiyabot import log
+from amiyalog import logger as log
 from amiyautils import temp_sys_path, extract_zip, import_module, delete_module
 from amiyabot.builtin.lib.timedTask import TasksControl, Task
 from amiyabot.builtin.lib.browserService import BrowserLaunchConfig

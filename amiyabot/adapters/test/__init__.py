@@ -3,7 +3,7 @@ from typing import Optional
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.log import LoggerManager
+from amiyalog import LoggerManager
 
 from .builder import build_message_send
 from .server import TestServer
