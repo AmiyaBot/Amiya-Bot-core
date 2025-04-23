@@ -1,5 +1,5 @@
 aiohttp~=3.7.4.post0
-amiyahttp~=0.0.4
+amiyahttp~=0.0.5
 amiyalog~=0.0.1
 amiyautils~=0.0.1
 apscheduler~=3.10.4
