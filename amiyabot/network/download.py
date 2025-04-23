@@ -5,7 +5,7 @@ import requests
 
 from io import BytesIO
 from typing import Dict, Optional
-from amiyabot import log
+from amiyalog import logger as log
 
 default_headers = {
     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) '

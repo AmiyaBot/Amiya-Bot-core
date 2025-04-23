@@ -4,8 +4,8 @@ from graiax import silkcoder
 from amiyabot.adapters import MessageCallback
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
-from amiyabot.util import is_valid_url
-from amiyabot import log
+from amiyautils import is_valid_url
+from amiyalog import logger as log
 
 from .api import OneBot11API
 from .package import package_onebot11_message

@@ -2,11 +2,11 @@ import time
 import shutil
 
 from graiax import silkcoder
+from amiyahttp import HttpServer, ServerConfig
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict, field
-from amiyabot.util import create_dir, get_public_ip, random_code
+from amiyautils import create_dir, get_public_ip, random_code
 from amiyabot.adapters import MessageCallback
-from amiyabot.network.httpServer import HttpServer
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.element import *
 
@@ -70,14 +70,14 @@ class QQGroupChainBuilderOptions:
     host: str = '0.0.0.0'
     port: int = 8086
     resource_path: str = './resource'
-    http_server_options: dict = field(default_factory=dict)
+    server_config: ServerConfig = field(default_factory=ServerConfig)
 
 
 class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
     def __init__(self, options: QQGroupChainBuilderOptions):
         create_dir(options.resource_path)
 
-        self.server = HttpServer(options.host, options.port, **options.http_server_options)
+        self.server = HttpServer(options.host, options.port, options.server_config)
         self.server.add_static_folder('/resource', options.resource_path)
 
         self.ip = options.host if options.host != '0.0.0.0' else get_public_ip()
@@ -145,11 +145,9 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
 
 
 class QQGroupMessageCallback(MessageCallback):
-    async def recall(self):
-        ...
+    async def recall(self): ...
 
-    async def get_message(self):
-        ...
+    async def get_message(self): ...
 
 
 class PayloadBuilder:

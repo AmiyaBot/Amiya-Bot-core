@@ -9,7 +9,7 @@ from websockets.legacy.client import WebSocketClientProtocol
 from amiyabot.typeIndexes import T_BotHandlerFactory
 from amiyabot.builtin.message import Event, EventList, Message, MessageCallback
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.log import LoggerManager
+from amiyalog import LoggerManager
 
 from .apiProtocol import BotInstanceAPIProtocol
 

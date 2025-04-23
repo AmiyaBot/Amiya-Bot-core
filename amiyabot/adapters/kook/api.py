@@ -3,7 +3,7 @@ import json
 from typing import Optional, Union
 from amiyabot.adapters.apiProtocol import BotInstanceAPIProtocol
 from amiyabot.network.httpRequests import http_requests
-from amiyabot.log import LoggerManager
+from amiyalog import LoggerManager
 
 log = LoggerManager('KOOK')
 

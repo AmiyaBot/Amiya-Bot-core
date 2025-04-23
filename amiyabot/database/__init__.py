@@ -6,7 +6,7 @@ from typing import List, Any, Optional
 from dataclasses import dataclass
 from playhouse.migrate import *
 from playhouse.shortcuts import ReconnectMixin, model_to_dict
-from amiyabot.util import create_dir, pascal_case_to_snake_case
+from amiyautils import create_dir, pascal_case_to_snake_case
 
 
 @dataclass

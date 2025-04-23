@@ -1,7 +1,7 @@
 import asyncio
 
 from typing import List, Dict, Union, Optional
-from amiyabot import log
+from amiyalog import logger as log
 
 from .structure import MessageStructure
 

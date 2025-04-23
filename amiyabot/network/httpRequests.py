@@ -2,7 +2,7 @@ import json
 import aiohttp
 
 from typing import Optional, Union, Any
-from amiyabot import log
+from amiyalog import logger as log
 
 
 class HttpRequests:

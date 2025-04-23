@@ -6,7 +6,7 @@ from typing import Callable, Optional
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.log import LoggerManager
+from amiyalog import LoggerManager
 
 from .package import package_onebot12_message
 from .builder import build_message_send, OneBot12MessageCallback

@@ -6,7 +6,7 @@ from typing import Optional
 from amiyabot.adapters import BotAdapterProtocol, HANDLER_TYPE
 from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain
-from amiyabot.log import LoggerManager
+from amiyalog import LoggerManager
 
 from .forwardMessage import MiraiForwardMessage
 from .package import package_mirai_message
