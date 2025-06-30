@@ -100,7 +100,10 @@ class TextParser:
         self.char_list.append(CharElem(enter, color, text, *self.__font_seat(text)))
 
     def __font_seat(self, char):
-        return self.font.getsize_multiline(char)
+        temp_img = Image.new('RGB', (1, 1))
+        draw = ImageDraw.Draw(temp_img)
+        bbox = draw.multiline_textbbox((0, 0), char, font=self.font)
+        return (bbox[2] - bbox[0], bbox[3] - bbox[1])
 
 
 IMAGES_TYPE = List[Union[ImageElem, Dict[str, Any]]]
