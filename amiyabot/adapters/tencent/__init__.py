@@ -1,12 +1,10 @@
 from .qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
 
 
-class TencentBotInstance(QQGuildBotInstance):
-    ...
+class TencentBotInstance(QQGuildBotInstance): ...
 
 
-class TencentSandboxBotInstance(QQGuildSandboxBotInstance):
-    ...
+class TencentSandboxBotInstance(QQGuildSandboxBotInstance): ...
 
 
 # notice = (

@@ -98,7 +98,7 @@ for root, dirs, files in os.walk('amiyabot/_assets'):
 
 setuptools.setup(
     name='amiyabot',
-    version='0.0.1',
+    version='0.1.0',
     author='vivien8261',
     author_email='826197021@qq.com',
     url='https://www.amiyabot.com',
@@ -109,7 +109,7 @@ setuptools.setup(
     packages=setuptools.find_packages(include=['amiyabot', 'amiyabot.*']),
     data_files=[('amiyabot', data_files)],
     include_package_data=True,
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     install_requires=requirements,
     cmdclass={
         'bdist_wheel': CustomBdistWheelCommand,

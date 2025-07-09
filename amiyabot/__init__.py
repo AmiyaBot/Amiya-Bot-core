@@ -131,9 +131,11 @@ class MultipleAccounts(BotInstance):
         self.__ready = True
 
         if self.__instances:
-            await asyncio.wait(
-                [self.append(item, start_up=False).start(launch_browser) for _, item in self.__instances.items()]
-            )
+            tasks = [
+                asyncio.create_task(self.append(item, start_up=False).start(launch_browser))
+                for item in self.__instances.values()
+            ]
+            await asyncio.wait(tasks)
 
         while self.__keep_alive:
             await asyncio.sleep(1)
