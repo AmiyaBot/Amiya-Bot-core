@@ -1,5 +1,5 @@
-amiyahttp~=0.0.6
-amiyalog~=0.0.2
+amiyahttp~=0.0.7
+amiyalog~=0.0.3
 amiyautils~=0.0.2
 jieba~=0.42.1
 aiohttp~=3.12.13
