@@ -1,6 +1,6 @@
-amiyahttp~=0.1.0
-amiyalog~=0.1.0
-amiyautils~=0.1.0
+amiyahttp~=0.0.6
+amiyalog~=0.0.2
+amiyautils~=0.0.2
 jieba~=0.42.1
 aiohttp~=3.12.13
 Pillow~=11.2.1
