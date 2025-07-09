@@ -6,7 +6,7 @@ aiohttp~=3.12.13
 Pillow~=11.2.1
 playwright~=1.53.0
 graiax-silkcoder~=0.3.6
-audioop-lts~=0.2.1
+audioop-lts~=0.2.1; python_version>='3.13'
 apscheduler~=3.11.0
 dhash~=1.4
 peewee~=3.18.1
