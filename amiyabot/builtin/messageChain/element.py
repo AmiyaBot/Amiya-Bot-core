@@ -23,8 +23,7 @@ class ChainBuilder:
         return video_file
 
     @classmethod
-    async def on_page_rendered(cls, page: Page):
-        ...
+    async def on_page_rendered(cls, page: Page): ...
 
 
 @dataclass
@@ -33,8 +32,7 @@ class At:
 
 
 @dataclass
-class AtAll:
-    ...
+class AtAll: ...
 
 
 @dataclass

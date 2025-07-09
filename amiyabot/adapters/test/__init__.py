@@ -19,11 +19,9 @@ def test_instance(host: str = '127.0.0.1', port: int = 32001):
 
 
 class TestMessageCallback(MessageCallback):
-    async def recall(self):
-        ...
+    async def recall(self): ...
 
-    async def get_message(self) -> Optional[Message]:
-        ...
+    async def get_message(self) -> Optional[Message]: ...
 
 
 class TestInstance(BotAdapterProtocol):
@@ -45,8 +43,7 @@ class TestInstance(BotAdapterProtocol):
     def __str__(self):
         return 'Testing'
 
-    async def close(self):
-        ...
+    async def close(self): ...
 
     async def start(self, handler: HANDLER_TYPE):
         await self.server.run(handler)
@@ -66,5 +63,4 @@ class TestInstance(BotAdapterProtocol):
 
         return [TestMessageCallback(chain.data, self, None)]
 
-    async def recall_message(self, message_id, data: Optional[Message] = None):
-        ...
+    async def recall_message(self, message_id, data: Optional[Message] = None): ...

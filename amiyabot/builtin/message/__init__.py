@@ -30,8 +30,7 @@ class Equal:
     content: str
 
 
-class Event(EventStructure):
-    ...
+class Event(EventStructure): ...
 
 
 class EventList:

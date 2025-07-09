@@ -1,6 +1,7 @@
 """
 https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/event-emit.html#websocket-%E6%96%B9%E5%BC%8F
 """
+
 import enum
 
 
