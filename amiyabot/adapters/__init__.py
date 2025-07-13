@@ -151,7 +151,7 @@ class WebSocketConnect:
         self.log.info(f'connecting {self.mark}...')
 
         try:
-            self.connection = await websockets.connect(self.url, extra_headers=self.headers)
+            self.connection = await websockets.connect(self.url, additional_headers=self.headers)
             self.instance.set_alive(True)
         except self.ignore_errors as e:
             self.log.error(f'websocket connection({self.mark}) error: {repr(e)}')
