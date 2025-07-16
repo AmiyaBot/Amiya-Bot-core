@@ -5,6 +5,7 @@ import requests
 
 from io import BytesIO
 from typing import Dict, Optional
+from amiyalog.progress import download_progress
 from amiyalog import logger as log
 
 default_headers = {
@@ -28,7 +29,7 @@ def download_sync(
         if stream.status_code == 200:
             iter_content = stream.iter_content(chunk_size=1024)
             if progress and 'content-length' in stream.headers:
-                iter_content = log.download_progress(
+                iter_content = download_progress(
                     url.split('/')[-1],
                     max_size=int(stream.headers['content-length']),
                     chunk_size=1024,
