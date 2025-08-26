@@ -6,7 +6,7 @@ import asyncio
 from typing import Callable, Optional, Union, List, Tuple, Any
 from dataclasses import dataclass
 from amiyabot.typeIndexes import T_Chain, T_BotAdapterProtocol
-from amiyabot.network.httpRequests import Response
+from amiyautils.httpRequestsUtils import Response
 
 from .structure import EventStructure, MessageStructure, Verify, File
 from .waitEvent import (
