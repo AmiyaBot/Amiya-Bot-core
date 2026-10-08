@@ -142,6 +142,54 @@ QQGuildBotInstance ──> QQGroupBotInstance (qqGroup/__init__.py:19)
 
 `[事实]` `qqGuild/api.py` 525 行，是**全仓库最大的单文件**。`[事实]` `IntentsClass` 枚举体系在 `intents.py:8-36`（`CommonIntents`/`PublicIntents`/`PrivateIntents`/`GroupIntents`）。`[事实]` `QQGroupChainBuilder` 用 `PortSingleton` 元类（`qqGroup/builder.py:41,76`）——`[推断]` 确保单例端口分配。`[事实]` `qqGlobal` 内嵌一个 `QQGuildBotInstance` 做双路由（`qqGlobal/__init__.py:20,29-32`）。
 
+#### 4.4.1 QQ 官方 API v2 能力（已接入）
+
+> `[事实]` 官方文档：<https://bot.q.qq.com/wiki/develop/api-v2/>（核对日期 2026-09）。
+
+**全量群消息（非 @ 消息）**
+
+`[事实]` 官方新增 `GROUP_MESSAGE_CREATE`（群消息·全量模式）：机器人在开放平台开启「接收所有消息」后，群内**每条**消息（不限 @）都会推送，事件体与 `GROUP_AT_MESSAGE_CREATE` **完全一致**。
+
+| 项 | 结论 | 证据 |
+|---|---|---|
+| intent | 仍为 `GROUP_AND_C2C_EVENT (1<<25)`，**无新 intent 位** | `intents.py:36-38`；官方 intent 表未列该事件名 |
+| 事件白名单 | `qqGroup/package.py` 的 `FULL_MESSAGE_CREATED` | 原先遗漏，事件落入 `Event` 分支 |
+| 开关 | **无**——直接静默解析为 `Message` | `qqGroup/package.py`（按设计决定，见下） |
+
+`[事实]` 全量消息一律解析为 `Message`，仅如实标记 `is_at`（是否 @ 了机器人），**框架不做任何过滤**——是否响应由使用者的前缀触发词/关键字逻辑决定，与 KOOK 等适配器一致。
+
+`[事实]` **两条被否决的中间设计**（记录以免重复引入）：
+
+1. **`receive_all_messages` 开关**（曾实现后移除）：用于在未开启时把全量事件降级为 `Event`。经需求方明确要求移除——框架不应替用户决定是否处理某类消息。
+2. **`Message.is_full_message` 字段**（曾实现后移除）：原意是与 `is_at` 正交，以区分「全量通道的未 @ 消息」。经核对 `factory/implemented.py:62-82` 后被否决，理由有二：
+   - **无实际效果**：`verify()` 中 `is_at=True` 跳过前缀检查，但 `else` 分支在 `prefix_keywords` 为空时（`implemented.py:76`）**同样放行**。默认机器人未调用 `set_prefix_keywords`，两条路径殊途同归，该字段不改变任何分发结果。
+   - **语义错误**：开启全量后 `GROUP_AT_MESSAGE_CREATE` 与 `GROUP_MESSAGE_CREATE` **都会推送**，无法据此判断消息来源，字段是伪信息。
+
+`[事实]` KOOK 适配器（`kook/package.py:30`）同样只设 `is_at`、**无**任何全量标记字段，是既有适配器的既有实践。
+
+**新增 intent `GROUP_MEMBER_EVENT (1<<24)`**
+
+`[事实]` `GROUP_JOIN_REQUEST`（用户申请加群）走 `1<<24`（`intents.py:GroupMemberIntents`）。`[事实]` 官方明示：**订阅无权限的 intent 会致 WebSocket 返回 `4014` 并断开连接**——故默认不订阅，由 `subscribe_group_member_event` 显式开启。
+
+**其他已接入能力**
+
+| 能力 | 实现位置 |
+|---|---|
+| 自定义 Markdown（`markdown.content`，无需模板） | `element.py:MarkdownContent`、`Chain.markdown_content()` |
+| 引用回复 `message_reference` | `qqGroup/builder.py:PayloadBuilder`（`chain.reference=True`） |
+| 群/单聊消息撤回 | `qqGroup/api.py:delete_group_message/delete_private_message` |
+| 富媒体分片上传 | `qqGroup/api.py:upload_prepare/upload_part_finish` |
+| 群管理（12 接口） | `qqGroup/api.py`（⚠️ 多需白名单，错误码 `11253`） |
+| 互动事件回应 | `qqGroup/api.py:put_interaction_response` |
+| 流式消息 | `qqGroup/api.py:post_stream_message`（仅单聊） |
+
+**`[事实]` 已修复的既有缺陷**
+
+1. `QQGroupMessageCallback.recall()` 原为 `...` 空实现 → 群消息撤回**完全不可用**；且 `recall_message` 继承自 `qqGuild`，会去调**频道** `/channels/...` 端点。现已覆盖为群/单聊端点。
+2. `qqGroup` 的 `PayloadBuilder` 原不处理 `At`/`AtAll`（`qqGuild/builder.py:107-112` 有）→ `Chain.__init__` 自动 `at()` 被**静默丢弃**。现补上 `At`/`AtAll` 分支，与 `qqGuild` 行为一致（`<@openid>` / `<@everyone>`）。
+
+**`[事实]` 未接入项（有意留待）**：自定义菜单 `GET/PUT /v2/menu`、指令面板 6 接口、入群自动审批策略 6 接口。`[事实]` 这些接口对普通 bot 需白名单/内邀，实际不可用。`[事实]` 域名统一 `api.bot.qq.com` 已为官方要求，但 `api.sgroup.qq.com` 实测仍可用（HTTP 401 而非 DNS 失败），故**未强制迁移**以避免回归。
+
 ### 4.5 `test` 适配器（`adapters/test/`）
 
 `[事实]` **唯一被动服务端**模式：`TestInstance`（`__init__.py:27`）起 `TestServer`（`server.py:22`，继承 `amiyahttp.HttpServer`），在 `/{appid}` 开 WS 端点（`server.py:40-62`）。`[事实]` 客户端指向 `https://console.amiyabot.com/#/test`（`__init__.py:40`）。`[事实]` 图片 base64 落盘 `testTemp/images/`（`server.py:99-107`），退出时 `rmtree`（`:36-38`）。

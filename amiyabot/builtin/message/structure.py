@@ -33,6 +33,10 @@ class MessageStructure:
         self.message_id = ''
         self.message_type = ''
 
+        # 被引用消息的索引（QQ 群/单聊 message_type=103 时由 message_scene.ext 的
+        # ref_msg_idx 提供），可用于发送引用回复。
+        self.reference_message_id = ''
+
         self.face: List[int] = []
         self.image: List[str] = []
 

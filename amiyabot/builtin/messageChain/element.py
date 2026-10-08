@@ -128,9 +128,7 @@ class Html:
                                     'Can not execute "window.init(data)" because this function does not exist.'
                                 )
                             }
-                        ''' % json.dumps(
-                            self.data
-                        )
+                        ''' % json.dumps(self.data)
                         await page.evaluate(injected)
 
                     # 等待渲染
@@ -209,6 +207,37 @@ class Markdown:
 
 
 @dataclass
+class MarkdownContent:
+    """
+    自定义 Markdown 消息（QQ 群 / 单聊）。
+
+    2026/04/23 起官方已将自定义 Markdown 开放至所有机器人，无需申请模版。
+    对应 `markdown.content` 字段，与 `Markdown`（模版消息）互斥。
+    https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/type/markdown.html
+    """
+
+    content: str
+    keyboard: Optional[InlineKeyboard] = None
+    keyboard_template_id: Optional[str] = ''
+    force_verify_image_resource: Optional[bool] = None
+
+    def get(self):
+        markdown = {'content': self.content}
+        if self.force_verify_image_resource is not None:
+            markdown['force_verify_image_resource'] = self.force_verify_image_resource
+
+        data = {'markdown': markdown}
+
+        if self.keyboard:
+            data.update({'keyboard': {'content': self.keyboard.dict()}})
+
+        if self.keyboard_template_id:
+            data.update({'keyboard': {'id': self.keyboard_template_id}})
+
+        return data
+
+
+@dataclass
 class Extend:
     data: Any
 
@@ -236,6 +265,7 @@ CHAIN_ITEM = Union[
     Embed,
     Ark,
     Markdown,
+    MarkdownContent,
     Extend,
 ]
 CHAIN_LIST = List[CHAIN_ITEM]

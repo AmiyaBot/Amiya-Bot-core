@@ -57,6 +57,7 @@ cd ../.. && git add docs/Amiya-Bot-docs && git commit -m "chore: 更新 SDK 文�
 | `.html()` | `basic/chainBuild/html.md` |
 | `.markdown()` | `basic/chainBuild/markdown.md` |
 | `.markdown_template()` | `basic/chainBuild/mdTemplate.md` |
+| `.markdown_content()`（**新增 2026-09**） | `basic/chainBuild/mdContent.md`（**新增页**） |
 | `.embed()` | `basic/chainBuild/embed.md` |
 | `.ark()` | `basic/chainBuild/ark.md` |
 | `.extend()` | `basic/chainBuild/extend.md` |
@@ -83,6 +84,7 @@ cd ../.. && git add docs/Amiya-Bot-docs && git commit -m "chore: 更新 SDK 文�
 | 代码 | 文档 |
 |---|---|
 | `Message` 字段（`text`/`user_id`/`is_direct`…） | `basic/recvMessage.md` |
+| `Message.reference_message_id`（**新增 2026-09**） | `basic/recvMessage.md` |
 | `Message.send()` | `basic/sendMessage.md` |
 | `Message.recall()` | `basic/recallMessage.md` |
 | `Message.wait()` / `wait_channel()` | `basic/continuityMessage.md` |
@@ -98,6 +100,8 @@ cd ../.. && git add docs/Amiya-Bot-docs && git commit -m "chore: 更新 SDK 文�
 | `qq_guild_shards` | `adapters/qqChannel.md` |
 | `QQGroupBotInstance` | `adapters/qqGroup.md` |
 | `QQGlobalBotInstance` | `adapters/qqGlobal.md` |
+| `qq_group` / `qq_global` 的 `subscribe_group_member_event`（**新增 2026-09**） | `adapters/qqGroup.md`（「订阅群成员事件」节）、`adapters/qqGlobal.md` |
+| `QQGroupAPI`（**新增 2026-09**） | `basic/api/qqGroup.md`（**新增页**） |
 | `KOOKBotInstance` | `adapters/kook.md` |
 | `MiraiBotInstance` / `mirai_api_http` | `adapters/mah.md` |
 | `CQHttpBotInstance` / `cq_http` | `adapters/gocq.md` |
@@ -145,6 +149,28 @@ cd ../.. && git add docs/Amiya-Bot-docs && git commit -m "chore: 更新 SDK 文�
 `[事实]` **本次无需同步 SDK 文档**：`grep -rn "TencentBotInstance|TencentSandbox" docs/Amiya-Bot-docs/` **无任何命中**——文档从未提及这两个旧名，且 `adapters/qqChannel.md` 已使用新路径 `amiyabot.adapters.tencent.qqGuild`。
 
 `[推断]` 这是一次「**代码有破坏性变更、但文档恰好无需改**」的情况，属于例外：因为该弃用类从未进入用户文档。**不要**因此认为「删除公开类不用改文档」——本次只是恰好没被记录。
+
+### 5.1 QQ API v2 升级（2026-09，已完成同步）
+
+`[事实]` 本次为 QQ 官方 API v2 升级适配（全量群消息、自定义 Markdown、群管理 API 等），**已同步 SDK 文档**，共改动 8 个文件 + 新增 2 个页面：
+
+| 文件 | 变更 |
+|---|---|
+| `develop/adapters/qqGroup.md` | 参数表加两行；新增「接收全量群消息」「订阅群成员事件」两节 |
+| `develop/adapters/qqGlobal.md` | 说明两个新参数同样生效 |
+| `develop/basic/recvMessage.md` | 属性表加 `reference_message_id`；`is_at` 释义补充 |
+| `develop/basic/handleEvents.md` | 新增「QQ 群 / 全域事件」事件表 + 开启条件警告 |
+| `develop/basic/recallMessage.md` | 补充 QQ 群 2 分钟撤回时效与群管理员撤回说明 |
+| `develop/basic/chainBuild/markdown.md` | **修正失效链接**（原指向已废弃的 `api/openapi/message/post_markdown_messages.html`） |
+| `develop/basic/chainBuild/mdContent.md` | **新增页**：自定义 Markdown |
+| `develop/basic/api/qqGroup.md` | **新增页**：QQ 群 API 方法表 |
+| `.vitepress/nav/sidebar.js` | 注册两个新增页 |
+
+`[事实]` 验证方式：`npm install && npm run docs:build` 通过（exit 0，`build complete in 5.67s`），且确认 `mdContent.html` / `api/qqGroup.html` 均已产出。
+
+`[建议]` 提交顺序仍遵循 §2：**先提交子模块仓库，再提交本仓库的子模块指针**。
+
+`[事实]` 文档中的 `InlineKeyboard` 示例（`mdContent.md`）已用真实代码验证可生成正确 payload，避免写出不可运行的示例。
 
 ## 6. 相关文档
 

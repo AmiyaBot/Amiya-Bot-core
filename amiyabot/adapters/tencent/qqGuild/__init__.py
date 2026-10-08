@@ -123,7 +123,11 @@ class QQGuildBotInstance(BotAdapterProtocol):
                     if payload.op == 10:
                         create_token = {
                             'token': f'Bot {self.appid}.{self.token}',
-                            'intents': get_intents(handler.private, self.__str__()),
+                            'intents': get_intents(
+                                handler.private,
+                                self.__str__(),
+                                getattr(self, 'subscribe_group_member_event', False),
+                            ),
                             'shard': [self.shard_index, self.shards],
                             'properties': {
                                 '$os': sys.platform,
