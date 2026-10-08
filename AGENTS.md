@@ -47,11 +47,11 @@ pip check                              # 依赖完整性
 | 坑 | 说明 |
 |---|---|
 | 🚫 **不要 push 到 `master`** | `.github/workflows/pypi.yml:3-6` 在 push 到 master 时**自动发布正式 PyPI**，版本由 PyPI 最新版自增决定，PyPI 版本不可删改。 |
-| 🚫 **不要直接跑 `setup.py`** | `setup.py:6` 硬依赖 `wheel`；`:68` 有交互式 `input()`（不带 `--auto-increment-version` 会挂起）；`:91-92` 会**写回** `requirements.txt` 污染 git status。构建期还需联网到 PyPI（`:18`）。 |
+| 🚫 **不要直接跑 `setup.py`** | `setup.py:6` 硬依赖 `wheel`；`:68` 有交互式 `input()`（不带 `--auto-increment-version` 会挂起）；构建期还需联网到 PyPI（`:18`）。（原 `:91-92` 写回 `requirements.txt` 的副作用已移除。） |
 | ⚠️ **改 peewee 模型字段名 = 丢数据** | `database/__init__.py:84-85` 对「表有模型无」的列执行 `drop_column`，启动时静默执行，无确认无日志。改 schema 前务必备份。 |
 | ⚠️ **`amiyabot.__version__` 不存在** | 源码无 `__version__`，版本只在构建期由 `setup.py:61-65` 计算。用 `pip show amiyabot`。 |
 | ⚠️ **`import amiyabot` 需要 playwright 库** | `browserService/__init__.py:1` 顶层导入，无延迟/降级（`amiyabot/__init__.py:30`）。浏览器**二进制**才是可选（仅渲染 HTML 时需要）。 |
-| ⚠️ **改动会波及公共 API** | 无 `__all__`、无 `py.typed`、无语义化版本承诺、无弃用机制（旧名弃用提示在 `adapters/tencent/__init__.py:10-17` 被注释掉，静默失效）。 |
+| ⚠️ **改动会波及公共 API** | 无 `__all__`、无 `py.typed`、无语义化版本承诺。**弃用类已移除**：`adapters/tencent/__init__.py` 的 `TencentBotInstance` / `TencentSandboxBotInstance` 已删除（旧提示曾被注释、静默失效），文件现仅剩 re-export。 |
 | ⚠️ **`implemented.py:89` 的关键字收窄是**有意**的** | `verify()` 在「前缀未通过」时把 `self.keywords` 收窄为 `Equal` 子集，供 `:113` 的 `__check` 消费。**不要**当成副作用删掉。原判「状态污染」已撤回。 |
 | ⚠️ **`test` 适配器随包发布** | `adapters/test/` 进 wheel；其端点无鉴权，**不要**把 host 设为 `0.0.0.0`（`test/server.py:40-44,109`）。 |
 

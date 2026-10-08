@@ -33,18 +33,19 @@ $ find . -name "py.typed" -o -name "*.pyi" | grep -v .venv
 
 **证据** `[事实]`
 
-- 弃用提示是**被注释掉的 `print()`**：`adapters/tencent/__init__.py:10-17`。非 `warnings.warn`，且当前整体注释 → **完全静默**。
+- 弃用提示曾是**被注释掉的 `print()`**：`adapters/tencent/__init__.py`（原 `:10-17`）。非 `warnings.warn`，且当时整体注释 → **完全静默**。
+- **该类已于本次移除**：`TencentBotInstance` / `TencentSandboxBotInstance` 已删除（原 `:4,7`），文件现仅剩 1 行 re-export。
 - 版本号由 PyPI 自增决定（`setup.py:61-63`），**与改动性质无关**。
 - 无 CHANGELOG（`ls CHANGELOG*` 无结果）、无 CONTRIBUTING。
 
 **影响** `[推断]`
 - 公开 API（`on_message` 参数、`Chain` 方法、`BotAdapterProtocol` 抽象方法）**无兼容性契约**。
-- 使用旧类名（`TencentBotInstance`）的用户**收不到任何迁移提示**。
+- `[事实]` 使用旧类名（`TencentBotInstance`）的用户将直接得到 **`ImportError`**——因弃用提示从未真正生效（被注释、静默），用户**实际是在移除时才感知**的。这是「无正式弃用机制」的**实例证据**。
 - `2.x` 内的 break change 无法从版本号预判，插件生态升级风险高。
 
-**建议** 恢复弃用提示（改用 `warnings.warn(..., DeprecationWarning)`）；建立 CHANGELOG；对公开 API 承诺 semver。
+**建议** 后续弃用改用 `warnings.warn(..., DeprecationWarning)`（本次移除已印证：静默提示 = 用户无预警）；建立 CHANGELOG；对公开 API 承诺 semver。
 
-**本次不改动。**
+**本次已部分处理**（移除弃用类，见 [public-api.md](public-api.md) §4）。
 
 ---
 

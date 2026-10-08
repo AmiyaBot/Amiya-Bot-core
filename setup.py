@@ -88,9 +88,6 @@ with open('README.md', mode='r', encoding='utf-8') as md:
 with open('requirements.txt', mode='r', encoding='utf-8') as req:
     requirements = sorted(req.read().lower().strip('\n').split('\n'))
 
-with open('requirements.txt', mode='w', encoding='utf-8') as req:
-    req.write('\n'.join(requirements))
-
 data_files = []
 for root, dirs, files in os.walk('amiyabot/_assets'):
     for item in files:

@@ -149,17 +149,25 @@ $ find amiyabot -name "__main__.py"
 
 ## 4. 弃用与语义化版本策略
 
-`[事实]` **没有正式的弃用机制**。唯一的弃用痕迹是被注释掉的代码：
+`[事实]` **已发生过一次弃用移除**：`amiyabot/adapters/tencent/__init__.py` 曾定义两个别名子类 `TencentBotInstance`（原 `:4`）与 `TencentSandboxBotInstance`（原 `:7`），并附有一段**被注释掉的 `print()` 弃用提示**（原 `:10-17`，自述 `"will be removed in future versions"`）。
+
+`[事实]` **该弃用已执行完毕（本次移除）**：两个类定义与注释块均已删除，文件现仅剩 1 行 re-export：
 
 ```python
-# amiyabot/adapters/tencent/__init__.py:10-17
-# notice = ('"{name}" is deprecated and will be removed in future versions. '
-#           'Please using "from amiyabot.adapters.tencent.qqGuild import {new_name}"')
-# print('\n==== AmiyaBot Warning ======================================')
-# print(notice.format(name=TencentBotInstance.__name__, ...))
+from .qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
 ```
 
-`[事实]` 机制选的是 `print()` 而非 `warnings.warn`，且**当前整体被注释掉** → 废弃提示**完全静默**。`[事实]` 旧类名仍可用（`TencentBotInstance:4`、`TencentSandboxBotInstance:7`，均为真实子类）。
+`[事实]` **影响与迁移路径**：
+
+| 项 | 说明 |
+|---|---|
+| 受影响写法 | `from amiyabot.adapters.tencent import TencentBotInstance`（或 `TencentSandboxBotInstance`）→ **`ImportError`** |
+| **不受影响** | `from amiyabot.adapters.tencent import QQGuildBotInstance`（因保留 re-export，仍可用） |
+| 推荐迁移 | `from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance` |
+| 内部是否受影响 | **无**。仓库内部代码全部直接引用 `amiyabot.adapters.tencent.qqGuild`（`amiyabot/__init__.py:17`、`qqGroup/__init__.py:6`、`qqGlobal/__init__.py:2,3`） |
+| 默认适配器 | 是 `QQGuildBotInstance`（`amiyabot/__init__.py:53`），**非**别名，故不影响零配置用户 |
+
+`[事实]` 这次移除也印证了「无正式弃用机制」：提示从未真正生效（`print()` 被注释、静默失效），用户实际是**在移除时才感知**的。`[建议]` 后续若有弃用需求，宜改用 `warnings.warn(..., DeprecationWarning)`。
 
 `[事实]` **没有语义化版本承诺**：
 

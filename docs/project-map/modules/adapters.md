@@ -93,7 +93,7 @@
 | QQ 群 | `adapters.tencent.qqGroup` | `QQGroupBotInstance` | `tencent/qqGroup/__init__.py:19` | `qq_group`（`:104`） |
 | QQ 全域 | `adapters.tencent.qqGlobal` | `QQGlobalBotInstance` | `tencent/qqGlobal/__init__.py:8` | `qq_global`（`:35`） |
 | 测试 | `adapters.test` | `TestInstance` | `test/__init__.py:27` | `test_instance`（`:14`） |
-| 废弃别名 | `adapters.tencent` | `TencentBotInstance` / `TencentSandboxBotInstance` | `tencent/__init__.py:4,7` | 无 |
+| ~~废弃别名~~ | ~~`adapters.tencent`~~ | ~~`TencentBotInstance` / `TencentSandboxBotInstance`~~ → **已移除**（原 `tencent/__init__.py:4,7`）；该文件现仅剩 re-export | — |
 
 `[事实]` `adapters/onebot/__init__.py` 是 **0 行空文件**。
 
@@ -150,11 +150,21 @@ QQGuildBotInstance ──> QQGroupBotInstance (qqGroup/__init__.py:19)
 
 `[推断]` 风险：`server.py:109` 显式处理 `host == '0.0.0.0'`，说明该用法存在；此时 `/{appid}` **无鉴权**（`:40-44`），可注入伪造消息驱动机器人 + 无限制落盘。详见 [../risks.md](../risks.md) R-17。
 
-### 4.6 废弃别名（`adapters/tencent/__init__.py`）
+### 4.6 废弃别名 —— **已移除**
 
-`[事实]` 仅 17 行，`:4`、`:7` 定义两个子类别名；`:10-17` 是**被注释掉的 `print()` 弃用提示**。
+`[事实]` 该文件原为 17 行：`:4`、`:7` 定义两个子类别名（`TencentBotInstance` / `TencentSandboxBotInstance`），`:10-17` 是**被注释掉的 `print()` 弃用提示**。
 
-`[推断]` 用 `print()` 而非 `warnings.warn`，且当前整体注释 → **弃用提示完全静默**，旧名用户收不到任何迁移信号。详见 [../risks.md](../risks.md) R-9。
+`[事实]` **本次已删除两个别名与注释块**，文件现仅剩 1 行 re-export：
+
+```python
+from .qqGuild import QQGuildBotInstance, QQGuildSandboxBotInstance
+```
+
+`[事实]` 保留 `:1` re-export 的用意：`from amiyabot.adapters.tencent import QQGuildBotInstance` 这类写法继续可用，避免扩大破坏面。
+
+`[推断]` 原提示用 `print()` 而非 `warnings.warn`、且整体注释 → **弃用提示从未真正生效**，旧名用户是在**移除时才感知**的（表现为 `ImportError`）。`[事实]` 这也是「无正式弃用机制」的实例证据，详见 [../risks-api.md](../risks-api.md) R-9 与 [../public-api.md](../public-api.md) §4。
+
+`[事实]` 删除的安全性已核实：仓库内部**零引用**这两个别名，全部代码直接引用 `amiyabot.adapters.tencent.qqGuild`（`amiyabot/__init__.py:17`、`qqGroup/__init__.py:6`、`qqGlobal/__init__.py:2,3`）；且默认适配器是 `QQGuildBotInstance`（`amiyabot/__init__.py:53`），非别名。
 
 ## 5. 重复与复用
 
@@ -229,7 +239,7 @@ QQGuildBotInstance ──> QQGroupBotInstance (qqGroup/__init__.py:19)
 | **R-18** | URL 硬编码不可配置 | `kook/api.py:13`、`qqGuild/api.py:34` 等 |
 | R-l | 8 份 `build_message_send` + 8 份 `package_*_message` 重复 | 见 §5 |
 | R-m | `test/builder.py` 复制自 `onebot/v11/builder.py` | 改动易漏 |
-| R-n | 弃用提示被注释，静默失效 | `tencent/__init__.py:10-17` |
+| ~~R-n~~ | ~~弃用提示被注释，静默失效~~ → **已处理**：两个弃用类别名与注释块均已移除，文件仅剩 re-export | 见 §4.6 |
 | R-o | 大量直接下标访问 JSON（`json[...]`），结构异常即 `KeyError` | `kook/__init__.py:43-44,82`、`qqGuild/__init__.py:114`、`qqGuild/api.py:289` |
 | R-p | WS 主循环外层无 `except`（只有 `try/finally`），异常终止连接任务 | `kook/__init__.py:61-111` |
 | R-q | `qqGuild/api.py:296-306` 重试无退避（`asyncio.sleep(0)`），3 次连续打 API | `qqGuild/api.py:296-306` |
