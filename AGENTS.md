@@ -3,6 +3,17 @@
 `amiyabot` —— Python 异步渐进式聊天机器人框架（QQ 频道/QQ 群/KOOK/Mirai/OneBot 等适配器 + 消息链 + 关键字路由 + 插件系统）。分发名与导入名均为 `amiyabot`。
 
 > **先读 [docs/project-map/README.md](docs/project-map/README.md)，再按任务读相关分册。**
+>
+> ⚠️ **改公共 API / 适配器 / Chain / 生命周期后，必须同步 SDK 用户文档**（`docs/Amiya-Bot-docs/`，独立 git 子模块）——见下方「代码改动 → SDK 文档同步」。
+
+## 两套文档的分工（别搞混）
+
+| 目录 | 是什么 | 面向谁 | 是否子模块 |
+|---|---|---|---|
+| `docs/project-map/` | **项目地图**：架构、打包、风险、模块分册 | 维护者 / AI | 否（本仓库内） |
+| `docs/Amiya-Bot-docs/` | **SDK 用户文档**：VitePress 站点（`npm run docs:dev`），发布到 amiyabot.com | 插件开发者 / 使用者 | **是**（独立仓库，需单独提交） |
+
+`[事实]` 两者职责不同，**改代码时通常两份都要看**：project-map 判断影响面，SDK docs 决定要不要同步用户可见说明。
 
 ## 命令速查
 
@@ -61,6 +72,33 @@ pip check                              # 依赖完整性
 2. `pylint amiyabot --rcfile=pylint.conf` —— 与 CI 门禁一致，PR 会被它拦。
 3. `black amiyabot --skip-string-normalization --line-length 120` —— 统一格式（CI 不查，但请保持）。
 4. 手动验证：**没有自动化测试可依赖**，涉及适配器/浏览器/数据库的改动必须在真实环境或 `test` 适配器上人工验证。
+
+## 代码改动 → SDK 文档同步
+
+`[事实]` 子模块位置 `docs/Amiya-Bot-docs/`（VitePress，**独立 git 仓库**，需在其内部单独 commit）。
+`[事实]` 完整映射表见 [docs/project-map/sdk-docs-sync.md](docs/project-map/sdk-docs-sync.md)。高频对照：
+
+| 你改了什么 | 同步到 |
+|---|---|
+| `Chain` 及其元素（`.text/.image/.at/...`） | `docs/Amiya-Bot-docs/docs/develop/basic/chainBuild/*.md` |
+| `on_message` / `on_event` / `on_exception` | `basic/messageHandler.md`、`basic/handleEvents.md`、`basic/handleException.md` |
+| 适配器（新增/改工厂函数/改连接参数） | `develop/adapters/*.md`（qqChannel / qqGroup / qqGlobal / kook / onebot11 / onebot12 / gocq / mah / comwechat） |
+| `ChainBuilder` 子类化 | `advanced/chainBuilder.md` |
+| 7 个生命周期钩子 | `advanced/lifeCycle.md` |
+| `event_bus` | `advanced/eventBus.md` |
+| `timed_task` / `TasksControl` | `advanced/timedTask.md` |
+| 启动参数（`--text-max-length` 等） | `advanced/startupParameter.md` |
+| 插件机制（`PluginInstance` 等） | `develop/plugin/*.md` |
+| 数据库 API | `develop/tools/databaseSupport.md` |
+| 等待事件 / `Message.wait` | `basic/continuityMessage.md` |
+
+**规则**
+
+1. **新增/修改公共 API → 必须同步**相应 SDK 文档；仅内部重构（不改签名与行为）可不同步。
+2. **破坏性变更**（如移除类、改参数）→ 除更新文档外，须在文档显式标注迁移方式。
+3. `[事实]` 当前 `docs/develop/adapters/qqChannel.md` 等已使用 `amiyabot.adapters.tencent.qqGuild` 这类**新路径**——改动时保持文档与代码的导入路径一致。
+4. `[建议]` 提交顺序：先提 SDK 文档仓库（`cd docs/Amiya-Bot-docs && git commit`），再提本仓库的子模块指针更新。
+5. `[事实]` 本仓库的 `docs/project-map/` **不是**用户文档，不要往里写面向使用者的教程；教程一律进 SDK 文档。
 
 ## 发布注意事项
 

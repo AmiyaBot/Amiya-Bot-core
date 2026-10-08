@@ -34,6 +34,18 @@
 | [risks-packaging.md](risks-packaging.md) | 🟡 打包与依赖类：R-4 / R-12 / R-14 / R-17 |
 | [risks-api.md](risks-api.md) | 🟡 API 与质量类：R-7 / R-9 / R-10 / R-16 |
 | [risks-low.md](risks-low.md) | 🟢 低severity：R-8 / R-11 / R-13 / R-18 / R-19 / R-21 / R-22 + 「已否定推断」附录 |
+| [sdk-docs-sync.md](sdk-docs-sync.md) | **改代码该同步哪份 SDK 用户文档**：子模块操作 + 代码→文档映射表 + 同步规则 |
+
+### 另一套文档：SDK 用户文档（子模块）
+
+`[事实]` `docs/Amiya-Bot-docs/` 是**独立 git 子模块**，内容为面向用户的 VitePress SDK 文档（发布到 amiyabot.com），与上面的 `docs/project-map/`（维护者/AI 用的项目地图）**职责不同**。
+
+```bash
+git submodule update --init --recursive   # 首次克隆后初始化
+cd docs/Amiya-Bot-docs && npm install && npm run docs:dev   # 本地预览（:8080）
+```
+
+`[事实]` 改公共 API 后**必须同步**该子模块，映射见 [sdk-docs-sync.md](sdk-docs-sync.md)。
 
 ### 模块分册
 
