@@ -145,9 +145,25 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
 
 
 class QQGroupMessageCallback(MessageCallback):
-    async def recall(self): ...
+    async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
 
-    async def get_message(self): ...
+        res = self.response.json
+        message_id = res.get('id')
+        if not message_id:
+            return False
+
+        api: QQGroupAPI = self.instance.api
+
+        if self.data.is_direct:
+            return await api.delete_private_message(self.data.user_openid, message_id)
+        return await api.delete_group_message(self.data.channel_openid, message_id)
+
+    async def get_message(self):
+        # 群聊/单聊暂未提供按 ID 获取消息的接口
+        return None
 
 
 class PayloadBuilder:
@@ -159,14 +175,27 @@ class PayloadBuilder:
         self.chain_list = chain.chain
         self.msg_id = chain.data.message_id
 
+        # 引用回复：chain.reference=True 时携带 message_reference。
+        # 被引用消息索引来自 message_scene.ext 的 msg_idx（非机器人消息）。
+        self.message_reference = None
+        reference_id = getattr(chain.data, 'reference_message_id', '')
+        if chain.reference and reference_id:
+            self.message_reference = {'message_id': reference_id}
+
         self.payload_list: List[GroupPayload] = []
-        self.payload = GroupPayload(msg_id=self.msg_id, msg_seq=seq_service.msg_req(self.msg_id))
+        self.payload = self.__new_payload()
+
+    def __new_payload(self):
+        payload = GroupPayload(msg_id=self.msg_id, msg_seq=self.seq_service.msg_req(self.msg_id))
+        if self.message_reference:
+            payload.message_reference = self.message_reference
+        return payload
 
     def refresh_payload(self, safe: bool = False):
         if not safe or self.payload.content:
             self.payload_list.append(self.payload)
 
-        self.payload = GroupPayload(msg_id=self.msg_id, msg_seq=self.seq_service.msg_req(self.msg_id))
+        self.payload = self.__new_payload()
 
     @contextmanager
     def lone_payload(self):
@@ -207,6 +236,15 @@ class PayloadBuilder:
 
     async def build(self):
         for item in self.chain_list:
+            # At
+            # QQ 群官方语法：<@user_openid>
+            if isinstance(item, At):
+                self.payload.content += f'<@{item.target}>'
+
+            # AtAll
+            if isinstance(item, AtAll):
+                self.payload.content += '<@everyone>'
+
             # Text
             if isinstance(item, Text):
                 self.payload.content += item.content
@@ -235,6 +273,16 @@ class PayloadBuilder:
 
             # Markdown
             if isinstance(item, Markdown):
+                with self.lone_payload():
+                    md = item.get()
+
+                    self.payload.msg_type = 2
+                    self.payload.markdown = md['markdown']
+                    if 'keyboard' in md:
+                        self.payload.keyboard = md['keyboard']
+
+            # Markdown（自定义内容，无需申请模版）
+            if isinstance(item, MarkdownContent):
                 with self.lone_payload():
                     md = item.get()
 

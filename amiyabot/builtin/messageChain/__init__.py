@@ -209,6 +209,20 @@ class Chain:
         self.chain.append(Markdown(template_id, params, keyboard, keyboard_template_id))
         return self
 
+    def markdown_content(
+        self,
+        content: str,
+        keyboard: Optional[InlineKeyboard] = None,
+        keyboard_template_id: Optional[str] = '',
+        force_verify_image_resource: Optional[bool] = None,
+    ):
+        """
+        发送自定义 Markdown 消息（QQ 群 / 单聊，无需申请模版）。
+        https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/type/markdown.html
+        """
+        self.chain.append(MarkdownContent(content, keyboard, keyboard_template_id, force_verify_image_resource))
+        return self
+
     def embed(self, title: str, prompt: str, thumbnail: str, fields: List[str]):
         self.chain.append(Embed(title, prompt, thumbnail, fields))
         return self

@@ -34,12 +34,28 @@ class PrivateIntents(IntentsClass):
 
 
 class GroupIntents(IntentsClass):
+    # 同时承载 C2C_MESSAGE_CREATE / GROUP_AT_MESSAGE_CREATE / GROUP_MESSAGE_CREATE(全量模式)
     GROUP_AND_C2C_EVENT = 1 << 25
 
 
-def get_intents(private: bool, name: str) -> int:
+class GroupMemberIntents(IntentsClass):
+    """
+    群成员事件（仅群/全域适配器可用）。
+    GROUP_MEMBER_EVENT (1<<24) 承载 GROUP_JOIN_REQUEST 等入群申请类事件。
+
+    ⚠️ 该 intent 需平台审批：若机器人无权限却订阅，WebSocket 会返回 4014 并直接断开连接。
+    因此默认不订阅，仅在显式开启时并入。
+    """
+
+    GROUP_MEMBER_EVENT = 1 << 24
+
+
+def get_intents(private: bool, name: str, subscribe_group_member_event: bool = False) -> int:
     if name == 'QQGroup':
-        return GroupIntents.calc()
+        res = GroupIntents.calc()
+        if subscribe_group_member_event:
+            res |= GroupMemberIntents.calc()
+        return res
 
     res = CommonIntents.calc()
 
@@ -50,5 +66,7 @@ def get_intents(private: bool, name: str) -> int:
 
     if name == 'QQGlobal':
         res |= GroupIntents.calc()
+        if subscribe_group_member_event:
+            res |= GroupMemberIntents.calc()
 
     return res

@@ -62,6 +62,7 @@ class AmiyaBot(BotInstance):
         self.__closed = False
 
         SignalHandler.on_shutdown.append(self.close)
+        SignalHandler.register()
 
     async def start(self, launch_browser: typing.Union[bool, BrowserLaunchConfig] = False):
         TasksControl.start()
@@ -111,6 +112,7 @@ class MultipleAccounts(BotInstance):
         self.__keep_alive = True
 
         SignalHandler.on_shutdown.append(self.close)
+        SignalHandler.register()
 
     def __iter__(self):
         return iter(self.__instances.values())

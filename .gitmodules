@@ -1,0 +1,3 @@
+[submodule "docs/Amiya-Bot-docs"]
+	path = docs/Amiya-Bot-docs
+	url = git@github.com:AmiyaBot/Amiya-Bot-docs.git
