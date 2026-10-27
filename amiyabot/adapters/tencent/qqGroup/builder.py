@@ -329,7 +329,7 @@ class PayloadBuilder:
                     # 内容层面被拒（非图片 / 超出上限）或上传失败已记录日志，不再重复请求
                     return
 
-                log.warning('media download fallback to platform url=%s', url)
+                log.warning('media fallback to platform upload url=%s', url)
 
             res = await self.api.upload_file(
                 self.openid,
