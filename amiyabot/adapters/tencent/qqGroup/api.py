@@ -54,28 +54,37 @@ class QQGroupAPI(QQGuildAPI):
         self,
         openid: str,
         file_type: int,
-        url: str,
+        url: Optional[str],
         srv_send_msg: bool = False,
         is_direct: bool = False,
         file_name: Optional[str] = None,
         upload_id: Optional[str] = None,
+        file_data: Optional[str] = None,
     ):
         """
         富媒体上传。
         file_type: 1=图片 2=视频 3=语音 4=文件
-        传 upload_id 时走「分片上传合并」路径，此时 url 可为空。
+        三种方式三选一：
+        - 传 url：由平台下载转存（要求地址公网可达）
+        - 传 file_data：直接上传 base64 二进制（上限 5MB）
+        - 传 upload_id：走「分片上传合并」路径
         """
         payload = {
             'file_type': file_type,
-            'url': url,
             'srv_send_msg': srv_send_msg,
         }
+
+        if url:
+            payload['url'] = url
 
         if file_name is not None:
             payload['file_name'] = file_name
 
         if upload_id is not None:
             payload['upload_id'] = upload_id
+
+        if file_data is not None:
+            payload['file_data'] = file_data
 
         return await self.post(
             f'/v2/users/{openid}/files' if is_direct else f'/v2/groups/{openid}/files',

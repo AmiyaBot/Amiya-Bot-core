@@ -55,6 +55,9 @@ class Image:
     url: Optional[str] = None
     content: Optional[bytes] = None
     builder: Optional[ChainBuilder] = None
+    download: Optional[bool] = None
+    """是否由框架下载后上传（仅部分适配器支持，如 QQ 群）。
+    None 表示跟随适配器配置；对非 url 输入无效。"""
 
     async def get(self):
         if self.builder:
