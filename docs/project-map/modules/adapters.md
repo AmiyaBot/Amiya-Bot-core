@@ -140,7 +140,7 @@ QQGuildBotInstance ──> QQGroupBotInstance (qqGroup/__init__.py:19)
                             └──> QQGlobalBotInstance (qqGlobal/__init__.py:8)
 ```
 
-`[事实]` `qqGuild/api.py` 525 行，是**全仓库最大的单文件**。`[事实]` `IntentsClass` 枚举体系在 `intents.py:8-36`（`CommonIntents`/`PublicIntents`/`PrivateIntents`/`GroupIntents`）。`[事实]` `QQGroupChainBuilder` 用 `PortSingleton` 元类（`qqGroup/builder.py:41,76`）——`[推断]` 确保单例端口分配。`[事实]` `qqGlobal` 内嵌一个 `QQGuildBotInstance` 做双路由（`qqGlobal/__init__.py:20,29-32`）。
+`[事实]` `qqGuild/api.py` 525 行，是**全仓库最大的单文件**。`[事实]` `IntentsClass` 枚举体系在 `intents.py`（`CommonIntents`/`PublicIntents`/`PrivateIntents`/`GroupIntents`/`GroupMemberIntents`）。`[事实]` `QQGroup` 适配器额外订阅 `INTERACTION (1<<26)`。`[事实]` `QQGroupChainBuilder` 用 `PortSingleton` 元类（`qqGroup/builder.py:41,76`）——`[推断]` 确保单例端口分配。`[事实]` `qqGlobal` 内嵌一个 `QQGuildBotInstance` 做双路由（`qqGlobal/__init__.py:20,29-32`）。
 
 #### 4.4.1 QQ 官方 API v2 能力（已接入）
 
