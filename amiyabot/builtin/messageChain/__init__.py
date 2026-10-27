@@ -4,6 +4,7 @@ from amiyabot.builtin.message import MessageStructure
 from amiyabot.builtin.lib.imageCreator import create_image, IMAGES_TYPE
 
 from .element import *
+from amiyalog import logger as log
 
 cur_file_path = os.path.abspath(__file__)
 cur_file_folder = os.path.dirname(cur_file_path)
@@ -131,20 +132,38 @@ class Chain:
             )
         )
 
-    def image(self, target: Optional[Union[str, bytes, List[Union[str, bytes]]]] = None, url: Optional[str] = None):
+    def image(
+        self,
+        target: Optional[Union[str, bytes, List[Union[str, bytes]]]] = None,
+        url: Optional[str] = None,
+        download: Optional[bool] = None,
+    ):
+        """
+        添加图片
+
+        :param target:   本地图片路径、图片 bytes，或它们的列表；http(s) 地址等价于 url 参数
+        :param url:      网络图片的 URL
+        :param download: 是否由框架下载后上传（仅部分适配器支持，如 QQ 群）。
+                         None 跟随适配器配置，True / False 强制开关；仅对 url 生效。
+        """
         if url:
-            self.chain.append(Image(url=url, builder=self.builder))
+            self.chain.append(Image(url=url, builder=self.builder, download=download))
         else:
             if not isinstance(target, list):
                 target = [target]
 
             for item in target:
                 if isinstance(item, str):
-                    if os.path.exists(item):
+                    if item.startswith(('http://', 'https://')):
+                        # target 里的网络地址等价于 url 参数（旧版会静默丢弃该元素）
+                        self.chain.append(Image(url=item, builder=self.builder, download=download))
+                    elif os.path.exists(item):
                         with open(item, mode='rb') as f:
-                            self.chain.append(Image(content=f.read(), builder=self.builder))
-                else:
-                    self.chain.append(Image(content=item, builder=self.builder))
+                            self.chain.append(Image(content=f.read(), builder=self.builder, download=download))
+                    else:
+                        log.warning(f'image file not found: "{item}", skip.')
+                elif item is not None:
+                    self.chain.append(Image(content=item, builder=self.builder, download=download))
 
         return self
 
