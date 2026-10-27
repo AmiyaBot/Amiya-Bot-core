@@ -47,6 +47,11 @@ class QQGuildBotInstance(BotAdapterProtocol):
     def package_method(self):
         return package_qq_guild_message
 
+    @property
+    def ws_auth_token(self) -> str:
+        """WebSocket 鉴权 token。频道机器人沿用旧 token 格式；群/全域适配器覆写为 AccessToken"""
+        return f'Bot {self.appid}.{self.token}'
+
     def __create_heartbeat(self, websocket, interval: int):
         heartbeat_key = random_code(10)
         self.model.heartbeat_key = heartbeat_key
@@ -122,7 +127,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
 
                     if payload.op == 10:
                         create_token = {
-                            'token': f'Bot {self.appid}.{self.token}',
+                            'token': self.ws_auth_token,
                             'intents': get_intents(
                                 handler.private,
                                 self.__str__(),
@@ -167,7 +172,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
 
                     if payload.op == 10:
                         reconnect_token = {
-                            'token': f'Bot {self.appid}.{self.token}',
+                            'token': self.ws_auth_token,
                             'session_id': self.model.session_id,
                             'seq': self.model.last_s,
                         }
