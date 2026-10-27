@@ -52,7 +52,9 @@ class GroupMemberIntents(IntentsClass):
 
 def get_intents(private: bool, name: str, subscribe_group_member_event: bool = False) -> int:
     if name == 'QQGroup':
-        res = GroupIntents.calc()
+        # INTERACTION (1<<26) 承载按钮回调 INTERACTION_CREATE（与 QQGlobal 经 CommonIntents 的订阅保持一致，
+        # 见 SDK 文档 handleEvents「QQ 群 / 全域事件」与 mdContent 的按钮回调示例）
+        res = GroupIntents.calc() | CommonIntents.INTERACTION.value
         if subscribe_group_member_event:
             res |= GroupMemberIntents.calc()
         return res

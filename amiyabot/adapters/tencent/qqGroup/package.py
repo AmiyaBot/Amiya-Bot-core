@@ -43,13 +43,18 @@ def parse_attachments(data: Message, message: dict):
         content_type = item.get('content_type') or ''
         url = item.get('url') or ''
 
+        if content_type == 'voice':
+            # 语音附件可能只有 voice_wav_url 而无 url（官方字段：voice_wav_url / asr_refer_text）
+            voice = item.get('voice_wav_url') or url
+            if voice:
+                data.voice = voice
+            continue
+
         if not url:
             continue
 
         if content_type.startswith('image'):
             data.image.append(url)
-        elif content_type == 'voice':
-            data.voice = url
         elif content_type.startswith('video'):
             data.video = url
         else:
@@ -74,7 +79,8 @@ async def package_qq_group_message(instance: BotAdapterProtocol, event: str, mes
             data.user_openid = message['author']['user_openid']
         else:
             data.user_openid = message['author']['member_openid']
-            data.channel_id = message['group_id']
+            # 官方文档只保证 group_openid；group_id 为实际推送携带的附加字段，缺失时回退
+            data.channel_id = message.get('group_id') or message['group_openid']
             data.channel_openid = message['group_openid']
 
         if message['author'].get('member_role') in ('admin', 'owner'):
