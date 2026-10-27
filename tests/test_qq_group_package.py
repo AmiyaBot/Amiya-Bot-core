@@ -132,6 +132,18 @@ async def test_remove_at_mark_pure_function():
     assert data.is_at is True and data.is_at_all is True and data.at_target == ['A']
 
 
+async def test_old_event_mentions_still_collected():
+    """GROUP_AT_MESSAGE_CREATE 的 mentions 照旧计入 at_target，文本不做 @ 标记剔除（零行为变化）"""
+    data = await package_qq_group_message(
+        make_instance(),
+        'GROUP_AT_MESSAGE_CREATE',
+        make_message('<@A> 你好', [{'id': 'A'}, {'id': 'B'}]),
+    )
+    assert data.at_target == ['A', 'B']
+    assert data.is_at is True
+    assert data.text == '<@A> 你好'
+
+
 # ===== 评审补充用例（PR #122 review）=====
 
 
