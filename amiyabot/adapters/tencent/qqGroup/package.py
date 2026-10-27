@@ -15,8 +15,9 @@ FULL_MESSAGE_CREATED = [
     'GROUP_MESSAGE_CREATE',
 ]
 
-# content 中 @成员 的标记形态：<@openid>（官方）/ <@!openid>（兼容频道形态）
-AT_MARK_PATTERN = re.compile(r'<@!?\w+>')
+# content 中 @成员 的标记形态：<@openid>（官方）/ <@!openid>（兼容频道形态）。
+# openid 不保证为 \w（评审实测线上存在含 - 等字符的形态），按「非 > 与空白」匹配
+AT_MARK_PATTERN = re.compile(r'<@!?[^>\s]+>')
 
 
 def parse_reference_message_id(message: dict) -> str:
@@ -88,9 +89,9 @@ def remove_at_mark(data: Message, text: str, mentions: list) -> str:
         data.at_target.append(uid)
         text = text.replace(f'<@{uid}>', '').replace(f'<@!{uid}>', '')
 
-    if '<@all>' in text:
+    if '<@all>' in text or '<@!all>' in text:
         data.is_at_all = True
-        text = text.replace('<@all>', '')
+        text = text.replace('<@all>', '').replace('<@!all>', '')
 
     if bot_id:
         if f'<@{bot_id}>' in text or f'<@!{bot_id}>' in text:
@@ -140,14 +141,15 @@ async def package_qq_group_message(instance: BotAdapterProtocol, event: str, mes
 
         data.reference_message_id = parse_reference_message_id(message)
 
+        # 不依赖 content 键是否存在：纯附件消息也可能携带 mentions，@ 判定与 at_target 收集照常执行
+        text = message.get('content') or ''
+
+        if event in FULL_MESSAGE_CREATED:
+            # is_at 默认值见上方（GROUP_AT_MESSAGE_CREATE 恒 True 的语义不变），
+            # 此处在全量事件里按 @ 标记追加推断，使「@ 机器人的全量消息」也能跳过前缀检查
+            text = remove_at_mark(data, text, message.get('mentions') or [])
+
         if 'content' in message:
-            text = message['content']
-
-            if event in FULL_MESSAGE_CREATED:
-                # is_at 默认值见上方（GROUP_AT_MESSAGE_CREATE 恒 True 的语义不变），
-                # 此处在全量事件里按 @ 标记追加推断，使「@ 机器人的全量消息」也能跳过前缀检查
-                text = remove_at_mark(data, text, message.get('mentions') or [])
-
             face_list = re.findall(r'<emoji:(\d+)>', text)
             if face_list:
                 for fid in face_list:

@@ -160,7 +160,9 @@ QQGuildBotInstance ──> QQGroupBotInstance (qqGroup/__init__.py:19)
 
 `[事实]` **2026-10-27 缺陷修复**（AmiyaBot-Stellar 上报，P1）：`is_at` 曾仅按事件名判定（`event == 'GROUP_AT_MESSAGE_CREATE'`），全量事件下恒为 `False`，与 SDK 文档「已 @ 机器人的消息为 True」冲突，且真 @ 消息会被 `implemented.py` 的前缀门槛拦截。现全量事件在 content 处理时按 @ 标记追加推断（`remove_at_mark`）：mentions 成员的标记剔除并计入 `at_target`；剔除后残留的 `<@...>` 即 @ 机器人 → `is_at=True` 并剔除；`<@all>` → `is_at_all`；若 mentions 携带 `bot=True` 条目（平台行为变化）则按该条目直接判定。`GROUP_AT_MESSAGE_CREATE` / `C2C_MESSAGE_CREATE` 行为零变化。回归测试：`tests/test_qq_group_package.py`。
 
-`[待证]` 本页早先记载「开启全量后 `GROUP_AT_MESSAGE_CREATE` 与 `GROUP_MESSAGE_CREATE` **都会推送**」（下文否决 `is_full_message` 的论据之一），与 Stellar 实测（三条消息均仅收到全量事件，含真 @ 机器人的那条）**矛盾**。若真为双推，本修复会使同一条 @ 消息触发两次处理（两个副本 `is_at` 均为 True）——需真机确认；若确认双推，需按 `message_id` 去重。
+`[已证·2026-10-27]` 本页早先记载「开启全量后 `GROUP_AT_MESSAGE_CREATE` 与 `GROUP_MESSAGE_CREATE` **都会推送**」（下文否决 `is_full_message` 的论据之一）——AmiyaBot-Stellar 在 2.1.3 上真机实测证伪：**单推**（开启全量后只有全量事件；真 @ 消息若存在 AT 副本则旧版 `is_at=False` 的全量副本之外还会有一条被正常响应的记录，实际一条都没有）。无需按 `message_id` 去重。
+
+`[待证]` **mentions 携带机器人但无 `bot` 标的形态**：`remove_at_mark` 的防御只覆盖「mentions 中有 `bot=True` 条目」。若平台实际是「把机器人放进 mentions 但不打 bot 标」，成员剔除循环会把机器人自身的标记一并抹掉，`is_at` 仍为 `False`（缺陷复发，P1）。命中概率与影响都比双推更直接，真机确认 mentions 原始形态后决定是否按机器人 openid 比对。
 
 `[事实]` **两条被否决的中间设计**（记录以免重复引入）：
 

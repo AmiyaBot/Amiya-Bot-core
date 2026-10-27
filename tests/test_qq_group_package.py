@@ -130,3 +130,37 @@ async def test_remove_at_mark_pure_function():
     text = remove_at_mark(data, '<@A> <@all> <@!BOT> hi', [{'id': 'A'}])
     assert text.strip() == 'hi'  # 纯函数不去空白，set_text 才负责 strip
     assert data.is_at is True and data.is_at_all is True and data.at_target == ['A']
+
+
+# ===== 评审补充用例（PR #122 review）=====
+
+
+async def test_at_mark_with_non_word_openid():
+    """openid 含非 \\w 字符（如 -）时仍能识别与剔除（评审 P2-1）"""
+    data = await package_qq_group_message(make_instance(), FULL, make_message('<@A-BCDEF> hi'))
+    assert data.is_at is True and data.text == 'hi'
+
+    data2 = await package_qq_group_message(make_instance(), FULL, make_message('<@A-BCDEF> 你看', [{'id': 'A-BCDEF'}]))
+    assert data2.is_at is False and data2.at_target == ['A-BCDEF'] and data2.text == '你看'
+
+
+async def test_at_all_bang_form():
+    """<@!all> 是 @全体而非 @机器人（评审 P2-2）"""
+    data = await package_qq_group_message(make_instance(), FULL, make_message('<@!all> 开会'))
+    assert data.is_at is False and data.is_at_all is True and data.text == '开会'
+
+    mixed = await package_qq_group_message(make_instance(), FULL, make_message('<@!BOT><@!all> 开会'))
+    assert mixed.is_at is True and mixed.is_at_all is True and mixed.text == '开会'
+
+
+async def test_full_message_without_content_key():
+    """纯附件消息无 content 键时，mentions 的 at_target 收集与 @ 判定仍执行（评审 P3-4）"""
+    message = make_message('', [{'id': 'A'}])
+    del message['content']
+    data = await package_qq_group_message(make_instance(), FULL, message)
+    assert data.at_target == ['A'] and data.is_at is False and data.text == ''
+
+    message2 = make_message('', [{'id': 'A'}])
+    del message2['content']
+    data2 = await package_qq_group_message(make_instance(), FULL, {**message2, 'content': ''})  # content 为空串同理
+    assert data2.at_target == ['A']
