@@ -140,7 +140,9 @@ QQGuildBotInstance ──> QQGroupBotInstance (qqGroup/__init__.py:19)
                             └──> QQGlobalBotInstance (qqGlobal/__init__.py:8)
 ```
 
-`[事实]` `qqGuild/api.py` 525 行，是**全仓库最大的单文件**。`[事实]` `IntentsClass` 枚举体系在 `intents.py:8-36`（`CommonIntents`/`PublicIntents`/`PrivateIntents`/`GroupIntents`）。`[事实]` `QQGroupChainBuilder` 用 `PortSingleton` 元类（`qqGroup/builder.py:41,76`）——`[推断]` 确保单例端口分配。`[事实]` `qqGlobal` 内嵌一个 `QQGuildBotInstance` 做双路由（`qqGlobal/__init__.py:20,29-32`）。
+`[事实]` `qqGuild/api.py` 525 行，是**全仓库最大的单文件**。`[事实]` `IntentsClass` 枚举体系在 `intents.py`（`CommonIntents`/`PublicIntents`/`PrivateIntents`/`GroupIntents`/`GroupMemberIntents`）；`QQGroup` 适配器额外订阅 `INTERACTION (1<<26)`，`GROUP_MEMBER_EVENT (1<<24)` 仅在 `subscribe_group_member_event=True` 时订阅（无平台权限时订阅会导致 ws 被 4014 关闭，故默认关闭）。`[事实]` `QQGroupChainBuilder` 用 `PortSingleton` 元类（`qqGroup/builder.py:41,76`）——`[推断]` 确保单例端口分配。`[事实]` `qqGlobal` 内嵌一个 `QQGuildBotInstance` 做双路由（`qqGlobal/__init__.py:20,29-32`）。
+
+`[事实]` 2026-10 群聊能力补齐（与 SDK 文档 `develop/basic/api/qqGroup.md` 对齐）：`GROUP_MESSAGE_CREATE` 全量群消息打包（`qqGroup/package.py`，含 @ 标记识别、附件分类、`member_role`→`is_admin`、`message_scene.ext.ref_msg_idx`→`reference_message_id`）；`QQGroupAPI` 新增撤回（`delete_group_message`/`delete_private_message`，接入 `QQGroupMessageCallback.recall`）、流式消息、分片上传、群管理（群信息/成员/黑名单/禁言/入群审批）、`put_interaction_response`、`generate_url_link`；`Chain.markdown_content()` 发送自定义 Markdown（`MarkdownContent` 元素）。`[事实]` `Message` 新增 `reference_message_id` 属性（`builtin/message/structure.py`）。
 
 ### 4.5 `test` 适配器（`adapters/test/`）
 

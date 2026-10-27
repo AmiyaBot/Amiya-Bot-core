@@ -64,6 +64,8 @@ class MessageStructure:
         self.guild_id = ''
         self.src_guild_id = ''
 
+        self.reference_message_id = ''
+
         self.nickname = ''
         self.avatar = ''
 

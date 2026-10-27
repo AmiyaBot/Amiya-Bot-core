@@ -142,8 +142,8 @@ async def build_message_send(chain: Chain, custom_chain: Optional[CHAIN_LIST] = 
         if isinstance(item, Ark):
             messages.add_data(item.get())
 
-        # Markdown
-        if isinstance(item, Markdown):
+        # Markdown / 自定义 Markdown
+        if isinstance(item, (Markdown, MarkdownContent)):
             messages.add_data(item.get())
 
     messages.done()

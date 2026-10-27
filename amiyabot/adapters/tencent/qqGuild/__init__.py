@@ -33,6 +33,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
         self.token = token
         self.shard_index = shard_index
         self.shards = shards
+        self.subscribe_group_member_event = False
 
         self.model: Optional[ConnectionModel] = None
 
@@ -92,6 +93,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
                 private=self.private,
                 gateway=gateway,
                 message_handler=handler,
+                subscribe_group_member_event=self.subscribe_group_member_event,
             )
         )
 
@@ -123,7 +125,9 @@ class QQGuildBotInstance(BotAdapterProtocol):
                     if payload.op == 10:
                         create_token = {
                             'token': f'Bot {self.appid}.{self.token}',
-                            'intents': get_intents(handler.private, self.__str__()),
+                            'intents': get_intents(
+                                handler.private, self.__str__(), handler.subscribe_group_member_event
+                            ),
                             'shard': [self.shard_index, self.shards],
                             'properties': {
                                 '$os': sys.platform,

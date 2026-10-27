@@ -12,6 +12,7 @@ async def package_qq_global_message(
     group_message_created = [
         'C2C_MESSAGE_CREATE',
         'GROUP_AT_MESSAGE_CREATE',
+        'GROUP_MESSAGE_CREATE',
     ]
 
     if event in group_message_created:

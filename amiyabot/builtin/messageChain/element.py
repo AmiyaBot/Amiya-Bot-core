@@ -128,9 +128,7 @@ class Html:
                                     'Can not execute "window.init(data)" because this function does not exist.'
                                 )
                             }
-                        ''' % json.dumps(
-                            self.data
-                        )
+                        ''' % json.dumps(self.data)
                         await page.evaluate(injected)
 
                     # 等待渲染
@@ -209,6 +207,30 @@ class Markdown:
 
 
 @dataclass
+class MarkdownContent:
+    content: str
+    keyboard: Optional[InlineKeyboard] = None
+    keyboard_template_id: Optional[str] = ''
+    force_verify_image_resource: Optional[bool] = None
+
+    def get(self):
+        markdown: dict = {'content': self.content}
+
+        if self.force_verify_image_resource is not None:
+            markdown['force_verify_image_resource'] = self.force_verify_image_resource
+
+        data = {'markdown': markdown}
+
+        if self.keyboard:
+            data.update({'keyboard': {'content': self.keyboard.dict()}})
+
+        if self.keyboard_template_id:
+            data.update({'keyboard': {'id': self.keyboard_template_id}})
+
+        return data
+
+
+@dataclass
 class Extend:
     data: Any
 
@@ -236,6 +258,7 @@ CHAIN_ITEM = Union[
     Embed,
     Ark,
     Markdown,
+    MarkdownContent,
     Extend,
 ]
 CHAIN_LIST = List[CHAIN_ITEM]

@@ -145,7 +145,12 @@ class QQGroupChainBuilder(ChainBuilder, metaclass=PortSingleton):
 
 
 class QQGroupMessageCallback(MessageCallback):
-    async def recall(self): ...
+    async def recall(self):
+        if not self.response:
+            log.warning('can not recall message because the response is None.')
+            return False
+
+        await self.instance.recall_message(self.response.json['id'], self.data)
 
     async def get_message(self): ...
 
@@ -233,8 +238,8 @@ class PayloadBuilder:
                     self.payload.msg_type = 3
                     self.payload.ark = item.get()['ark']
 
-            # Markdown
-            if isinstance(item, Markdown):
+            # Markdown / 自定义 Markdown
+            if isinstance(item, (Markdown, MarkdownContent)):
                 with self.lone_payload():
                     md = item.get()
 

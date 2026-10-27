@@ -1,3 +1,5 @@
+from typing import Optional
+from amiyabot.builtin.message import Message
 from amiyabot.builtin.messageChain import Chain, ChainBuilder
 from amiyabot.adapters.tencent.qqGuild import QQGuildBotInstance
 from amiyabot.adapters.tencent.qqGroup import QQGroupBotInstance
@@ -14,8 +16,17 @@ class QQGlobalBotInstance(QQGroupBotInstance):
         default_chain_builder: ChainBuilder,
         shard_index: int,
         shards: int,
+        subscribe_group_member_event: bool = False,
     ):
-        super().__init__(appid, token, client_secret, default_chain_builder, shard_index, shards)
+        super().__init__(
+            appid,
+            token,
+            client_secret,
+            default_chain_builder,
+            shard_index,
+            shards,
+            subscribe_group_member_event,
+        )
 
         self.guild = QQGuildBotInstance(appid, token, shard_index, shards)
 
@@ -30,6 +41,11 @@ class QQGlobalBotInstance(QQGroupBotInstance):
         if not (chain.data.channel_openid or chain.data.user_openid):
             return await self.guild.send_chain_message(chain, is_sync)
         return await super().send_chain_message(chain, is_sync)
+
+    async def recall_message(self, message_id: str, data: Optional[Message] = None):
+        if not (data.channel_openid or data.user_openid):
+            return await self.guild.recall_message(message_id, data)
+        return await super().recall_message(message_id, data)
 
 
 qq_global = QQGlobalBotInstance.build_adapter

@@ -37,18 +37,27 @@ class GroupIntents(IntentsClass):
     GROUP_AND_C2C_EVENT = 1 << 25
 
 
-def get_intents(private: bool, name: str) -> int:
+class GroupMemberIntents(IntentsClass):
+    # 群成员事件（如入群申请 GROUP_JOIN_REQUEST），需在管理端申请权限后订阅，
+    # 无权限却订阅会导致 WebSocket 被服务端关闭（close code 4014）
+    GROUP_MEMBER_EVENT = 1 << 24
+
+
+def get_intents(private: bool, name: str, subscribe_group_member_event: bool = False) -> int:
     if name == 'QQGroup':
-        return GroupIntents.calc()
-
-    res = CommonIntents.calc()
-
-    if private:
-        res |= PrivateIntents.calc()
+        res = GroupIntents.calc() | CommonIntents.INTERACTION.value
     else:
-        res |= PublicIntents.calc()
+        res = CommonIntents.calc()
 
-    if name == 'QQGlobal':
-        res |= GroupIntents.calc()
+        if private:
+            res |= PrivateIntents.calc()
+        else:
+            res |= PublicIntents.calc()
+
+        if name == 'QQGlobal':
+            res |= GroupIntents.calc()
+
+    if subscribe_group_member_event:
+        res |= GroupMemberIntents.calc()
 
     return res

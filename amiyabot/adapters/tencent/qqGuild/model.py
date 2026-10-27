@@ -19,6 +19,7 @@ class ConnectionHandler:
     private: bool
     gateway: GateWay
     message_handler: HANDLER_TYPE
+    subscribe_group_member_event: bool = False
 
 
 @dataclass
