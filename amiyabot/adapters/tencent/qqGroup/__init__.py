@@ -75,6 +75,14 @@ class QQGroupBotInstance(QQGuildBotInstance):
     def package_method(self):
         return package_qq_group_message
 
+    @property
+    def ws_auth_token(self) -> str:
+        # v2 群机器人无需旧 token，WebSocket 鉴权使用 AccessToken
+        # （官方文档仅保留 "QQBot {AccessToken}" 格式，旧 "Bot appid.token" 会返回 4004）
+        # headers property 会在首次或临近过期时自动刷新
+        _ = self.api.headers
+        return f'QQBot {self.api.access_token}'
+
     async def start(self, handler: HANDLER_TYPE):
         if hasattr(self.__default_chain_builder, 'start'):
             self.__default_chain_builder.start()
