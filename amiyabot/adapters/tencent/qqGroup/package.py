@@ -104,7 +104,13 @@ def remove_at_mark(data: Message, text: str, mentions: list) -> str:
     return text
 
 
-async def package_qq_group_message(instance: BotAdapterProtocol, event: str, message: dict, is_reference: bool = False):
+async def package_qq_group_message(
+    instance: BotAdapterProtocol,
+    event: str,
+    message: dict,
+    is_reference: bool = False,
+    event_id: str = '',
+):
     if event in MESSAGE_CREATED or event in FULL_MESSAGE_CREATED:
         data = Message(instance, message)
         data.is_direct = event == 'C2C_MESSAGE_CREATE'
@@ -160,4 +166,4 @@ async def package_qq_group_message(instance: BotAdapterProtocol, event: str, mes
 
         return data
 
-    return Event(instance, event, message)
+    return Event(instance, event, message, event_id or '')

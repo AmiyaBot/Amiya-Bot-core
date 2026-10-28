@@ -79,7 +79,7 @@ $ find . -name "py.typed" -o -name "*.pyi" | grep -v .venv
 | 名字 | 位置 | 公共成员 |
 |---|---|---|
 | `Message` | `builtin/message/__init__.py:47` | `send`（`:48`）、`recall`（`:57`）、`wait`（`:61`）、`wait_channel`（`:98`）、`copy`（`:151`） |
-| `Event` | `builtin/message/__init__.py:33` | `reply`（`structure.py:43`，`event_id` 锚定被动消息）、`ack_interaction`（`structure.py:24`）、`instance`/`event_name`/`data` |
+| `Event` | `builtin/message/__init__.py:33` | `reply`（`structure.py:47`，`event_id` 锚定被动消息）、`ack_interaction`（`structure.py:28`）、`instance`/`event_name`/`data`/`event_id`（事件信封 id，`structure.py:23`） |
 | `MessageStructure` 字段 | `builtin/message/structure.py:102-159` | `event_id`（`:116`，`event_id` 被动消息锚点）、`text`/`text_prefix`/`text_digits`/`text_unsigned`/`text_original`/`text_words`（`:130-135`）、`at_target`（`:137`）、`is_at`/`is_at_all`/`is_admin`/`is_direct`（`:139-142`）、`user_id`/`user_openid`（`:144-145`）、`channel_id`/`channel_openid`（`:147-148`）、`guild_id`/`src_guild_id`（`:150-151`）、`nickname`/`avatar`（`:153-154`）、`verify`（`:157`） |
 | `Chain` | `builtin/messageChain/__init__.py:21` | 见下表链式方法 |
 | `ChainBuilder` | `builtin/messageChain/element.py:12` | 4 个可覆写 classmethod 钩子：`get_image`（`:13`）、`get_voice`（`:17`）、`get_video`（`:21`）、`on_page_rendered`（`:25`） |

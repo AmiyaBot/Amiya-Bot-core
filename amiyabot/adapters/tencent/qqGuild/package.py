@@ -8,7 +8,13 @@ from .api import QQGuildAPI
 ADMIN = ['2', '4', '5']
 
 
-async def package_qq_guild_message(instance: BotAdapterProtocol, event: str, message: dict, is_reference: bool = False):
+async def package_qq_guild_message(
+    instance: BotAdapterProtocol,
+    event: str,
+    message: dict,
+    is_reference: bool = False,
+    event_id: str = '',
+):
     message_created = [
         'MESSAGE_CREATE',
         'AT_MESSAGE_CREATE',
@@ -69,7 +75,7 @@ async def package_qq_guild_message(instance: BotAdapterProtocol, event: str, mes
 
         return data
 
-    return Event(instance, event, message)
+    return Event(instance, event, message, event_id or '')
 
 
 def get_info(obj: Message, message: dict):

@@ -204,7 +204,7 @@ class QQGuildBotInstance(BotAdapterProtocol):
     async def create_package_task(self, handler: ConnectionHandler, payload: Payload):
         asyncio.create_task(
             handler.message_handler(
-                await self.package_method(self, payload.t, payload.d),
+                await self.package_method(self, payload.t, payload.d, event_id=payload.id),
             ),
         )
 
