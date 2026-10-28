@@ -12,8 +12,9 @@ async def package_qq_global_message(
     event: str,
     message: dict,
     is_reference: bool = False,
+    event_id: str = '',
 ):
     if event in MESSAGE_CREATED or event in FULL_MESSAGE_CREATED:
-        return await package_qq_group_message(instance, event, message, is_reference)
+        return await package_qq_group_message(instance, event, message, is_reference, event_id)
 
-    return await package_qq_guild_message(instance, event, message, is_reference)
+    return await package_qq_guild_message(instance, event, message, is_reference, event_id)

@@ -13,10 +13,14 @@ def cut_by_jieba(text: str):
 
 
 class EventStructure:
-    def __init__(self, instance: T_BotAdapterProtocol, event_name: str, data: dict):
+    def __init__(self, instance: T_BotAdapterProtocol, event_name: str, data: dict, event_id: str = ''):
         self.instance = instance
         self.event_name = event_name
         self.data = data
+
+        # 事件信封（WebSocket payload）最外层的 id，被动消息的 event_id 锚点。
+        # 部分事件体（data）内不含 id，只能由适配器从信封透传。
+        self.event_id = event_id
 
     def __str__(self):
         return f'Bot:{self.instance.appid} Event:{self.event_name}'
@@ -83,8 +87,8 @@ class EventStructure:
         data = MessageStructure(self.instance)
         data.bot = getattr(self.instance, 'bot', None)
 
-        # 被动消息锚点：事件 ID 与 message_id 二选一，事件场景下 message_id 不存在
-        data.event_id = self.data.get('id') or ''
+        # 被动消息锚点：优先事件信封 id，其次事件体内的 id
+        data.event_id = self.event_id or self.data.get('id') or ''
 
         # 群聊：group_openid 是发送目标，group_id 仅作展示用途，缺失时回落到 group_openid
         data.channel_openid = group_openid

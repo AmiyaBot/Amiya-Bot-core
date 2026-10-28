@@ -7,6 +7,7 @@ QQ 群 / 单聊：event_id 锚定的被动消息（Event.reply）。
 
 import pytest
 
+from amiyabot.adapters.tencent.qqGlobal.package import package_qq_global_message
 from amiyabot.adapters.tencent.qqGroup import QQGroupBotInstance
 from amiyabot.adapters.tencent.qqGroup.builder import (
     PayloadBuilder,
@@ -14,6 +15,7 @@ from amiyabot.adapters.tencent.qqGroup.builder import (
     SeqService,
     raise_for_send_error,
 )
+from amiyabot.adapters.tencent.qqGroup.package import package_qq_group_message
 from amiyabot.builtin.message import Event, Message
 from amiyabot.builtin.messageChain import Chain
 from amiyabot.builtin.messageChain.keyboard import InlineKeyboard
@@ -109,6 +111,44 @@ async def test_group_event_reply_payload():
     assert payload['event_id'] == 'EVENT_ID'
     assert payload['msg_id'] is None
     assert payload['msg_seq'] == 1
+
+
+@pytest.mark.asyncio
+async def test_event_envelope_id_wins_over_body_id():
+    instance = FakeInstance()
+    # 信封 id（WebSocket payload 最外层）优先于事件体内的 id
+    event = Event(instance, 'INTERACTION_CREATE', {**GROUP_EVENT, 'id': 'BODY_ID'}, event_id='ENVELOPE_ID')
+
+    await event.reply(Chain(at=False).text('hi'))
+
+    assert instance.sent[0]['data'].event_id == 'ENVELOPE_ID'
+
+
+@pytest.mark.asyncio
+async def test_event_body_id_is_fallback():
+    instance = FakeInstance()
+    event = Event(instance, 'INTERACTION_CREATE', dict(GROUP_EVENT))
+
+    assert event.event_id == ''
+
+    await event.reply(Chain(at=False).text('hi'))
+
+    assert instance.sent[0]['data'].event_id == 'EVENT_ID'
+
+
+@pytest.mark.asyncio
+async def test_package_passes_envelope_id():
+    data = await package_qq_group_message(FakeInstance(), 'GROUP_ADD_ROBOT', {}, event_id='ENVELOPE_ID')
+
+    assert isinstance(data, Event)
+    assert data.event_id == 'ENVELOPE_ID'
+
+    # 全域适配器同样透传
+    global_event = await package_qq_global_message(FakeInstance(), 'GROUP_DEL_ROBOT', {}, event_id='ENVELOPE_ID_2')
+    assert global_event.event_id == 'ENVELOPE_ID_2'
+
+    # 未传时保持空串
+    assert (await package_qq_group_message(FakeInstance(), 'GROUP_ADD_ROBOT', {})).event_id == ''
 
 
 @pytest.mark.asyncio
