@@ -183,6 +183,7 @@ QQGuildBotInstance ──> QQGroupBotInstance (qqGroup/__init__.py:19)
 |---|---|
 | 自定义 Markdown（`markdown.content`，无需模板） | `element.py:MarkdownContent`、`Chain.markdown_content()` |
 | 引用回复 `message_reference` | `qqGroup/builder.py:PayloadBuilder`（`chain.reference=True`） |
+| **`event_id` 锚定的被动消息** | `builtin/message/structure.py:EventStructure.reply/ack_interaction`、`qqGroup/__init__.py:send_event_message`、`qqGroup/builder.py:PayloadBuilder`（锚点 `event_id or message_id`） |
 | 群/单聊消息撤回 | `qqGroup/api.py:delete_group_message/delete_private_message` |
 | 富媒体分片上传 | `qqGroup/api.py:upload_prepare/upload_part_finish` → `qqGroup/media.py:_upload_by_parts`（框架下载模式下 5MB < size ≤ `media_max_bytes` 时自动启用） |
 | 框架侧下载并上传富媒体 | `qqGroup/media.py`（`QQGroupChainBuilderOptions.download_media`、`Chain.image(download=)`），用于内网地址绕开平台侧下载 |
