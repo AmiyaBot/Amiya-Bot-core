@@ -15,18 +15,61 @@ from .api import QQGroupAPI, log
 from .media import ERROR_UNSUPPORTED_FORMAT, MediaDownload, download_media, upload_media
 
 
+class QQGroupMessageError(Exception):
+    """QQ 群/单聊消息发送失败。code 为平台错误码，本地校验失败时为 None。"""
+
+    def __init__(self, message: str, code: Optional[int] = None):
+        super().__init__(message)
+        self.code = code
+
+    def __str__(self):
+        text = self.args[0] if self.args else ''
+        return f'{text} (code={self.code})' if self.code is not None else str(text)
+
+
+# 平台错误码 → 可读说明。仅映射业务侧需要据此降级的错误，
+# 其余错误保持既有行为（仅记录日志），避免影响已有调用方。
+SEND_ERROR_MESSAGES = {
+    40034026: 'event_id 已过期（被动消息仅在事件发生后 5 分钟内有效）',
+    40034024: 'msg_id 无效或越权',
+    40034027: '该事件不支持回复',
+}
+
+
+def raise_for_send_error(response):
+    if response is None:
+        return
+
+    result = response.json
+    if not isinstance(result, dict):
+        return
+
+    code = result.get('code')
+    if code in SEND_ERROR_MESSAGES:
+        raise QQGroupMessageError(SEND_ERROR_MESSAGES[code], code)
+
+
 class SeqService:
+    # 官方限制：同一 event_id 的被动消息在 5 分钟内最多 5 条
+    EVENT_REPLY_LIMIT = 5
+
     def __init__(self):
         self.seq_rec = {}
         self.alive = False
 
-    def msg_req(self, msg_id: str):
-        if msg_id not in self.seq_rec:
-            self.seq_rec[msg_id] = {'last': time.time(), 'seq': 0}
+    def msg_req(self, anchor: str, limit: int = 0):
+        if anchor not in self.seq_rec:
+            self.seq_rec[anchor] = {'last': time.time(), 'seq': 0}
 
-        self.seq_rec[msg_id]['seq'] += 1
+        record = self.seq_rec[anchor]
 
-        return self.seq_rec[msg_id]['seq']
+        # seq 必须单调递增，相同 anchor + msg_seq 会被平台静默去重（40054005）
+        if limit and record['seq'] >= limit:
+            raise QQGroupMessageError(f'event_id 被动消息已达上限（同一事件 5 分钟内最多回复 {limit} 条）')
+
+        record['seq'] += 1
+
+        return record['seq']
 
     async def run(self):
         if not self.alive:
@@ -193,6 +236,12 @@ class PayloadBuilder:
         self.chain_list = chain.chain
         self.msg_id = chain.data.message_id
 
+        # 鸭子类型的 chain.data（插件/测试构造的对象）可能没有 event_id
+        self.event_id = getattr(chain.data, 'event_id', '')
+
+        # 被动消息锚点：event_id 优先（按钮回调等事件场景），否则 msg_id
+        self.anchor = self.event_id or self.msg_id
+
         # 引用回复：chain.reference=True 时携带 message_reference。
         # 被引用消息索引来自 message_scene.ext 的 msg_idx（非机器人消息）。
         self.message_reference = None
@@ -207,14 +256,29 @@ class PayloadBuilder:
         self.media_cache: Dict[str, Tuple[dict, int]] = {}
 
     def __new_payload(self):
-        payload = GroupPayload(msg_id=self.msg_id, msg_seq=self.seq_service.msg_req(self.msg_id))
+        payload = GroupPayload()
         if self.message_reference:
             payload.message_reference = self.message_reference
         return payload
 
+    def __commit_payload(self, payload: GroupPayload):
+        # msg_seq 在真正发送时才分配，避免被丢弃的空 payload 占用序号
+        # （否则只发一条 markdown 时首条 msg_seq 会是 2）
+        payload.msg_seq = self.seq_service.msg_req(
+            self.anchor,
+            SeqService.EVENT_REPLY_LIMIT if self.event_id else 0,
+        )
+
+        if self.event_id:
+            payload.event_id = self.event_id
+        else:
+            payload.msg_id = self.msg_id
+
+        self.payload_list.append(payload)
+
     def refresh_payload(self, safe: bool = False):
         if not safe or self.payload.content:
-            self.payload_list.append(self.payload)
+            self.__commit_payload(self.payload)
 
         self.payload = self.__new_payload()
 
@@ -412,7 +476,7 @@ class PayloadBuilder:
                         self.payload.keyboard = md['keyboard']
 
         if self.payload.content:
-            self.payload_list.append(self.payload)
+            self.__commit_payload(self.payload)
 
         return [asdict(item) for item in self.payload_list]
 

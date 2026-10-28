@@ -88,7 +88,9 @@ cd ../.. && git add docs/Amiya-Bot-docs && git commit -m "chore: 更新 SDK 文�
 | `Message.send()` | `basic/sendMessage.md` |
 | `Message.recall()` | `basic/recallMessage.md` |
 | `Message.wait()` / `wait_channel()` | `basic/continuityMessage.md` |
+| `Message.event_id`（**新增 2026-10**） | `basic/recvMessage.md` |
 | `Event` / `EventList` | `basic/handleEvents.md` |
+| `Event.reply()` / `Event.ack_interaction()`（**新增 2026-10**） | `basic/handleEvents.md`（「以事件为锚点回复消息」节）、`basic/chainBuild/mdContent.md` |
 | 主动消息（`send_message`） | `basic/sendActiveMessage.md` |
 | `MultipleAccounts` | `basic/multipleAccounts.md` |
 
@@ -171,6 +173,21 @@ cd ../.. && git add docs/Amiya-Bot-docs && git commit -m "chore: 更新 SDK 文�
 `[建议]` 提交顺序仍遵循 §2：**先提交子模块仓库，再提交本仓库的子模块指针**。
 
 `[事实]` 文档中的 `InlineKeyboard` 示例（`mdContent.md`）已用真实代码验证可生成正确 payload，避免写出不可运行的示例。
+
+### 5.2 `event_id` 锚定的被动消息（2026-10，已完成同步）
+
+`[事实]` 按钮回调（`INTERACTION_CREATE`）、`GROUP_ADD_ROBOT` 等事件**没有原消息 ID**，官方允许改用事件最外层的 `id`
+作为被动消息锚点（`event_id`）。本次新增 `Event.reply()` / `Event.ack_interaction()`、`MessageStructure.event_id`，
+以及 `QQGroupBotInstance.send_event_message()`。
+
+| 文件 | 变更 |
+|---|---|
+| `develop/basic/handleEvents.md` | `INTERACTION_CREATE` 示例改用 `event.ack_interaction()`；新增「以事件为锚点回复消息」节（字段映射表 + 边界条件 + 底层写法） |
+| `develop/basic/chainBuild/mdContent.md` | 按钮回调示例改为 `ack_interaction()` + `reply()`，补充 5 条上限提示 |
+| `develop/basic/recvMessage.md` | 属性表加 `event_id` |
+| `develop/basic/sendMessage.md` | 补充「事件如何回复」提示 |
+
+`[事实]` 本次未改动导航与路由（沿用既有页面），故无需改 `.vitepress` 配置。
 
 ## 6. 相关文档
 

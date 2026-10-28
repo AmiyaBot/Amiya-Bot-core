@@ -11,8 +11,10 @@ from .builder import (
     QQGroupMessageCallback,
     QQGroupChainBuilder,
     QQGroupChainBuilderOptions,
+    QQGroupMessageError,
     SeqService,
     build_message_send,
+    raise_for_send_error,
 )
 from .package import package_qq_group_message
 
@@ -117,22 +119,49 @@ class QQGroupBotInstance(QQGuildBotInstance):
         res = []
 
         for payload in payloads:
+            response = None
+
             async with log.catch('post error:', ignore=[asyncio.TimeoutError]):
-                res.append(
-                    await (
-                        self.api.post_private_message(
-                            chain.data.user_openid,
-                            payload,
-                        )
-                        if chain.data.is_direct
-                        else self.api.post_group_message(
-                            chain.data.channel_openid,
-                            payload,
-                        )
+                response = await (
+                    self.api.post_private_message(
+                        chain.data.user_openid,
+                        payload,
+                    )
+                    if chain.data.is_direct
+                    else self.api.post_group_message(
+                        chain.data.channel_openid,
+                        payload,
                     )
                 )
+                res.append(response)
+
+            # 已知错误码（event_id 过期 / msg_id 越权 / 事件不支持回复）转成带 code 的异常，
+            # 其余错误保持原有「仅记录日志」行为
+            raise_for_send_error(response)
 
         return [QQGroupMessageCallback(chain.data, self, item) for item in res]
+
+    async def send_event_message(self, chain: Chain, event_id: str = '', is_sync: bool = True):
+        """
+        以事件 ID 为锚点发送被动消息（按钮回调、入群事件等）。
+
+        与 message_id 锚点二选一，msg_seq 由 SeqService 递增；同一事件 5 分钟内最多回复 5 条。
+
+        :param chain:   消息 Chain 对象
+        :param event_id: 事件 ID（事件最外层的 id），为空时使用 chain.data.event_id
+        :param is_sync: 是否同步发送消息
+        :return:        MessageCallback 列表
+        """
+        if chain.data is None:
+            raise TypeError('send_event_message() missing chain data')
+
+        if event_id:
+            chain.data.event_id = event_id
+
+        if not getattr(chain.data, 'event_id', ''):
+            raise ValueError('send_event_message() missing argument: "event_id"')
+
+        return await self.send_chain_message(chain, is_sync=is_sync)
 
 
 qq_group = QQGroupBotInstance.build_adapter
