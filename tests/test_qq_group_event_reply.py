@@ -5,10 +5,13 @@ QQ 群 / 单聊：event_id 锚定的被动消息（Event.reply）。
 断言只落在「最终 payload 长什么样」与「抛出了什么异常」。
 """
 
+import time
+
 import pytest
 
 from amiyabot.adapters.tencent.qqGlobal.package import package_qq_global_message
 from amiyabot.adapters.tencent.qqGroup import QQGroupBotInstance
+from amiyabot.adapters.tencent.qqGroup.api import QQGroupAPI
 from amiyabot.adapters.tencent.qqGroup.builder import (
     PayloadBuilder,
     QQGroupMessageError,
@@ -336,3 +339,38 @@ def test_send_error_code_mapping():
     raise_for_send_error(UnknownResponse())
     raise_for_send_error(EmptyResponse())
     raise_for_send_error(None)
+
+
+@pytest.mark.asyncio
+async def test_put_interaction_response_uses_json_body(monkeypatch):
+    """
+    互动事件回应（PUT /interactions/{id}）必须是 JSON 体。
+
+    回归：原先走 QQGroupAPI.request()，dict 交给 aiohttp 后被编码成表单
+    （`code=0` + application/x-www-form-urlencoded），平台不认这个回应，
+    客户端弹「机器人服务响应异常」，而业务逻辑照常执行——极难排查。
+    """
+    calls = []
+
+    async def fake_request(url, method='post', **kwargs):
+        calls.append((url, method, kwargs))
+        return '{}'
+
+    monkeypatch.setattr('amiyabot.adapters.tencent.qqGroup.api.http_requests.request', fake_request)
+
+    api = QQGroupAPI('appid', 'token', 'client_secret')
+    # 跳过 access_token 的实时拉取（headers 属性会走外网）
+    api.access_token = 'ACCESS_TOKEN'
+    api.expires_time = int(time.time()) + 3600
+
+    await api.put_interaction_response('INTERACTION_ID', code=0)
+
+    assert len(calls) == 1
+    url, method, kwargs = calls[0]
+
+    assert url == 'https://api.sgroup.qq.com/interactions/INTERACTION_ID'
+    assert method == 'put'
+    assert kwargs['json'] == {'code': 0}
+    assert 'data' not in kwargs, 'data= 会被编码成表单，平台不认'
+    assert kwargs['headers']['Content-Type'] == 'application/json'
+    assert kwargs['headers']['Authorization'] == 'QQBot ACCESS_TOKEN'

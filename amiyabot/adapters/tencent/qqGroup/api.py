@@ -5,6 +5,7 @@ import requests
 from typing import List, Optional
 
 from ..qqGuild.api import QQGuildAPI, log
+from amiyabot.network.httpRequests import http_requests
 
 
 class QQGroupAPI(QQGuildAPI):
@@ -267,8 +268,18 @@ class QQGroupAPI(QQGuildAPI):
         """
         回应互动事件（按钮回调等）。
         code: 0=成功 1=操作失败 2=操作频繁 3=重复操作 4=没有权限 5=仅管理员操作
+
+        平台要求 body 为 JSON（``{"code": 0}``），因此不能走 ``self.request()``：
+        它把 dict 交给 ``http_requests.request(data=...)``，aiohttp 会按表单编码成
+        ``code=0`` + ``application/x-www-form-urlencoded``，平台不认这个回应，
+        客户端就会提示「机器人服务响应异常」（业务逻辑却照常执行，很难排查）。
         """
-        return await self.request(f'/interactions/{interaction_id}', 'put', {'code': code})
+        return await http_requests.request(
+            f'{self.domain}/interactions/{interaction_id}',
+            'put',
+            json={'code': code},
+            headers={**self.headers, 'Content-Type': 'application/json'},
+        )
 
     async def post_stream_message(
         self,
