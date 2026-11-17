@@ -128,6 +128,9 @@ class MessageStructure:
 
         self.files: List[File] = []
         self.voice = ''
+        # 平台侧语音转写（QQ 群语音附件 attachments[].asr_refer_text），
+        # 可直接当用户输入使用，无需自行接入 ASR。平台未转写时为空字符串。
+        self.voice_text = ''
         self.audio = ''
         self.video = ''
 
@@ -144,6 +147,9 @@ class MessageStructure:
         self.is_at_all = False
         self.is_admin = False
         self.is_direct = False
+        # 发送者是否为机器人（QQ 群 author.bot）。用于拦截机器人之间的互相 @ 死循环：
+        # 每轮都是真实 API 调用，不拦会被无限放大。
+        self.is_bot = False
 
         self.user_id = ''
         self.user_openid = ''
@@ -175,6 +181,10 @@ class MessageStructure:
         text = self.text.replace('\n', ' ')
         face = ''.join([f'[face:{n}]' for n in self.face])
         image = '[image]' * len(self.image)
+        # voice / video / files 原先不参与渲染，线上纯附件消息在日志里是一片空白，排查时无从下手
+        voice = '[voice]' if self.voice or self.voice_text else ''
+        video = '[video]' if self.video else ''
+        files = ''.join([f'[file:{item.filename}]' if item.filename else '[file]' for item in self.files])
 
         return 'Bot:{bot}{channel} User:{user}{admin}{direct}{nickname}: {message}'.format(
             **{
@@ -184,7 +194,7 @@ class MessageStructure:
                 'admin': '(admin)' if self.is_admin else '',
                 'direct': '(direct)' if self.is_direct else '',
                 'nickname': f' {self.nickname}' if self.nickname else '',
-                'message': text + face + image,
+                'message': text + face + image + voice + video + files,
             }
         )
 
