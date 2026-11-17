@@ -49,9 +49,11 @@ def parse_attachments(data: Message, message: dict):
 
         if content_type == 'voice':
             # 语音附件可能只有 voice_wav_url 而无 url（官方字段：voice_wav_url / asr_refer_text）
-            voice = item.get('voice_wav_url') or url
-            if voice:
-                data.voice = voice
+            if not data.voice:
+                data.voice = item.get('voice_wav_url') or url
+            # 平台侧转写是零成本、零延迟的文本输入，此前被整条丢弃，下游只能回读原始 payload
+            if not data.voice_text:
+                data.voice_text = (item.get('asr_refer_text') or '').strip()
             continue
 
         if not url:
@@ -122,6 +124,8 @@ async def package_qq_group_message(
         data.message_id = message['id']
         data.user_id = message['author']['id']
         data.nickname = message['author'].get('username') or ''
+        # 机器人互相 @ 会形成死循环（每轮一次真实 API 调用），下游需要这个判据
+        data.is_bot = bool(message['author'].get('bot'))
         data.message_type = message.get('message_type', '')
 
         if data.is_direct:
