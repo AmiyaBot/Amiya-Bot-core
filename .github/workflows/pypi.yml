@@ -4,6 +4,9 @@ on:
     push:
         branches:
             - master
+        # 仅文档/子模块指针变动时不发版（PyPI 版本不可撤回，避免为了改文档烧一个版本号）
+        paths-ignore:
+            - 'docs/**'
 
 jobs:
     pypi-publish:
