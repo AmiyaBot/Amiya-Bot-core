@@ -39,12 +39,32 @@ DOWNLOAD_CHUNK_SIZE = 64 * 1024
 ERROR_UNSUPPORTED_FORMAT = 850019
 """file_type=1 不支持的格式，可降级 file_type=4（按文件发送）。"""
 
+FILE_TYPE_IMAGE = 1
+FILE_TYPE_VIDEO = 2
+FILE_TYPE_VOICE = 3
+FILE_TYPE_FILE = 4
+
+FILE_TYPE_MIME_PREFIXES = {
+    FILE_TYPE_IMAGE: ('image/',),
+    FILE_TYPE_VIDEO: ('video/',),
+    FILE_TYPE_VOICE: ('audio/',),
+}
+"""各 file_type 允许直传的 MIME 前缀。file_type=4（按文件发送）不在表内 —— 不限类型。"""
+
+FILE_TYPE_DEFAULT_EXTENSION = {
+    FILE_TYPE_IMAGE: 'png',
+    FILE_TYPE_VIDEO: 'mp4',
+    FILE_TYPE_VOICE: 'silk',
+    FILE_TYPE_FILE: 'bin',
+}
+"""MIME 与 URL 都给不出扩展名时的兜底（QQ 要求 file_name 必须带扩展名）。"""
+
 # 下载状态。allow_fallback 为 True 表示「平台侧也许还能救」，由调用方决定是否兜底。
 STATUS_OK = 'ok'
 STATUS_HTTP_ERROR = 'http_error'
 STATUS_TIMEOUT = 'timeout'
 STATUS_ERROR = 'error'
-STATUS_NOT_IMAGE = 'not_image'
+STATUS_TYPE_MISMATCH = 'type_mismatch'
 STATUS_TOO_LARGE = 'too_large'
 
 FALLBACK_STATUS = (STATUS_HTTP_ERROR, STATUS_TIMEOUT, STATUS_ERROR)
@@ -61,6 +81,16 @@ MIME_EXTENSIONS = {
     'image/bmp': 'bmp',
     'image/x-ms-bmp': 'bmp',
     'image/svg+xml': 'svg',
+    'audio/silk': 'silk',
+    'audio/amr': 'amr',
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/wav': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/ogg': 'ogg',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+    'video/quicktime': 'mov',
 }
 
 GENERIC_MIMES = ('', 'application/octet-stream', 'binary/octet-stream', 'application/unknown')
@@ -125,13 +155,47 @@ def sniff_image_mime(data: bytes) -> str:
     return ''
 
 
-def filename_for(url: str, mime: str) -> str:
+def sniff_voice_mime(data: bytes) -> str:
+    """
+    按文件头判断语音类型。
+
+    silk 的 Content-Type 常年缺失（框架自己写出的临时 .silk 文件也没设），只能看魔数：
+    完整 silk 文件以 ``#!SILK_V3`` 起头，裸流则直接以版本字节 0x02 / 0x03 开头。
+    """
+    if data.startswith(b'#!SILK_V3') or data[:1] in (b'\x02', b'\x03'):
+        return 'audio/silk'
+    if data.startswith(b'#!AMR'):
+        return 'audio/amr'
+    if data.startswith(b'ID3') or data[:2] in (b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'):
+        return 'audio/mpeg'
+    if data.startswith(b'RIFF') and data[8:12] == b'WAVE':
+        return 'audio/wav'
+
+    return ''
+
+
+def sniff_video_mime(data: bytes) -> str:
+    """按文件头判断视频类型（MP4 家族的 ftyp 在偏移 4，WebM 是 EBML 头）。"""
+    if data[4:8] == b'ftyp':
+        return 'video/mp4'
+    if data.startswith(b'\x1a\x45\xdf\xa3'):
+        return 'video/webm'
+
+    return ''
+
+
+def sniff_media_mime(data: bytes) -> str:
+    """按文件头嗅探图片 / 语音 / 视频，识别不出返回空串。"""
+    return sniff_image_mime(data) or sniff_voice_mime(data) or sniff_video_mime(data)
+
+
+def filename_for(url: str, mime: str, file_type: int = FILE_TYPE_IMAGE) -> str:
     """从 URL 与 MIME 推出带正确扩展名的文件名（QQ 要求 file_name 必须有扩展名）。"""
     stem, ext = os.path.splitext(os.path.basename(unquote(urlparse(url).path or '')))
-    ext = MIME_EXTENSIONS.get(mime) or ext.lstrip('.').lower() or 'png'
+    ext = MIME_EXTENSIONS.get(mime) or ext.lstrip('.').lower() or FILE_TYPE_DEFAULT_EXTENSION.get(file_type, 'bin')
     stem = re.sub(r'[^0-9A-Za-z_-]+', '_', stem).strip('_')[:32]
 
-    return f'{stem or "image"}.{ext[:8]}'
+    return f'{stem or "media"}.{ext[:8]}'
 
 
 async def download_media(
@@ -139,14 +203,17 @@ async def download_media(
     timeout: float = 10.0,
     max_bytes: int = 20 * 1024 * 1024,
     trust_env: bool = False,
+    file_type: int = FILE_TYPE_IMAGE,
 ) -> MediaDownload:
     """
-    下载 `url` 指向的图片。
+    下载 `url` 指向的媒体，并按 `file_type` 校验类型。
 
     :param timeout:   总超时（秒）
     :param max_bytes: 单文件上限，超过直接放弃
     :param trust_env: 是否读取 HTTP_PROXY/NO_PROXY。默认 False ——
                       全局代理会把内网请求劫持成 502，与 MCP 内网地址的坑一致。
+    :param file_type: 期望的 QQ 媒体类型（1 图片 / 2 视频 / 3 语音 / 4 文件），
+                      决定 MIME 白名单；4 不限类型。
     """
     try:
         async with aiohttp.ClientSession(
@@ -154,7 +221,7 @@ async def download_media(
             timeout=aiohttp.ClientTimeout(total=timeout),
         ) as session:
             async with session.get(url) as response:
-                return await _read_download(response, url, max_bytes)
+                return await _read_download(response, url, max_bytes, file_type)
     except asyncio.TimeoutError:
         log.warning('media download fail url=%s reason=timeout timeout=%s', url, timeout)
         return MediaDownload(status=STATUS_TIMEOUT, detail='timeout')
@@ -163,7 +230,17 @@ async def download_media(
         return MediaDownload(status=STATUS_ERROR, detail=f'{type(e).__name__}: {e}')
 
 
-async def _read_download(response, url: str, max_bytes: int) -> MediaDownload:
+def _mime_allowed(mime: str, file_type: int) -> bool:
+    """file_type=4 不限类型；其余按 MIME 前缀白名单，识别不出 MIME 的一律拒绝。"""
+    prefixes = FILE_TYPE_MIME_PREFIXES.get(file_type)
+
+    if prefixes is None:
+        return True
+
+    return bool(mime) and mime.startswith(prefixes)
+
+
+async def _read_download(response, url: str, max_bytes: int, file_type: int = FILE_TYPE_IMAGE) -> MediaDownload:
     if response.status != 200:
         log.warning('media download fail url=%s status=%s', url, response.status)
         return MediaDownload(status=STATUS_HTTP_ERROR, detail=str(response.status))
@@ -177,12 +254,17 @@ async def _read_download(response, url: str, max_bytes: int) -> MediaDownload:
         log.warning('media download fail url=%s reason=empty_body', url)
         return MediaDownload(status=STATUS_HTTP_ERROR, detail='empty body')
 
-    mime = _resolve_mime(response.headers.get('Content-Type', ''), data)
-    if not mime.startswith('image/'):
-        log.warning('media download fail url=%s reason=not_image content_type=%s', url, mime or '-')
-        return MediaDownload(status=STATUS_NOT_IMAGE, detail=mime or 'unknown')
+    mime = _resolve_mime(response.headers.get('Content-Type', ''), data, file_type)
+    if not _mime_allowed(mime, file_type):
+        log.warning(
+            'media download fail url=%s reason=type_mismatch file_type=%s content_type=%s',
+            url,
+            file_type,
+            mime or '-',
+        )
+        return MediaDownload(status=STATUS_TYPE_MISMATCH, detail=f'{mime or "unknown"} for file_type={file_type}')
 
-    return MediaDownload(media=MediaFile(data=data, mime=mime, name=filename_for(url, mime)))
+    return MediaDownload(media=MediaFile(data=data, mime=mime, name=filename_for(url, mime, file_type)))
 
 
 async def upload_media(
@@ -341,13 +423,19 @@ async def _read_limited(response: aiohttp.ClientResponse, max_bytes: int) -> Opt
     return b''.join(chunks)
 
 
-def _resolve_mime(content_type: str, data: bytes) -> str:
+def _resolve_mime(content_type: str, data: bytes, file_type: int = FILE_TYPE_IMAGE) -> str:
+    """
+    确定媒体 MIME。
+
+    先信 Content-Type；缺失、通用、或与 file_type 白名单不符时回落到文件头嗅探 ——
+    ``.silk`` 这类扩展名会被静态服务器当成 text/plain，只看 Content-Type 会把语音误杀。
+    """
     mime = (content_type or '').split(';')[0].strip().lower()
 
-    if mime in GENERIC_MIMES:
-        return sniff_image_mime(data)
+    if mime not in GENERIC_MIMES and _mime_allowed(mime, file_type):
+        return mime
 
-    return mime
+    return sniff_media_mime(data)
 
 
 def _body_of(response) -> dict:

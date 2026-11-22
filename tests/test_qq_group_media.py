@@ -25,6 +25,14 @@ PNG = b'\x89PNG\r\n\x1a\n' + b'0' * 120
 URL = 'http://192.168.1.2:9000/image/a.png'
 BIG_URL = 'http://192.168.1.2:9000/image/big.png'
 
+# silk：完整文件以 #!SILK_V3 起头，裸流直接以版本字节 0x02 起头
+SILK = b'#!SILK_V3' + b'\x00' * 200
+SILK_BARE = b'\x02' + b'\x00' * 200
+MP4 = b'\x00\x00\x00\x18ftypisom' + b'\x00' * 200
+
+VOICE_URL = 'http://192.168.1.2:9000/resource/voice.silk'
+VIDEO_URL = 'http://192.168.1.2:9000/resource/v.mp4'
+
 
 # ---------------------------------------------------------------------------
 # 假 HTTP 层
@@ -256,7 +264,7 @@ def test_download_true_uploads_binary_then_sends_media(http):
 
 
 def test_download_true_rejects_non_image(http, monkeypatch):
-    """非 image/*：不发请求，只 warn。"""
+    """图片链路遇到非 image/*：不发请求，只 warn。"""
     http.routes[URL] = (200, b'<html>error page</html>', 'text/html')
 
     records = record_warnings(monkeypatch)
@@ -268,7 +276,7 @@ def test_download_true_rejects_non_image(http, monkeypatch):
 
     assert api.calls == []
     assert payloads == []
-    assert any('reason=not_image' in item for item in records)
+    assert any('reason=type_mismatch' in item for item in records)
 
 
 def test_download_true_rejects_oversized_media(http, monkeypatch):
@@ -402,6 +410,165 @@ def test_media_failure_does_not_break_text(http):
 
     text_payloads = [item for item in payloads if item['content'] == 'hello']
     assert len(text_payloads) == 1
+
+
+# ---------------------------------------------------------------------------
+# 语音 / 视频：「框架下载直传」按 file_type 放开（issue #130）
+# ---------------------------------------------------------------------------
+
+
+def test_voice_download_disabled_by_default(http):
+    """默认 download_media_types=(1,)：语音仍走平台侧 URL 下载，不碰本地媒体。"""
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True)).voice(VOICE_URL)
+
+    payloads = send(api, chain)
+
+    assert [item['method'] for item in api.calls] == ['upload_file']
+    assert api.calls[0]['file_type'] == 3
+    assert api.calls[0]['url'] == VOICE_URL
+    assert api.calls[0]['file_data'] is None
+    assert http.sessions == []
+    assert payloads[0]['media'] == {'file_info': 'FI3'}
+
+
+def test_voice_download_opt_in_uploads_binary(http):
+    """download_media_types 含 3：silk 走 file_data 直传，file_type 透传为 3。"""
+    http.routes[VOICE_URL] = (200, SILK, '')
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3))).voice(VOICE_URL)
+
+    payloads = send(api, chain)
+
+    assert [item['method'] for item in api.calls] == ['upload_file']
+    call = api.calls[0]
+    assert call['file_type'] == 3
+    assert call['url'] is None
+    assert call['file_data'] is not None
+    assert call['file_name'].endswith('.silk')
+    assert payloads[0]['msg_type'] == 7
+    assert payloads[0]['media'] == {'file_info': 'FI3'}
+
+
+def test_voice_download_accepts_silk_under_text_plain(http):
+    """.silk 被静态服务器当成 text/plain：按魔数纠正，不能误杀。"""
+    http.routes[VOICE_URL] = (200, SILK, 'text/plain')
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3))).voice(VOICE_URL)
+
+    payloads = send(api, chain)
+
+    assert api.calls[0]['file_type'] == 3
+    assert api.calls[0]['file_data'] is not None
+    assert payloads[0]['media'] == {'file_info': 'FI3'}
+
+
+def test_voice_download_accepts_bare_silk_stream(http):
+    """裸 silk 流（无 #!SILK_V3 头，首字节 0x02）同样识别为语音。"""
+    http.routes[VOICE_URL] = (200, SILK_BARE, 'application/octet-stream')
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3))).voice(VOICE_URL)
+
+    send(api, chain)
+
+    assert api.calls[0]['file_type'] == 3
+    assert api.calls[0]['file_data'] is not None
+
+
+def test_voice_download_rejects_html(http, monkeypatch):
+    """语音 URL 返回 HTML 错误页：拒绝直传，也不回退平台侧（平台同样下载不到）。"""
+    http.routes[VOICE_URL] = (200, b'<html>404</html>', 'text/html')
+
+    records = record_warnings(monkeypatch)
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3))).voice(VOICE_URL)
+
+    payloads = send(api, chain)
+
+    assert api.calls == []
+    assert payloads == []
+    assert any('reason=type_mismatch' in item and 'file_type=3' in item for item in records)
+
+
+def test_voice_download_rejects_image_body(http, monkeypatch):
+    """file_type=3 只收 audio/*：图片内容即使魔数清晰也要拒绝。"""
+    http.routes[VOICE_URL] = (200, PNG, 'image/png')
+
+    records = record_warnings(monkeypatch)
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3))).voice(VOICE_URL)
+
+    payloads = send(api, chain)
+
+    assert api.calls == []
+    assert payloads == []
+    assert any('reason=type_mismatch' in item for item in records)
+
+
+def test_image_download_still_rejects_silk(http, monkeypatch):
+    """回归：图片链路不能因为放开语音而接受 silk。"""
+    http.routes[URL] = (200, SILK, 'audio/silk')
+
+    records = record_warnings(monkeypatch)
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3))).image(url=URL)
+
+    payloads = send(api, chain)
+
+    assert api.calls == []
+    assert payloads == []
+    assert any('reason=type_mismatch' in item for item in records)
+
+
+def test_video_download_opt_in(http):
+    """download_media_types 含 2：video/mp4 走直传，file_type=2。"""
+    http.routes[VIDEO_URL] = (200, MP4, 'video/mp4')
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 2))).video(VIDEO_URL)
+
+    payloads = send(api, chain)
+
+    assert api.calls[0]['file_type'] == 2
+    assert api.calls[0]['file_data'] is not None
+    assert payloads[0]['media'] == {'file_info': 'FI2'}
+
+
+def test_voice_download_failure_falls_back_to_platform(http, monkeypatch):
+    """下载 500：语音仍回退平台侧 URL 上传（公网场景可能救回来）。"""
+    http.routes[VOICE_URL] = (500, b'', 'text/plain')
+
+    record_warnings(monkeypatch)
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3))).voice(VOICE_URL)
+
+    payloads = send(api, chain)
+
+    assert [item['method'] for item in api.calls] == ['upload_file']
+    assert api.calls[0]['url'] == VOICE_URL
+    assert api.calls[0]['file_type'] == 3
+    assert payloads[0]['media'] == {'file_info': 'FI3'}
+
+
+def test_voice_download_cached_per_type(http):
+    """同一 Chain 内重复的语音 URL 只上传一次。"""
+    http.routes[VOICE_URL] = (200, SILK, '')
+
+    api = FakeAPI()
+    chain = make_chain(options(download_media=True, download_media_types=(1, 3)))
+    chain.voice(VOICE_URL).voice(VOICE_URL)
+
+    payloads = send(api, chain)
+
+    assert [item['method'] for item in api.calls] == ['upload_file']
+    assert [item['media']['file_info'] for item in payloads] == ['FI3', 'FI3']
 
 
 # ---------------------------------------------------------------------------
