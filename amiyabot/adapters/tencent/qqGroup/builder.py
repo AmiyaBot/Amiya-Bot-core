@@ -12,7 +12,13 @@ from amiyabot.builtin.messageChain.element import *
 from typing import Dict, Tuple
 
 from .api import QQGroupAPI, log
-from .media import ERROR_UNSUPPORTED_FORMAT, MediaDownload, download_media, upload_media
+from .media import (
+    ERROR_UNSUPPORTED_FORMAT,
+    FILE_TYPE_IMAGE,
+    MediaDownload,
+    download_media,
+    upload_media,
+)
 
 
 class QQGroupMessageError(Exception):
@@ -122,7 +128,15 @@ class QQGroupChainBuilderOptions:
     server_config: ServerConfig = field(default_factory=ServerConfig)
 
     download_media: bool = False
-    """True 时，http(s) 图片先由框架下载再上传（适用于内网地址）；False 保持现状（平台侧下载）。"""
+    """True 时，http(s) 媒体先由框架下载再上传（适用于内网地址）；False 保持现状（平台侧下载）。"""
+
+    download_media_types: Tuple[int, ...] = (1,)
+    """允许走「框架下载直传」的 file_type（1 图片 / 2 视频 / 3 语音 / 4 文件）。
+
+    默认只有图片。容器 / 内网部署下平台无法回连 ``media.host``，语音会必然返回
+    40093010 —— 此时把需要的类型加进来（如 ``(1, 3)``）即可让语音也走直传。
+    ``file_type=4``（按文件发送）不受 MIME 白名单限制。
+    """
 
     media_download_timeout: float = DEFAULT_MEDIA_DOWNLOAD_TIMEOUT
     """下载超时（秒）。内网图床通常很快，10s 足够。"""
@@ -252,8 +266,8 @@ class PayloadBuilder:
         self.payload_list: List[GroupPayload] = []
         self.payload = self.__new_payload()
 
-        # 同一 payload（同一条 Chain）内重复的 URL 只上传一次：url -> (file_info, file_type)
-        self.media_cache: Dict[str, Tuple[dict, int]] = {}
+        # 同一 payload（同一条 Chain）内重复的 URL 只上传一次：(url, file_type) -> (file_info, file_type)
+        self.media_cache: Dict[Tuple[str, int], Tuple[dict, int]] = {}
 
     def __new_payload(self):
         payload = GroupPayload()
@@ -298,24 +312,27 @@ class PayloadBuilder:
         return getattr(self.chain.builder, 'options', None)
 
     def __download_enabled(self, download: Optional[bool], file_type: int) -> bool:
-        # 只有图片走「框架下载」；语音/视频/文件维持平台侧下载
-        if file_type != 1:
-            return False
-
+        # 显式 download 优先（仅图片元素带该参数）；否则看 options 放开了哪些 file_type
         if download is not None:
             return download
 
         options = self.media_options
-        return bool(options and options.download_media)
+        if not options or not options.download_media:
+            return False
 
-    async def __resolve_by_download(self, url: str) -> Tuple[Optional[dict], int, bool]:
+        return file_type in options.download_media_types
+
+    async def __resolve_by_download(
+        self, url: str, file_type: int = FILE_TYPE_IMAGE
+    ) -> Tuple[Optional[dict], int, bool]:
         """
         下载并由框架上传，返回 (file_info, 实际 file_type, 是否允许兜底)。
         没有 file_info 时由调用方决定「兜底回平台侧下载」还是「直接放弃」。
         """
-        if url in self.media_cache:
-            file_info, file_type = self.media_cache[url]
-            return file_info, file_type, False
+        cache_key = (url, file_type)
+        if cache_key in self.media_cache:
+            file_info, cached_type = self.media_cache[cache_key]
+            return file_info, cached_type, False
 
         options = self.media_options
         trust_env = options.media_trust_env if options else False
@@ -328,22 +345,23 @@ class PayloadBuilder:
             timeout=timeout,
             max_bytes=max_bytes,
             trust_env=trust_env,
+            file_type=file_type,
         )
 
         if not cached_media.media:
-            return None, 1, cached_media.allow_fallback
+            return None, file_type, cached_media.allow_fallback
 
         result = await upload_media(
             self.api,
             self.openid,
             cached_media.media,
-            file_type=1,
+            file_type=file_type,
             is_direct=self.chain.data.is_direct,
             trust_env=trust_env,
         )
 
-        if not result.ok and result.code == ERROR_UNSUPPORTED_FORMAT:
-            # file_type=1 官方只保证 png/jpg，其余格式降级为「按文件发送」
+        if not result.ok and file_type == FILE_TYPE_IMAGE and result.code == ERROR_UNSUPPORTED_FORMAT:
+            # file_type=1 官方只保证 png/jpg，其余格式降级为「按文件发送」；其余类型无此语义
             log.warning('media upload downgrade to file_type=4 url=%s code=%s', url, result.code)
             result = await upload_media(
                 self.api,
@@ -355,11 +373,11 @@ class PayloadBuilder:
             )
 
         if result.ok:
-            self.media_cache[url] = (result.file_info, result.file_type)
+            self.media_cache[cache_key] = (result.file_info, result.file_type)
             return result.file_info, result.file_type, False
 
-        # 上传失败：公网图仍可能被平台侧救回来，允许兜底
-        return None, 1, True
+        # 上传失败：公网媒体仍可能被平台侧救回来，允许兜底
+        return None, file_type, True
 
     def __append_media(self, file_info: dict, file_type: int = 1):
         # 非图片（语音 / 视频 / 文件）需独占一条消息，先把已累积的文本冲刷出去。
@@ -383,14 +401,14 @@ class PayloadBuilder:
 
         try:
             if self.__download_enabled(download, file_type):
-                file_info, effective_type, allow_fallback = await self.__resolve_by_download(url)
+                file_info, effective_type, allow_fallback = await self.__resolve_by_download(url, file_type)
 
                 if file_info:
                     self.__append_media(file_info, effective_type)
                     return
 
                 if not allow_fallback:
-                    # 内容层面被拒（非图片 / 超出上限）或上传失败已记录日志，不再重复请求
+                    # 内容层面被拒（类型不符 / 超出上限）或上传失败已记录日志，不再重复请求
                     return
 
                 log.warning('media fallback to platform upload url=%s', url)
